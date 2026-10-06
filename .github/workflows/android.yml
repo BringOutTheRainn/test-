@@ -1,0 +1,67 @@
+name: Android build
+
+# Builds an installable debug APK and attaches it to the run as an artifact
+# ("city-builder-rpg-apk"). Download it from the run's Summary page.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.3-stable
+      TEMPLATES_DIR: 4.3.stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot and export templates
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+          curl -sSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${TEMPLATES_DIR}"
+          unzip -q templates.tpz -d tpl
+          mv tpl/templates/* "$HOME/.local/share/godot/export_templates/${TEMPLATES_DIR}/"
+          rm -rf tpl templates.tpz godot.zip
+
+      - name: Point Godot at the Android SDK, Java and a debug key
+        run: |
+          keytool -genkeypair -v -keystore "$HOME/debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.3.tres" <<SETTINGS
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          export/android/java_sdk_path = "${JAVA_HOME_17_X64}"
+          export/android/debug_keystore = "$HOME/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          SETTINGS
+          sed -i 's/^ *//' "$HOME/.config/godot/editor_settings-4.3.tres"
+
+      - name: Import project
+        run: ./godot --headless --import || true
+
+      - name: Export APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /home/runner/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          mkdir -p build
+          ./godot --headless --export-debug "Android" build/city-builder-rpg.apk
+          ls -la build
+          test -s build/city-builder-rpg.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: city-builder-rpg-apk
+          path: build/city-builder-rpg.apk
+          if-no-files-found: error
