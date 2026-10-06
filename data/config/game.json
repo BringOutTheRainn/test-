@@ -1,0 +1,40 @@
+{
+  "grid": {
+    "width": 8,
+    "height": 9
+  },
+  "starting_resources": {
+    "gold": 500,
+    "wood": 300,
+    "stone": 150,
+    "food": 200,
+    "gems": 500
+  },
+  "starting_builders": 2,
+  "starting_buildings": [
+    {
+      "id": "town_hall",
+      "x": 3,
+      "y": 4,
+      "level": 1
+    }
+  ],
+  "starting_party": [
+    "knight",
+    "ranger",
+    "cleric"
+  ],
+  "base_party_size": 3,
+  "max_offline_hours": 12,
+  "skip": {
+    "free_seconds": 300,
+    "gems_per_minute_first_hour": 1,
+    "gems_for_24_hours": 500
+  },
+  "combat": {
+    "max_energy": 3,
+    "energy_per_turn": 1,
+    "lose_loot_fraction": 0.5,
+    "damage_scale": 1.5
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "strike",
+  "name": "Strike",
+  "cost": 0,
+  "target": "enemy_melee",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.0
+    }
+  ]
+}

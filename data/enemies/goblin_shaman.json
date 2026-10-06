@@ -1,0 +1,15 @@
+{
+  "id": "goblin_shaman",
+  "name": "Goblin Shaman",
+  "color": "#5b4a8a",
+  "stats": {
+    "hp": 55,
+    "atk": 13,
+    "def": 3,
+    "spd": 7
+  },
+  "skills": [
+    "hex",
+    "dark_mend"
+  ]
+}

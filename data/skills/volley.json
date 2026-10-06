@@ -1,0 +1,13 @@
+{
+  "id": "volley",
+  "name": "Volley",
+  "cost": 2,
+  "target": "enemy_back_row",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.8
+    }
+  ],
+  "description": "Hits every enemy in the back row."
+}

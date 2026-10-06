@@ -1,0 +1,19 @@
+{
+  "id": "ground_slam",
+  "name": "Ground Slam",
+  "cost": 3,
+  "target": "all_enemies",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.6
+    },
+    {
+      "type": "status",
+      "status": "stun",
+      "turns": 1,
+      "chance": 0.35
+    }
+  ],
+  "description": "Hits every hero and may stun them."
+}

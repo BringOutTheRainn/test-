@@ -1,0 +1,12 @@
+{
+  "id": "arrow",
+  "name": "Arrow",
+  "cost": 0,
+  "target": "enemy_any",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.0
+    }
+  ]
+}

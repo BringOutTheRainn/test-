@@ -1,0 +1,12 @@
+{
+  "id": "smash",
+  "name": "Smash",
+  "cost": 0,
+  "target": "enemy_melee",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.0
+    }
+  ]
+}

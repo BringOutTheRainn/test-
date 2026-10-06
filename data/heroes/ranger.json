@@ -1,0 +1,20 @@
+{
+  "id": "ranger",
+  "name": "Ranger",
+  "class": "Ranger",
+  "role": "Ranged damage",
+  "rarity": "common",
+  "row": "back",
+  "color": "#27ae60",
+  "stats": {
+    "hp": 90,
+    "atk": 18,
+    "def": 5,
+    "spd": 12
+  },
+  "skills": [
+    "shoot",
+    "defend",
+    "volley"
+  ]
+}

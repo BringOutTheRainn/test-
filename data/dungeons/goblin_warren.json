@@ -1,0 +1,52 @@
+{
+  "id": "goblin_warren",
+  "name": "Goblin Warren",
+  "unlock_town_hall": 1,
+  "order": 1,
+  "description": "A test dungeon: one fight and a boss under the old town.",
+  "rooms": [
+    {
+      "type": "fight",
+      "name": "Tunnel Ambush",
+      "enemies": [
+        {
+          "id": "goblin",
+          "row": "front"
+        },
+        {
+          "id": "goblin",
+          "row": "front"
+        },
+        {
+          "id": "goblin_archer",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "wood": 120,
+        "stone": 60,
+        "gold": 50
+      }
+    },
+    {
+      "type": "boss",
+      "name": "Chief's Den",
+      "enemies": [
+        {
+          "id": "orc_chief",
+          "row": "front"
+        },
+        {
+          "id": "goblin_shaman",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "wood": 200,
+        "stone": 150,
+        "gold": 150,
+        "crystals": 5
+      }
+    }
+  ]
+}

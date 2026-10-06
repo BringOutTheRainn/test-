@@ -1,0 +1,78 @@
+{
+  "id": "granary",
+  "name": "Granary",
+  "short": "Gran",
+  "category": "storage",
+  "color": "#d4ac0d",
+  "order": 7,
+  "description": "Raises the food cap.",
+  "unlock_town_hall": 2,
+  "max_count": [
+    0,
+    1,
+    1,
+    2,
+    2
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 60
+      },
+      "build_seconds": 10,
+      "provides": {
+        "storage": {
+          "food": 500
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 180,
+        "stone": 60
+      },
+      "build_seconds": 60,
+      "provides": {
+        "storage": {
+          "food": 1000
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 480,
+        "stone": 180
+      },
+      "build_seconds": 300,
+      "provides": {
+        "storage": {
+          "food": 1500
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 1200,
+        "stone": 600
+      },
+      "build_seconds": 1200,
+      "provides": {
+        "storage": {
+          "food": 2000
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 3000,
+        "stone": 1440
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "storage": {
+          "food": 2500
+        }
+      }
+    }
+  ]
+}

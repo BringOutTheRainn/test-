@@ -1,0 +1,16 @@
+{
+  "id": "mend",
+  "name": "Mend",
+  "cost": 2,
+  "target": "ally",
+  "effects": [
+    {
+      "type": "heal",
+      "power": 2.5
+    },
+    {
+      "type": "cleanse"
+    }
+  ],
+  "description": "Heals one ally and removes debuffs."
+}

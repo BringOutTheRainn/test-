@@ -1,0 +1,88 @@
+{
+  "id": "warehouse",
+  "name": "Warehouse",
+  "short": "Whs",
+  "category": "storage",
+  "color": "#5d6d7e",
+  "order": 6,
+  "description": "Raises the wood, stone and iron caps.",
+  "unlock_town_hall": 2,
+  "max_count": [
+    0,
+    1,
+    2,
+    2,
+    3
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 75
+      },
+      "build_seconds": 10,
+      "provides": {
+        "storage": {
+          "wood": 1000,
+          "stone": 1000,
+          "iron": 500
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 225,
+        "stone": 75
+      },
+      "build_seconds": 60,
+      "provides": {
+        "storage": {
+          "wood": 2000,
+          "stone": 2000,
+          "iron": 1000
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 600,
+        "stone": 225
+      },
+      "build_seconds": 300,
+      "provides": {
+        "storage": {
+          "wood": 3000,
+          "stone": 3000,
+          "iron": 1500
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 1500,
+        "stone": 750
+      },
+      "build_seconds": 1200,
+      "provides": {
+        "storage": {
+          "wood": 4000,
+          "stone": 4000,
+          "iron": 2000
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 3750,
+        "stone": 1800
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "storage": {
+          "wood": 5000,
+          "stone": 5000,
+          "iron": 2500
+        }
+      }
+    }
+  ]
+}

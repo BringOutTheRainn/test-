@@ -1,0 +1,8 @@
+{
+  "id": "wood",
+  "name": "Wood",
+  "color": "#a1887f",
+  "hud": true,
+  "order": 2,
+  "base_cap": 1000
+}

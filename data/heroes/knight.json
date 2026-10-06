@@ -1,0 +1,20 @@
+{
+  "id": "knight",
+  "name": "Knight",
+  "class": "Knight",
+  "role": "Tank",
+  "rarity": "common",
+  "row": "front",
+  "color": "#3498db",
+  "stats": {
+    "hp": 150,
+    "atk": 14,
+    "def": 12,
+    "spd": 8
+  },
+  "skills": [
+    "strike",
+    "defend",
+    "taunt"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "tavern",
+  "name": "Tavern",
+  "short": "Tav",
+  "category": "heroes",
+  "color": "#8e44ad",
+  "order": 8,
+  "description": "Recruit heroes and raise the max party size.",
+  "unlock_town_hall": 2,
+  "max_count": 1,
+  "levels": [
+    {
+      "cost": {
+        "wood": 100,
+        "gold": 100
+      },
+      "build_seconds": 10,
+      "provides": {
+        "party_size": 0
+      }
+    },
+    {
+      "cost": {
+        "wood": 300,
+        "stone": 100,
+        "gold": 200
+      },
+      "build_seconds": 60,
+      "provides": {
+        "party_size": 0
+      }
+    },
+    {
+      "cost": {
+        "wood": 800,
+        "stone": 300,
+        "gold": 300
+      },
+      "build_seconds": 300,
+      "provides": {
+        "party_size": 1
+      }
+    },
+    {
+      "cost": {
+        "wood": 2000,
+        "stone": 1000,
+        "gold": 400
+      },
+      "build_seconds": 1200,
+      "provides": {
+        "party_size": 1
+      }
+    },
+    {
+      "cost": {
+        "wood": 5000,
+        "stone": 2400,
+        "gold": 500
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "party_size": 1
+      }
+    }
+  ]
+}
