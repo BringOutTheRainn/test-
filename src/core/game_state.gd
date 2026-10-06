@@ -8,6 +8,7 @@ const Inventory := preload("res://src/systems/inventory.gd")
 const TimerService := preload("res://src/systems/timer_service.gd")
 const City := preload("res://src/systems/city.gd")
 const Economy := preload("res://src/systems/economy.gd")
+const Heroes := preload("res://src/systems/heroes.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -15,6 +16,8 @@ const AUTOSAVE_SECONDS := 30.0
 var inventory: Inventory
 var timers: TimerService
 var city: City
+var roster: Heroes
+## Hero ids that go into dungeons, in order (the first party_size() fight).
 var party: Array = []
 var save_path := SaveService.DEFAULT_PATH
 var _autosave_left := AUTOSAVE_SECONDS
@@ -26,11 +29,15 @@ func _ready() -> void:
 	timers = TimerService.new()
 	city = City.new()
 	city.setup(Content, inventory, timers)
+	roster = Heroes.new()
+	roster.setup(Content)
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
 	timers.started.connect(func(t): EventBus.timer_started.emit(t))
 	timers.finished.connect(_on_timer_finished)
+	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [Content.entry("heroes", id).get("name", id), lvl]))
+	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
 
 	if not load_game():
 		new_game()
@@ -56,6 +63,7 @@ func new_game() -> void:
 	city.new_city()
 	inventory.add_all(Content.setting("starting_resources", {}))
 	party = Content.setting("starting_party", []).duplicate()
+	roster.new_roster(party, Content.setting("starting_items", []))
 	_last_tick = timers.now()
 	save_game()
 
@@ -108,6 +116,40 @@ func grant(loot: Dictionary) -> Dictionary:
 	return inventory.add_all(loot)
 
 
+## Stats and levels for the fighting party, for DungeonRun.setup().
+func party_stats() -> Dictionary:
+	var out := {}
+	for id in party:
+		if roster.has_hero(id):
+			out[id] = roster.stats(id)
+	return out
+
+
+func party_levels() -> Dictionary:
+	var out := {}
+	for id in party:
+		out[id] = roster.level(id)
+	return out
+
+
+## Pays out a finished dungeon run: resources, items, and XP for each hero who
+## went. Returns {"resources", "items", "xp", "level_ups": {hero id: new level}}.
+func grant_run(result: Dictionary, heroes_in_run: Array) -> Dictionary:
+	var added := grant(result.get("loot", {}))
+	var gained := {}
+	for id in added:
+		if int(added[id]) > 0:
+			gained[id] = int(added[id])
+	for item_id in result.get("items", []):
+		roster.add_item(str(item_id))
+	var level_ups := {}
+	for id in heroes_in_run:
+		if roster.add_xp(id, int(result.get("xp", 0))) > 0:
+			level_ups[id] = roster.level(id)
+	save_game()
+	return {"resources": gained, "items": result.get("items", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
+
+
 # --- Saving ------------------------------------------------------------------
 
 func save_game() -> void:
@@ -118,6 +160,7 @@ func save_game() -> void:
 		"timers": timers.to_dict(),
 		"city": city.to_dict(),
 		"party": party,
+		"roster": roster.to_dict(),
 	}, save_path)
 
 
@@ -129,6 +172,11 @@ func load_game() -> bool:
 	city.from_dict(data.get("city", {}))
 	inventory.from_dict(data.get("inventory", {}))
 	party = data.get("party", Content.setting("starting_party", []))
+	if data.has("roster"):
+		roster.from_dict(data.roster)
+	else:
+		roster.new_roster(party, Content.setting("starting_items", []))
+	party = party.filter(func(id): return roster.has_hero(id))
 	catch_up(float(data.get("saved_at", timers.now())))
 	return true
 

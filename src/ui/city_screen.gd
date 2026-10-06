@@ -44,10 +44,13 @@ func _ready() -> void:
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 12)
 	add_child(bar)
-	var dungeon := UI.button("To the dungeon!", _enter_dungeon, 96, "primary")
+	var dungeon := UI.button("Dungeon", _enter_dungeon, 96, "primary")
 	dungeon.add_theme_font_size_override("font_size", UI.LARGE)
 	dungeon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(dungeon)
+	var heroes := UI.button("Heroes", func(): EventBus.screen_requested.emit("heroes", {}), 96)
+	heroes.custom_minimum_size.x = 170
+	bar.add_child(heroes)
 	var reset := UI.button("New", _confirm_reset, 96, "danger")
 	reset.add_theme_font_size_override("font_size", UI.SMALL)
 	reset.custom_minimum_size.x = 110

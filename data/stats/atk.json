@@ -1,0 +1,8 @@
+{
+  "id": "atk",
+  "name": "Attack",
+  "short": "ATK",
+  "description": "Raises damage dealt and healing done.",
+  "color": "#e43b44",
+  "order": 2
+}

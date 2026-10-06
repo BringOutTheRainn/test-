@@ -11,6 +11,7 @@ const Economy := preload("res://src/systems/economy.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 const Battle := preload("res://src/combat/battle.gd")
 const DungeonRun := preload("res://src/combat/dungeon_run.gd")
+const Heroes := preload("res://src/systems/heroes.gd")
 
 var failures = 0
 var checks = 0
@@ -32,6 +33,7 @@ func _initialize() -> void:
 		"test_production_and_caps",
 		"test_skip_cost",
 		"test_save_roundtrip",
+		"test_hero_levels_and_gear",
 		"test_battle_rules",
 		"test_battle_auto_resolves",
 		"test_dungeon_run",
@@ -97,6 +99,23 @@ func test_content_references() -> void:
 				check(res in resources, "dungeon %s loot %s is a resource" % [d.id, res])
 	for id in content.setting("starting_party", []):
 		check(content.has_entry("heroes", id), "starting hero %s exists" % id)
+	var stats = content.list("stats").map(func(s): return s.id)
+	var slots = content.setting("equipment_slots", []).map(func(s): return s.id)
+	for item in content.list("items"):
+		check(item.get("slot", "") in slots, "item %s uses a known slot" % item.id)
+		check(content.setting("rarities", {}).has(item.get("rarity", "")), "item %s has a known rarity" % item.id)
+		for stat in item.get("stats", {}):
+			check(stat in stats, "item %s changes known stat %s" % [item.id, stat])
+	for type in ["heroes", "enemies"]:
+		for u in content.list(type):
+			for stat in u.get("stats", {}):
+				check(stat in stats, "%s %s has known stat %s" % [type, u.id, stat])
+	for id in content.setting("starting_items", []):
+		check(content.has_entry("items", id), "starting item %s exists" % id)
+	for d in content.list("dungeons"):
+		for room in d.rooms:
+			for id in room.get("items", []):
+				check(content.has_entry("items", id), "dungeon %s drops known item %s" % [d.id, id])
 
 
 ## A "sprite" named in data must point at a real file.
@@ -200,6 +219,44 @@ func test_save_roundtrip() -> void:
 	check(copy.inventory.whole("wood") == city.inventory.whole("wood"), "inventory survives a save")
 	check(int(SaveService.migrate({"city": {}}).version) == SaveService.CURRENT_VERSION, "old saves migrate")
 	SaveService.delete(path)
+
+
+# --- Heroes -------------------------------------------------------------------
+
+func test_hero_levels_and_gear() -> void:
+	var roster = Heroes.new()
+	roster.setup(content)
+	roster.new_roster(["knight", "ranger"], ["rusty_sword", "rusty_sword", "padded_vest"])
+	var base: Dictionary = content.entry("heroes", "knight").stats
+	check(roster.stats("knight").atk == int(base.atk), "level 1 hero has its data stats")
+	var need: int = roster.xp_to_next(1)
+	check(roster.add_xp("knight", need + 5) == 1 and roster.level("knight") == 2, "enough XP levels up")
+	check(int(roster.hero("knight").xp) == 5, "extra XP carries over")
+	check(roster.stats("knight").hp > int(base.hp), "levels raise stats")
+	check(roster.xp_to_next(2) > need, "each level needs more XP")
+	var swords: Array = roster.free_items("weapon")
+	check(swords.size() == 2, "both swords are spare")
+	var atk_before: int = roster.stats("knight").atk
+	check(roster.equip("knight", swords[0].uid), "can equip a weapon")
+	check(roster.stats("knight").atk == atk_before + 4, "weapon adds its attack")
+	check(roster.free_items("weapon").size() == 1, "worn item leaves the bag")
+	roster.equip("ranger", swords[0].uid)
+	check(roster.owner_of(swords[0].uid) == "ranger" and roster.hero("knight").gear.is_empty(), "equipping moves an item between heroes")
+	check(not roster.equip("knight", roster.free_items("armor")[0].uid) or roster.hero("knight").gear.has("armor"), "armor goes in the armor slot")
+	var copy = Heroes.new()
+	copy.setup(content)
+	copy.from_dict(JSON.parse_string(JSON.stringify(roster.to_dict())))
+	check(copy.level("knight") == 2 and copy.stats("ranger") == roster.stats("ranger"), "roster survives a save")
+	check(copy.add_item("lucky_charm").uid not in roster.items, "new items get fresh ids after loading")
+	var run = DungeonRun.new()
+	run.setup(content, "goblin_warren", ["knight"], {"knight": {"hp": 999, "atk": 1, "def": 0, "spd": 1}})
+	var battle = run.start_battle(1)
+	check(battle.units.filter(func(u): return u.team == "hero")[0].max_hp == 999, "battles use the roster's stats")
+	for u in battle.alive("enemy"):
+		u.hp = 0
+	battle._check_outcome()
+	run.finish_battle()
+	check(run.xp > 0, "beating enemies earns XP")
 
 
 # --- Combat -------------------------------------------------------------------

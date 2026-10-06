@@ -95,6 +95,14 @@ other way.
 `src/ui/ui_kit.gd`. The pixel font is generated: edit the glyphs in `tools/make_font.py` and run
 `python3 tools/make_font.py`.
 
+**Heroes: stats, levels and gear.** A hero's battle stats are worked out, never stored: the
+`"stats"` in `data/heroes/<id>.json`, plus its `"growth"` for every level above 1, plus the
+`"stats"` of each item it wears. Stats are listed in `data/stats/` (adding a file there adds a stat
+to every sheet), items in `data/items/` (each has a `"slot"`, `"rarity"` and `"stats"`), and the
+slots, rarities and XP curve (`"hero_leveling"`) in `data/config/game.json`. Enemies give the
+`"xp"` in their data file when beaten, and a dungeon room can drop items with `"items": [...]`.
+The logic lives in `src/systems/heroes.gd`; the Heroes screen shows each hero's sheet and gear.
+
 **Content packs.** A folder in `packs/<name>/` (or `user://packs/<name>/` on the device) with the same
 layout as `data/` is loaded after the base data. An entry with an existing id replaces it, a new id
 adds content. This is the hook for events and downloadable content later.

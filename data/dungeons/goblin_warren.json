@@ -46,7 +46,10 @@
         "stone": 150,
         "gold": 150,
         "crystals": 5
-      }
+      },
+      "items": [
+        "goblin_tooth"
+      ]
     }
   ]
 }

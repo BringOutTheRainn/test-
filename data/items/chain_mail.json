@@ -1,0 +1,13 @@
+{
+  "id": "chain_mail",
+  "name": "Chain Mail",
+  "slot": "armor",
+  "rarity": "rare",
+  "stats": {
+    "def": 6,
+    "hp": 25,
+    "spd": -1
+  },
+  "description": "Heavy but very protective.",
+  "order": 5
+}

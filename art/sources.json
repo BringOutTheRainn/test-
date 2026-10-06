@@ -102,6 +102,51 @@
       "model": "gpt_image_2_5",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094300_f275c9f4-9220-49b0-8151-e84c22fab7f1.png",
       "size": 16
+    },
+    "resources/food.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094612_a38a0809-992e-4a0b-a942-5fff7e4dd505.png",
+      "size": 16
+    },
+    "resources/gems.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094613_a74ccba6-a5ba-470d-b9ac-03e8be8c1989.png",
+      "size": 16
+    },
+    "items/rusty_sword.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095732_6a2b00d1-08f5-4a26-9ad7-1ecff5614d05.png",
+      "size": 24
+    },
+    "items/oak_bow.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095731_b359a0c3-edf3-465a-adb8-302869fa840a.png",
+      "size": 24
+    },
+    "items/blessed_mace.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095740_63bae367-d554-43cf-816a-73b4aa24904b.png",
+      "size": 24
+    },
+    "items/padded_vest.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095739_ffd74b69-35d3-417c-b5c8-021543b48d45.png",
+      "size": 24
+    },
+    "items/chain_mail.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095803_61c629a1-c769-4d48-9062-b84fd8877970.png",
+      "size": 24
+    },
+    "items/lucky_charm.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095805_a6285423-cbf8-4399-88e1-73cb73b82fc9.png",
+      "size": 24
+    },
+    "items/goblin_tooth.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095817_77964ab9-8e7a-4ae1-92e9-a5c1825aca04.png",
+      "size": 24
     }
   }
 }

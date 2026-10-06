@@ -16,5 +16,11 @@
     "strike",
     "defend",
     "taunt"
-  ]
+  ],
+  "growth": {
+    "hp": 14,
+    "atk": 1.2,
+    "def": 1.2,
+    "spd": 0.2
+  }
 }

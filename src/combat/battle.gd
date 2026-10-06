@@ -36,7 +36,8 @@ var damage_scale := 1.0
 var _queue: Array = []
 
 
-## heroes: Array of {id, row?, hp?} (hp carries over between rooms).
+## heroes: Array of {id, row?, hp?, stats?, level?} (hp carries over between
+## rooms; stats, when given, replace the data file's, e.g. leveled and geared).
 ## enemies: Array of {id, row}.
 func setup(content_db, heroes: Array, enemies: Array, seed_value: int = -1) -> void:
 	content = content_db
@@ -50,7 +51,8 @@ func setup(content_db, heroes: Array, enemies: Array, seed_value: int = -1) -> v
 	damage_scale = float(combat_cfg.get("damage_scale", 1.0))
 	units = []
 	for h in heroes:
-		var hero := make_unit(content.entry("heroes", str(h.id)), "hero", str(h.get("row", "")))
+		var hero := make_unit(content.entry("heroes", str(h.id)), "hero", str(h.get("row", "")), h.get("stats", {}))
+		hero.level = int(h.get("level", 1))
 		if h.has("hp"):
 			hero.hp = clampi(int(h.hp), 0, int(hero.max_hp))
 		if int(hero.hp) > 0:
@@ -61,8 +63,8 @@ func setup(content_db, heroes: Array, enemies: Array, seed_value: int = -1) -> v
 	_next_turn()
 
 
-func make_unit(def: Dictionary, team: String, row: String) -> Dictionary:
-	var stats: Dictionary = def.get("stats", {})
+func make_unit(def: Dictionary, team: String, row: String, stats_override: Dictionary = {}) -> Dictionary:
+	var stats: Dictionary = stats_override if not stats_override.is_empty() else def.get("stats", {})
 	return {
 		"uid": "%s%d" % [team[0], units.size() + 1],
 		"id": str(def.get("id", "")),
@@ -71,6 +73,8 @@ func make_unit(def: Dictionary, team: String, row: String) -> Dictionary:
 		"row": row if row != "" else str(def.get("row", "front")),
 		"color": str(def.get("color", "#888888")),
 		"boss": bool(def.get("boss", false)),
+		"level": int(def.get("level", 1)),
+		"xp": int(def.get("xp", 0)),
 		"max_hp": int(stats.get("hp", 10)),
 		"hp": int(stats.get("hp", 10)),
 		"atk": int(stats.get("atk", 1)),

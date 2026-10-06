@@ -36,5 +36,49 @@
     "energy_per_turn": 1,
     "lose_loot_fraction": 0.5,
     "damage_scale": 1.5
-  }
+  },
+  "hero_leveling": {
+    "max_level": 30,
+    "xp_to_level_2": 60,
+    "xp_growth": 1.35,
+    "xp_kept_on_loss": 0.5
+  },
+  "equipment_slots": [
+    {
+      "id": "weapon",
+      "name": "Weapon"
+    },
+    {
+      "id": "armor",
+      "name": "Armor"
+    },
+    {
+      "id": "trinket",
+      "name": "Trinket"
+    }
+  ],
+  "rarities": {
+    "common": {
+      "name": "Common",
+      "color": "#c0cbdc"
+    },
+    "rare": {
+      "name": "Rare",
+      "color": "#0099db"
+    },
+    "epic": {
+      "name": "Epic",
+      "color": "#b55088"
+    },
+    "legendary": {
+      "name": "Legendary",
+      "color": "#feae34"
+    }
+  },
+  "starting_items": [
+    "rusty_sword",
+    "oak_bow",
+    "padded_vest",
+    "lucky_charm"
+  ]
 }

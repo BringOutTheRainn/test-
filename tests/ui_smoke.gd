@@ -47,6 +47,14 @@ func _run() -> void:
 	await _frames(5)
 	_shot("04_town_hall")
 
+	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": "knight"})
+	await _frames(5)
+	var heroes_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_show_sheet"))[0]
+	heroes_screen._picking = "weapon"
+	heroes_screen._rebuild()
+	await _frames(5)
+	_shot("04b_heroes")
+
 	root.get_node("EventBus").screen_requested.emit("battle", {"dungeon": "goblin_warren"})
 	await _frames(10)
 	_shot("05_battle")

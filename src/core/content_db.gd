@@ -9,7 +9,7 @@ extends Node
 ## same layout. They load after the base data, in name order, and an entry with
 ## an existing id replaces the earlier one, so a pack can add or rebalance content.
 
-const TYPES := ["resources", "buildings", "heroes", "skills", "enemies", "dungeons"]
+const TYPES := ["resources", "buildings", "heroes", "skills", "enemies", "dungeons", "stats", "items"]
 const BASE_ROOT := "res://data"
 const PACK_ROOTS := ["res://packs", "user://packs"]
 

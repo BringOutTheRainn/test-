@@ -136,7 +136,7 @@ func _ready() -> void:
 	_backdrop.texture = Sprites.load_texture(Sprites.ART_ROOT.path_join("backgrounds").path_join(_dungeon_id + ".png"))
 	run = DungeonRun.new()
 	var party: Array = Game.party.slice(0, Game.party_size())
-	run.setup(Content, _dungeon_id, party)
+	run.setup(Content, _dungeon_id, party, Game.party_stats(), Game.party_levels())
 	if run.finished:
 		EventBus.toast.emit("This dungeon has no rooms")
 		EventBus.screen_requested.emit.call_deferred("city", {})
@@ -461,17 +461,19 @@ func _room_finished() -> void:
 
 
 func _finish_run() -> void:
-	var added: Dictionary = Game.grant(run.loot)
-	var gained := {}
-	for id in added:
-		if int(added[id]) > 0:
-			gained[id] = int(added[id])
 	var result := run.result()
+	var paid: Dictionary = Game.grant_run(result, run.party)
 	EventBus.dungeon_finished.emit(result)
-	Game.save_game()
 	var title := "Victory!" if run.won else "Defeated"
 	var note := "You brought back" if run.won else "Losing keeps half the loot. You brought back"
-	_show_overlay(title, gained, note, "Back to town", func(): EventBus.screen_requested.emit("city", {}))
+	var extra: Array = []
+	if int(paid.xp) > 0:
+		extra.append(["+%d XP for each hero" % int(paid.xp), UI.ENERGY])
+	for id in paid.level_ups:
+		extra.append(["%s reached level %d!" % [Content.entry("heroes", id).get("name", id), int(paid.level_ups[id])], UI.ACCENT])
+	for item_id in paid.items:
+		extra.append(["Found: %s" % Content.entry("items", item_id).get("name", item_id), UI.GOOD])
+	_show_overlay(title, paid.resources, note, "Back to town", func(): EventBus.screen_requested.emit("city", {}), extra)
 
 
 func _retreat() -> void:
@@ -482,7 +484,8 @@ func _retreat() -> void:
 	_finish_run()
 
 
-func _show_overlay(title: String, loot: Dictionary, note: String, button_text: String, on_pressed: Callable) -> void:
+## extra: lines shown under the loot, as [text, color].
+func _show_overlay(title: String, loot: Dictionary, note: String, button_text: String, on_pressed: Callable, extra: Array = []) -> void:
 	_clear_skills()
 	_hint.text = ""
 	_overlay = Control.new()
@@ -506,6 +509,8 @@ func _show_overlay(title: String, loot: Dictionary, note: String, button_text: S
 	var loot_box := UI.panel("dark")
 	column.add_child(loot_box)
 	loot_box.add_child(UI.amounts_row(loot, Content, UI.FONT_SIZE) if not loot.is_empty() else UI.label("Nothing", UI.FONT_SIZE, UI.MUTED))
+	for line in extra:
+		column.add_child(UI.label(line[0], UI.FONT_SIZE, line[1]))
 	column.add_child(UI.button(button_text, on_pressed, 88, "primary"))
 	add_child(_overlay)
 	await get_tree().process_frame
