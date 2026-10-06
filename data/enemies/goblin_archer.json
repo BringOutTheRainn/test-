@@ -1,0 +1,14 @@
+{
+  "id": "goblin_archer",
+  "name": "Goblin Archer",
+  "color": "#8a9a3a",
+  "stats": {
+    "hp": 45,
+    "atk": 18,
+    "def": 2,
+    "spd": 11
+  },
+  "skills": [
+    "arrow"
+  ]
+}

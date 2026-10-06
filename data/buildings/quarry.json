@@ -1,0 +1,78 @@
+{
+  "id": "quarry",
+  "name": "Quarry",
+  "short": "Qry",
+  "category": "production",
+  "color": "#7f8c8d",
+  "order": 3,
+  "description": "Makes stone every hour.",
+  "unlock_town_hall": 1,
+  "max_count": [
+    2,
+    3,
+    3,
+    4,
+    4
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 50
+      },
+      "build_seconds": 10,
+      "provides": {
+        "production": {
+          "stone": 240
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 150,
+        "stone": 50
+      },
+      "build_seconds": 60,
+      "provides": {
+        "production": {
+          "stone": 720
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 400,
+        "stone": 150
+      },
+      "build_seconds": 300,
+      "provides": {
+        "production": {
+          "stone": 1440
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 1000,
+        "stone": 500
+      },
+      "build_seconds": 1200,
+      "provides": {
+        "production": {
+          "stone": 2400
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 2500,
+        "stone": 1200
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "production": {
+          "stone": 3600
+        }
+      }
+    }
+  ]
+}

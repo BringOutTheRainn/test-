@@ -1,0 +1,18 @@
+{
+  "id": "hex",
+  "name": "Hex",
+  "cost": 0,
+  "target": "enemy_any",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.5
+    },
+    {
+      "type": "status",
+      "status": "poison",
+      "turns": 2,
+      "power": 0.4
+    }
+  ]
+}

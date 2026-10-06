@@ -1,0 +1,7 @@
+{
+  "id": "gems",
+  "name": "Gems",
+  "color": "#4fc3f7",
+  "hud": true,
+  "order": 7
+}

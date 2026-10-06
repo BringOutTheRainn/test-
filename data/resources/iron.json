@@ -1,0 +1,8 @@
+{
+  "id": "iron",
+  "name": "Iron",
+  "color": "#78909c",
+  "hud": false,
+  "order": 5,
+  "base_cap": 500
+}

@@ -1,0 +1,8 @@
+{
+  "id": "food",
+  "name": "Food",
+  "color": "#81c784",
+  "hud": true,
+  "order": 4,
+  "base_cap": 500
+}

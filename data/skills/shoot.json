@@ -1,0 +1,12 @@
+{
+  "id": "shoot",
+  "name": "Shoot",
+  "cost": 0,
+  "target": "enemy_any",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.0
+    }
+  ]
+}

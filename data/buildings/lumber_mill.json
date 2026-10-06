@@ -1,0 +1,78 @@
+{
+  "id": "lumber_mill",
+  "name": "Lumber Mill",
+  "short": "Mill",
+  "category": "production",
+  "color": "#8d6e63",
+  "order": 2,
+  "description": "Makes wood every hour.",
+  "unlock_town_hall": 1,
+  "max_count": [
+    2,
+    3,
+    3,
+    4,
+    4
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 50
+      },
+      "build_seconds": 10,
+      "provides": {
+        "production": {
+          "wood": 360
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 150,
+        "stone": 50
+      },
+      "build_seconds": 60,
+      "provides": {
+        "production": {
+          "wood": 1080
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 400,
+        "stone": 150
+      },
+      "build_seconds": 300,
+      "provides": {
+        "production": {
+          "wood": 2160
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 1000,
+        "stone": 500
+      },
+      "build_seconds": 1200,
+      "provides": {
+        "production": {
+          "wood": 3600
+        }
+      }
+    },
+    {
+      "cost": {
+        "wood": 2500,
+        "stone": 1200
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "production": {
+          "wood": 5400
+        }
+      }
+    }
+  ]
+}
