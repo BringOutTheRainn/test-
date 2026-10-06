@@ -9,6 +9,10 @@ const Sprites := preload("res://src/ui/sprites.gd")
 var _grid: GridView
 var _panel_body: VBoxContainer
 var _selected := Vector2i(-1, -1)
+## "" shows the tile panel; "dungeons" shows the dungeon list.
+var _mode := ""
+var _quest_box: PanelContainer
+var _quest_signature := ""
 var _signature := ""
 var _check_left := 0.0
 ## Live widgets updated every frame without rebuilding the panel.
@@ -24,6 +28,9 @@ func setup(_args: Dictionary) -> void:
 func _ready() -> void:
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation", 12)
+
+	_quest_box = PanelContainer.new()
+	add_child(_quest_box)
 
 	_grid = GridView.new()
 	_grid.city = Game.city
@@ -58,6 +65,10 @@ func _ready() -> void:
 
 	EventBus.building_changed.connect(func(_b): _rebuild_panel())
 	EventBus.timer_finished.connect(func(_t): _rebuild_panel())
+	EventBus.quests_changed.connect(func():
+		_rebuild_quest()
+		_rebuild_panel())
+	_rebuild_quest()
 	_rebuild_panel()
 
 
@@ -69,9 +80,12 @@ func _process(delta: float) -> void:
 		# Rebuild only when something visible changed (affordability, builders).
 		if _panel_signature() != _signature:
 			_rebuild_panel()
+		if _quest_sig() != _quest_signature:
+			_rebuild_quest()
 
 
 func _on_tile_tapped(cell: Vector2i) -> void:
+	_mode = ""
 	_selected = Vector2i(-1, -1) if cell == _selected else cell
 	_grid.selected = _selected
 	_rebuild_panel()
@@ -84,7 +98,7 @@ func _selected_building() -> Dictionary:
 
 
 func _panel_signature() -> String:
-	var parts := [str(_selected)]
+	var parts := [str(_selected), _mode, str(Game.quests.is_complete(Game.quests.current(), Game.quest_facts()))]
 	var b := _selected_building()
 	if _selected.x < 0:
 		pass
@@ -106,7 +120,9 @@ func _rebuild_panel() -> void:
 	for child in _panel_body.get_children():
 		child.queue_free()
 	var b := _selected_building()
-	if _selected.x < 0:
+	if _mode == "dungeons":
+		_show_dungeons()
+	elif _selected.x < 0:
 		_show_overview()
 	elif b.is_empty():
 		_show_build_menu()
@@ -158,6 +174,9 @@ func _show_building(b: Dictionary) -> void:
 		_panel_body.add_child(_labeled_amounts("Makes per hour", provides.production))
 	if provides.has("storage"):
 		_panel_body.add_child(_labeled_amounts("Adds storage", provides.storage))
+
+	if b.id == "tavern" and int(b.level) >= 1:
+		_show_recruits()
 
 	var timer: Dictionary = city.timer_for(b.uid)
 	if not timer.is_empty():
@@ -214,10 +233,11 @@ func _build_card(def: Dictionary, data: Dictionary, reason: String, on_pressed: 
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_row.add_child(title)
-	var time := UI.label(UI.format_time(float(data.get("build_seconds", 0))), UI.SMALL, UI.MUTED)
-	time.autowrap_mode = TextServer.AUTOWRAP_OFF
-	time.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_row.add_child(time)
+	if data.has("build_seconds"):
+		var time := UI.label(UI.format_time(float(data.build_seconds)), UI.SMALL, UI.MUTED)
+		time.autowrap_mode = TextServer.AUTOWRAP_OFF
+		time.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		name_row.add_child(time)
 	column.add_child(UI.amounts_row(data.get("cost", {}), Content, UI.SMALL))
 	if reason != "":
 		var why := UI.label(reason, UI.SMALL, UI.BAD)
@@ -258,12 +278,117 @@ func _place(id: String) -> void:
 
 
 func _enter_dungeon() -> void:
-	var dungeons: Array = Content.list("dungeons").filter(
-		func(d): return Game.city.town_hall_level() >= int(d.get("unlock_town_hall", 1)))
-	if dungeons.is_empty():
-		EventBus.toast.emit("No dungeon unlocked yet")
+	_mode = "" if _mode == "dungeons" else "dungeons"
+	_selected = Vector2i(-1, -1)
+	_grid.selected = _selected
+	_rebuild_panel()
+
+
+func _show_dungeons() -> void:
+	_panel_body.add_child(UI.label("Dungeons", UI.LARGE, UI.ACCENT))
+	for d in Content.list("dungeons"):
+		var need := int(d.get("unlock_town_hall", 1))
+		var locked := Game.city.town_hall_level() < need
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(0, 112)
+		b.disabled = locked
+		var dungeon_id: String = d.id
+		b.pressed.connect(func(): EventBus.screen_requested.emit("battle", {"dungeon": dungeon_id}))
+		var column := VBoxContainer.new()
+		column.alignment = BoxContainer.ALIGNMENT_CENTER
+		column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		column.offset_left = 14
+		column.offset_right = -14
+		column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(column)
+		var status := "Needs Town Hall %d" % need if locked else ("Cleared" if d.id in Game.cleared else "%d rooms" % d.get("rooms", []).size())
+		var head := UI.label("%s  -  %s" % [d.get("name", d.id), status], UI.FONT_SIZE, Color("#8b9bb4") if locked else UI.TEXT)
+		head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		column.add_child(head)
+		var about := UI.label(str(d.get("description", "")), UI.SMALL, UI.MUTED)
+		about.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		column.add_child(about)
+		_panel_body.add_child(b)
+	var party: Array = Game.party.slice(0, Game.party_size()).map(func(id): return Content.entry("heroes", id).get("name", id))
+	_panel_body.add_child(UI.label("Party: " + ", ".join(party), UI.SMALL, UI.MUTED))
+
+
+func _show_recruits() -> void:
+	var offers: Array = Game.recruitable()
+	_panel_body.add_child(UI.label("Recruit heroes", UI.FONT_SIZE, UI.ACCENT))
+	if offers.is_empty():
+		_panel_body.add_child(UI.label("Everyone here has joined you.", UI.SMALL, UI.MUTED))
+	for h in offers:
+		var hero_id: String = h.id
+		var reason: String = Game.can_recruit(hero_id)
+		var card := _build_card({"name": "%s  (%s)" % [h.name, h.get("role", "")]}, {"cost": h.recruit.get("cost", {})}, reason, func(): Game.recruit(hero_id))
+		var tex := Sprites.for_entry("heroes", h)
+		if tex != null:
+			var row: HBoxContainer = card.get_child(0)
+			var icon := UI.icon_rect(tex, 80)
+			row.add_child(icon)
+			row.move_child(icon, 0)
+		_panel_body.add_child(card)
+
+
+## The current goal above the town, with its progress or a Claim button.
+func _quest_sig() -> String:
+	var q: Dictionary = Game.quests.current()
+	return "%d/%s" % [Game.quests.index, str(Game.quests.progress(q, Game.quest_facts())) if not q.is_empty() else ""]
+
+
+func _rebuild_quest() -> void:
+	_quest_signature = _quest_sig()
+	for child in _quest_box.get_children():
+		child.queue_free()
+	var q: Dictionary = Game.quests.current()
+	_quest_box.visible = not q.is_empty()
+	if q.is_empty():
 		return
-	EventBus.screen_requested.emit("battle", {"dungeon": dungeons[0].id})
+	var facts := Game.quest_facts()
+	var done: bool = Game.quests.is_complete(q, facts)
+	_quest_box.add_theme_stylebox_override("panel", UI.frame("parchment" if not done else "primary"))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_quest_box.add_child(row)
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 0)
+	row.add_child(column)
+	var p: Array = Game.quests.progress(q, facts)
+	var title := str(q.text) + ("" if int(p[1]) <= 1 else "  %d/%d" % [mini(int(p[0]), int(p[1])), int(p[1])])
+	var dark := Color("#3e2731")
+	column.add_child(_shadowless(UI.label(title, UI.FONT_SIZE, dark if not done else UI.TEXT)))
+	column.add_child(_shadowless(UI.label("Done! Claim your reward." if done else str(q.get("hint", "")), UI.SMALL, Color("#733e39") if not done else UI.TEXT)))
+	var goal: Dictionary = q.get("goal", {})
+	if done:
+		var claim := UI.button("Claim", func(): Game.claim_quest(), 72, "selected")
+		claim.custom_minimum_size.x = 150
+		row.add_child(claim)
+	elif goal.get("action", "") == "notifications":
+		var on := UI.button("Turn on", _ask_notifications, 72, "primary")
+		on.custom_minimum_size.x = 150
+		row.add_child(on)
+
+
+func _shadowless(l: Label) -> Label:
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
+	return l
+
+
+## Phones ask for permission here once the app is built for them; until then
+## this records the player's choice so the tutorial can finish.
+func _ask_notifications() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.dialog_text = "Get a notification when a build finishes?"
+	dialog.ok_button_text = "Yes"
+	dialog.cancel_button_text = "Not now"
+	dialog.confirmed.connect(func():
+		Game.set_flag("notifications", true)
+		Game.set_flag("notifications_asked", true))
+	dialog.canceled.connect(func(): Game.set_flag("notifications_asked", true))
+	add_child(dialog)
+	dialog.popup_centered()
 
 
 func _confirm_reset() -> void:
@@ -271,6 +396,7 @@ func _confirm_reset() -> void:
 	dialog.dialog_text = "Start a new game? Your current town will be lost."
 	dialog.confirmed.connect(func():
 		Game.reset_game()
+		_mode = ""
 		_selected = Vector2i(-1, -1)
 		_grid.selected = _selected
 		_rebuild_panel())

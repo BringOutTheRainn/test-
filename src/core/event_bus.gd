@@ -8,5 +8,6 @@ signal timer_started(timer: Dictionary)
 signal timer_finished(timer: Dictionary)
 signal dungeon_finished(result: Dictionary)
 signal heroes_changed(hero_id: String)
+signal quests_changed
 signal toast(message: String)
 signal screen_requested(screen: String, args: Dictionary)

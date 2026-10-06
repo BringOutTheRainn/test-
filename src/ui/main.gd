@@ -44,6 +44,7 @@ func _ready() -> void:
 	column.add_child(_holder)
 
 	_toast = UI.label("", UI.FONT_SIZE)
+	_toast.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_toast.position.y = 150
@@ -54,6 +55,8 @@ func _ready() -> void:
 	EventBus.screen_requested.connect(show_screen)
 	EventBus.toast.connect(show_toast)
 	show_screen("city", {})
+	if not Game.flags.get("intro_seen", false):
+		_show_intro()
 
 
 func _process(delta: float) -> void:
@@ -72,6 +75,34 @@ func show_screen(screen: String, args: Dictionary) -> void:
 	if node.has_method("setup"):
 		node.setup(args)
 	_holder.add_child(node)
+
+
+## The short story shown once at the start (config "intro").
+func _show_intro() -> void:
+	var intro: Dictionary = Content.setting("intro", {})
+	if intro.is_empty():
+		return
+	var overlay := ColorRect.new()
+	overlay.color = Color(0.09, 0.08, 0.15, 0.85)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var box := UI.panel("panel")
+	box.custom_minimum_size = Vector2(600, 0)
+	center.add_child(box)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 20)
+	box.add_child(column)
+	var title := UI.label(str(intro.get("title", "")), UI.HUGE, UI.ACCENT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+	for line in intro.get("lines", []):
+		column.add_child(UI.label(str(line), UI.FONT_SIZE))
+	column.add_child(UI.button(str(intro.get("button", "Start")), func():
+		overlay.queue_free()
+		Game.set_flag("intro_seen", true), 88, "primary"))
 
 
 func show_toast(message: String) -> void:

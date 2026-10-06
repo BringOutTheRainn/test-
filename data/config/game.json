@@ -20,9 +20,7 @@
     }
   ],
   "starting_party": [
-    "knight",
-    "ranger",
-    "cleric"
+    "ranger"
   ],
   "base_party_size": 3,
   "max_offline_hours": 12,
@@ -80,5 +78,14 @@
     "oak_bow",
     "padded_vest",
     "lucky_charm"
-  ]
+  ],
+  "intro": {
+    "title": "The town below",
+    "lines": [
+      "Monsters came up from the tunnels below and ruined your town.",
+      "Only the Town Hall still stands, and one ranger stayed behind.",
+      "Rebuild, gather heroes, and drive the goblins back into the dark."
+    ],
+    "button": "Rebuild"
+  }
 }

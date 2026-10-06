@@ -12,6 +12,7 @@ const SaveService := preload("res://src/core/save_service.gd")
 const Battle := preload("res://src/combat/battle.gd")
 const DungeonRun := preload("res://src/combat/dungeon_run.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
+const Quests := preload("res://src/systems/quests.gd")
 
 var failures = 0
 var checks = 0
@@ -34,6 +35,8 @@ func _initialize() -> void:
 		"test_skip_cost",
 		"test_save_roundtrip",
 		"test_hero_levels_and_gear",
+		"test_blueprints",
+		"test_quests",
 		"test_battle_rules",
 		"test_battle_auto_resolves",
 		"test_dungeon_run",
@@ -257,6 +260,53 @@ func test_hero_levels_and_gear() -> void:
 	battle._check_outcome()
 	run.finish_battle()
 	check(run.xp > 0, "beating enemies earns XP")
+
+
+func test_blueprints() -> void:
+	var city = make_city()
+	city.inventory.add_all({"wood": 5000, "stone": 5000, "gold": 5000})
+	var th: Dictionary = city.building_at(3, 4)
+	th.level = 2
+	check(city.can_place("warehouse", 0, 0).begins_with("Needs a blueprint"), "warehouse needs its blueprint")
+	check(city.can_place("farm", 0, 0) == "", "normal buildings need no blueprint")
+	check(city.unlock_blueprint("warehouse"), "a blueprint unlocks a building")
+	check(city.can_place("warehouse", 0, 0) == "", "unlocked building can be placed")
+	var copy = make_city()
+	copy.from_dict(city.to_dict())
+	check(copy.has_blueprint("warehouse"), "blueprints survive a save")
+	var run = DungeonRun.new()
+	run.setup(content, "old_cellar", ["knight"])
+	for i in run.rooms().size():
+		var battle = run.start_battle(i)
+		for u in battle.alive("enemy"):
+			u.hp = 0
+		battle._check_outcome()
+		run.finish_battle()
+	check(run.won and "warehouse" in run.result().blueprints, "the tutorial boss drops the Warehouse blueprint")
+
+
+func test_quests() -> void:
+	var q = Quests.new()
+	q.setup(content)
+	var facts := {"building_levels": {}, "building_counts": {}, "heroes": 1, "cleared": [], "flags": {}}
+	check(q.current().id == "build_lumber_mill", "the first quest is the Lumber Mill")
+	check(q.claim(facts).is_empty() and q.index == 0, "an unfinished quest can't be claimed")
+	facts.building_levels["lumber_mill"] = [1]
+	check(not q.claim(facts).is_empty() and q.current().id == "build_quarry", "a finished quest pays and moves on")
+	check(q.progress({"goal": {"type": "build", "building": "town_hall", "level": 2}}, {"building_levels": {"town_hall": [1]}}) == [0, 1], "level goals count only high enough buildings")
+	check(q.is_complete({"goal": {"type": "flag", "flag": "x"}}, {"flags": {"x": true}}), "flag goals")
+	var copy = Quests.new()
+	copy.setup(content)
+	copy.from_dict(q.to_dict())
+	check(copy.index == 1, "quest progress survives a save")
+	for quest in content.list("quests"):
+		var goal: Dictionary = quest.goal
+		if goal.has("building"):
+			check(content.has_entry("buildings", goal.building), "quest %s names a known building" % quest.id)
+		if goal.has("dungeon"):
+			check(content.has_entry("dungeons", goal.dungeon), "quest %s names a known dungeon" % quest.id)
+		for res in quest.get("reward", {}):
+			check(content.has_entry("resources", res), "quest %s rewards a known resource" % quest.id)
 
 
 # --- Combat -------------------------------------------------------------------

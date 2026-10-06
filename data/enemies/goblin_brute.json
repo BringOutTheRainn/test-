@@ -1,0 +1,18 @@
+{
+  "id": "goblin_brute",
+  "name": "Goblin Brute",
+  "color": "#4b6b2a",
+  "boss": true,
+  "sprite": "res://art/enemies/goblin.png",
+  "faces": "left",
+  "stats": {
+    "hp": 140,
+    "atk": 15,
+    "def": 5,
+    "spd": 7
+  },
+  "skills": [
+    "smash"
+  ],
+  "xp": 40
+}

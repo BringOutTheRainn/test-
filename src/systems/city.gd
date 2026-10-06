@@ -18,6 +18,9 @@ var width := 8
 var height := 9
 ## Building uid -> {uid, id, level, x, y}
 var buildings: Dictionary = {}
+## Building ids unlocked by blueprints. A definition with "blueprint": true
+## can only be built once its blueprint is found (bosses drop them).
+var blueprints: Array = []
 var _next_uid := 1
 
 
@@ -33,6 +36,7 @@ func setup(content_db, inv, timer_service) -> void:
 
 func new_city() -> void:
 	buildings = {}
+	blueprints = []
 	_next_uid = 1
 	for start in content.setting("starting_buildings", []):
 		var b := _add_building(str(start.id), int(start.x), int(start.y))
@@ -137,6 +141,26 @@ func production_per_hour() -> Dictionary:
 	return provided_map("production")
 
 
+## Highest finished level among buildings of this id (0 if none).
+func best_level(id: String) -> int:
+	var best := 0
+	for b in buildings.values():
+		if b.id == id:
+			best = maxi(best, int(b.level))
+	return best
+
+
+func has_blueprint(id: String) -> bool:
+	return not bool(definition(id).get("blueprint", false)) or id in blueprints
+
+
+func unlock_blueprint(id: String) -> bool:
+	if id in blueprints or definition(id).is_empty():
+		return false
+	blueprints.append(id)
+	return true
+
+
 # --- Actions -----------------------------------------------------------------
 
 ## Why a building cannot be placed here, or "" if it can.
@@ -150,6 +174,8 @@ func can_place(id: String, x: int, y: int) -> String:
 		return "Tile is taken"
 	if town_hall_level() < int(def.get("unlock_town_hall", 1)):
 		return "Needs Town Hall %d" % int(def.get("unlock_town_hall", 1))
+	if not has_blueprint(id):
+		return "Needs a blueprint (bosses drop them)"
 	if count_of(id) >= max_count(id):
 		return "Limit reached for this Town Hall level"
 	if builders_free() <= 0:
@@ -245,11 +271,12 @@ func _on_timer_finished(timer: Dictionary) -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"next_uid": _next_uid, "buildings": buildings.duplicate(true)}
+	return {"next_uid": _next_uid, "buildings": buildings.duplicate(true), "blueprints": blueprints.duplicate()}
 
 
 func from_dict(data: Dictionary) -> void:
 	_next_uid = int(data.get("next_uid", 1))
+	blueprints = Array(data.get("blueprints", [])).filter(func(id): return not definition(str(id)).is_empty())
 	buildings = {}
 	var saved: Dictionary = data.get("buildings", {})
 	for uid in saved:

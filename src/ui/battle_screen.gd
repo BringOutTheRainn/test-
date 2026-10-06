@@ -471,6 +471,8 @@ func _finish_run() -> void:
 		extra.append(["+%d XP for each hero" % int(paid.xp), UI.ENERGY])
 	for id in paid.level_ups:
 		extra.append(["%s reached level %d!" % [Content.entry("heroes", id).get("name", id), int(paid.level_ups[id])], UI.ACCENT])
+	for building_id in paid.blueprints:
+		extra.append(["Blueprint: %s! You can build it now." % Content.entry("buildings", building_id).get("name", building_id), UI.ACCENT])
 	for item_id in paid.items:
 		extra.append(["Found: %s" % Content.entry("items", item_id).get("name", item_id), UI.GOOD])
 	_show_overlay(title, paid.resources, note, "Back to town", func(): EventBus.screen_requested.emit("city", {}), extra)

@@ -16,6 +16,8 @@ var loot: Dictionary = {}
 var xp := 0
 ## Item ids found (data/items), from a room's "items" list.
 var items: Array = []
+## Building ids whose blueprints were found (a room's "blueprints" list).
+var blueprints: Array = []
 ## Hero id -> stats to fight with (leveled and geared); missing uses the data file.
 var hero_stats: Dictionary = {}
 var hero_levels: Dictionary = {}
@@ -34,6 +36,7 @@ func setup(content_db, dungeon_id: String, party_ids: Array, stats_by_hero: Dict
 	loot = {}
 	xp = 0
 	items = []
+	blueprints = []
 	hero_hp = {}
 	finished = dungeon.get("rooms", []).is_empty()
 
@@ -77,6 +80,7 @@ func finish_battle() -> void:
 			if u.team == "enemy":
 				xp += int(u.get("xp", 0))
 		items.append_array(current_room().get("items", []))
+		blueprints.append_array(current_room().get("blueprints", []))
 		room_index += 1
 		if room_index >= rooms().size():
 			finished = true
@@ -99,4 +103,4 @@ func retreat() -> void:
 
 
 func result() -> Dictionary:
-	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot, "xp": xp, "items": items}
+	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot, "xp": xp, "items": items, "blueprints": blueprints}

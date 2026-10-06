@@ -9,6 +9,7 @@ const TimerService := preload("res://src/systems/timer_service.gd")
 const City := preload("res://src/systems/city.gd")
 const Economy := preload("res://src/systems/economy.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
+const Quests := preload("res://src/systems/quests.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -19,6 +20,11 @@ var city: City
 var roster: Heroes
 ## Hero ids that go into dungeons, in order (the first party_size() fight).
 var party: Array = []
+var quests: Quests
+## Dungeon ids won at least once.
+var cleared: Array = []
+## Small one-off facts (intro seen, notifications asked, ...).
+var flags: Dictionary = {}
 var save_path := SaveService.DEFAULT_PATH
 var _autosave_left := AUTOSAVE_SECONDS
 var _last_tick := 0.0
@@ -31,6 +37,8 @@ func _ready() -> void:
 	city.setup(Content, inventory, timers)
 	roster = Heroes.new()
 	roster.setup(Content)
+	quests = Quests.new()
+	quests.setup(Content)
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
@@ -64,6 +72,9 @@ func new_game() -> void:
 	inventory.add_all(Content.setting("starting_resources", {}))
 	party = Content.setting("starting_party", []).duplicate()
 	roster.new_roster(party, Content.setting("starting_items", []))
+	quests.index = 0
+	cleared = []
+	flags = {}
 	_last_tick = timers.now()
 	save_game()
 
@@ -116,6 +127,67 @@ func grant(loot: Dictionary) -> Dictionary:
 	return inventory.add_all(loot)
 
 
+func set_flag(flag: String, value = true) -> void:
+	flags[flag] = value
+	EventBus.quests_changed.emit()
+	save_game()
+
+
+# --- Heroes and the Tavern -----------------------------------------------------
+
+## Heroes the Tavern offers: data entries with a "recruit" block not yet owned.
+func recruitable() -> Array:
+	return Content.list("heroes").filter(func(h): return h.has("recruit") and not roster.has_hero(h.id))
+
+
+## Why a hero can't be recruited now, or "".
+func can_recruit(id: String) -> String:
+	var def: Dictionary = Content.entry("heroes", id)
+	if not def.has("recruit") or roster.has_hero(id):
+		return "Not available"
+	if city.best_level("tavern") < 1:
+		return "Build a Tavern first"
+	if city.town_hall_level() < int(def.recruit.get("unlock_town_hall", 1)):
+		return "Needs Town Hall %d" % int(def.recruit.unlock_town_hall)
+	if not inventory.can_afford(def.recruit.get("cost", {})):
+		return "Not enough resources"
+	return ""
+
+
+func recruit(id: String) -> bool:
+	if can_recruit(id) != "":
+		return false
+	inventory.spend(Content.entry("heroes", id).recruit.get("cost", {}))
+	roster.recruit(id)
+	if party.size() < party_size():
+		party.append(id)
+	EventBus.toast.emit("%s joined your party!" % Content.entry("heroes", id).get("name", id))
+	EventBus.quests_changed.emit()
+	save_game()
+	return true
+
+
+# --- Quests ----------------------------------------------------------------------
+
+## What quest goals are checked against.
+func quest_facts() -> Dictionary:
+	var levels := {}
+	var counts := {}
+	for b in city.buildings.values():
+		levels[b.id] = levels.get(b.id, []) + [int(b.level)]
+		counts[b.id] = int(counts.get(b.id, 0)) + 1
+	return {"building_levels": levels, "building_counts": counts, "heroes": roster.heroes.size(), "cleared": cleared, "flags": flags}
+
+
+func claim_quest() -> bool:
+	if not quests.is_complete(quests.current(), quest_facts()):
+		return false
+	grant(quests.claim(quest_facts()))
+	EventBus.quests_changed.emit()
+	save_game()
+	return true
+
+
 ## Stats and levels for the fighting party, for DungeonRun.setup().
 func party_stats() -> Dictionary:
 	var out := {}
@@ -142,12 +214,17 @@ func grant_run(result: Dictionary, heroes_in_run: Array) -> Dictionary:
 			gained[id] = int(added[id])
 	for item_id in result.get("items", []):
 		roster.add_item(str(item_id))
+	for building_id in result.get("blueprints", []):
+		city.unlock_blueprint(str(building_id))
+	if result.get("won", false) and not str(result.get("dungeon", "")) in cleared:
+		cleared.append(str(result.dungeon))
 	var level_ups := {}
 	for id in heroes_in_run:
 		if roster.add_xp(id, int(result.get("xp", 0))) > 0:
 			level_ups[id] = roster.level(id)
 	save_game()
-	return {"resources": gained, "items": result.get("items", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
+	EventBus.quests_changed.emit()
+	return {"resources": gained, "items": result.get("items", []), "blueprints": result.get("blueprints", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
 
 
 # --- Saving ------------------------------------------------------------------
@@ -161,6 +238,9 @@ func save_game() -> void:
 		"city": city.to_dict(),
 		"party": party,
 		"roster": roster.to_dict(),
+		"quests": quests.to_dict(),
+		"cleared": cleared,
+		"flags": flags,
 	}, save_path)
 
 
@@ -177,6 +257,9 @@ func load_game() -> bool:
 	else:
 		roster.new_roster(party, Content.setting("starting_items", []))
 	party = party.filter(func(id): return roster.has_hero(id))
+	quests.from_dict(data.get("quests", {}))
+	cleared = data.get("cleared", [])
+	flags = data.get("flags", {})
 	catch_up(float(data.get("saved_at", timers.now())))
 	return true
 
@@ -185,6 +268,7 @@ func reset_game() -> void:
 	SaveService.delete(save_path)
 	new_game()
 	EventBus.resources_changed.emit()
+	EventBus.quests_changed.emit()
 
 
 func _on_timer_finished(timer: Dictionary) -> void:

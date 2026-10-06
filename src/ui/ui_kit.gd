@@ -191,7 +191,9 @@ static func amounts_row(amounts: Dictionary, content, font_size: int = FONT_SIZE
 	row.add_theme_constant_override("separation", 12)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if amounts.is_empty():
-		row.add_child(label("Free", font_size, color))
+		var free := label("Free", font_size, color)
+		free.autowrap_mode = TextServer.AUTOWRAP_OFF
+		row.add_child(free)
 	for id in amounts:
 		var tex := resource_icon(id, content)
 		var text := str(int(amounts[id]))

@@ -34,6 +34,16 @@ func _run() -> void:
 	var main: Control = load("res://src/main.tscn").instantiate()
 	root.add_child(main)
 	await _frames(10)
+	_shot("00_intro")
+	# Start over past the intro, with the heroes the tutorial recruits.
+	main.queue_free()
+	game.flags["intro_seen"] = true
+	for id in ["knight", "cleric"]:
+		game.roster.recruit(id)
+		game.party.append(id)
+	main = load("res://src/main.tscn").instantiate()
+	root.add_child(main)
+	await _frames(10)
 	_shot("01_city")
 
 	var city_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_on_tile_tapped"))[0]

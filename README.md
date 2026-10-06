@@ -103,6 +103,14 @@ slots, rarities and XP curve (`"hero_leveling"`) in `data/config/game.json`. Ene
 `"xp"` in their data file when beaten, and a dungeon room can drop items with `"items": [...]`.
 The logic lives in `src/systems/heroes.gd`; the Heroes screen shows each hero's sheet and gear.
 
+**First session.** A new game opens with a short story (config `"intro"`), then a chain of goals
+from `data/quests/` shown above the town: build a Lumber Mill and Quarry, upgrade the Town Hall,
+build a Tavern and recruit the Knight and Cleric (heroes with a `"recruit"` block), clear the Old
+Cellar, and build the Warehouse from the blueprint its boss drops (buildings with `"blueprint": true`
+need one; a room drops it with `"blueprints": [...]`). Goal types are listed in
+`src/systems/quests.gd`. `tests/first_session.gd` plays the whole chain to catch balance or data
+changes that would block it.
+
 **Content packs.** A folder in `packs/<name>/` (or `user://packs/<name>/` on the device) with the same
 layout as `data/` is loaded after the base data. An entry with an existing id replaces it, a new id
 adds content. This is the hook for events and downloadable content later.
