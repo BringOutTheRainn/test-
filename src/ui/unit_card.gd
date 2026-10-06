@@ -5,6 +5,7 @@ extends PanelContainer
 signal tapped(uid: String)
 
 const UI := preload("res://src/ui/ui_kit.gd")
+const Sprites := preload("res://src/ui/sprites.gd")
 
 var uid := ""
 var _name: Label
@@ -27,11 +28,27 @@ func setup(u: Dictionary) -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_theme_constant_override("separation", 4)
 	add_child(column)
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(top)
+	var type := "heroes" if u.team == "hero" else "enemies"
+	var tex := Sprites.for_entry(type, Content.entry(type, u.id))
+	if tex != null:
+		var portrait := TextureRect.new()
+		portrait.texture = tex
+		portrait.custom_minimum_size = Vector2(64, 64)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(portrait)
 	_name = UI.label(u.name + (" (boss)" if u.boss else ""), 24)
+	_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hp_bar = UI.progress_bar(UI.GOOD, 16)
 	_hp = UI.label("", 20)
 	_info = UI.label("", 18, UI.MUTED)
-	for c in [_name, _hp_bar, _hp, _info]:
+	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_child(_name)
+	for c in [_hp_bar, _hp, _info]:
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		column.add_child(c)
 
