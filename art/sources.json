@@ -1,0 +1,26 @@
+{
+  "_about": "Where each sprite came from, so it can be regenerated or redone. Raw images are generated on solid magenta #FF00FF and cleaned with tools/pixelize.py.",
+  "style": "cozy fantasy, 16-bit pixel art, 3/4 top-down view, dark outlines, like Pixel Tribe",
+  "sprites": {
+    "buildings/town_hall.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_86917ec6-15c1-4f2b-9b4d-8e634fd063d7.png",
+      "size": 64
+    },
+    "buildings/farm.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085655_af7c4854-05eb-4bef-9b33-6de112a6583b.png",
+      "size": 64
+    },
+    "heroes/knight.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_efb38526-76fb-4437-b18c-25e6f20fc403.png",
+      "size": 64
+    },
+    "enemies/goblin.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_5df520e6-7282-443e-8391-ebf21681dadf.png",
+      "size": 64
+    }
+  }
+}
