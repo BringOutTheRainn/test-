@@ -214,7 +214,11 @@ func test_battle_rules() -> void:
 	check(not archer.uid in battle.valid_targets(knight, "strike"), "melee cannot reach the back row")
 	check(archer.uid in battle.valid_targets(battle.current, "shoot"), "ranged reaches the back row")
 	check(not battle.is_usable(battle.current, "volley"), "skills need energy")
+	var events: Array = []
+	battle.event.connect(func(e): events.append(e))
 	check(battle.act("shoot", archer.uid), "player can act")
+	check(not events.is_empty() and events[0].type == "action" and events[0].targets == [archer.uid], "acting reports an action event")
+	check(events.any(func(e): return e.type == "damage" and e.target == archer.uid and int(e.amount) > 0), "damage is reported for animation")
 	knight.statuses["taunt"] = {"turns": 2}
 	var goblin = battle.alive("enemy").filter(func(u): return u.row == "front")[0]
 	check(battle.valid_targets(goblin, "stab") == [knight.uid], "taunt forces enemies onto the Knight")

@@ -42,11 +42,11 @@ func _ready() -> void:
 	_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(_holder)
 
-	_toast = UI.label("", 24)
+	_toast = UI.label("", UI.FONT_SIZE)
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_toast.position.y = 150
-	_toast.add_theme_stylebox_override("normal", UI.box(Color(0, 0, 0, 0.75), 12, 12))
+	_toast.add_theme_stylebox_override("normal", UI.frame("dark"))
 	_toast.visible = false
 	add_child(_toast)
 

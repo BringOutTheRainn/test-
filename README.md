@@ -83,7 +83,17 @@ python3 tools/pixelize.py raw.png art/buildings/farm.png --size 64 --preview che
 ```
 
 It removes the background, crops, shrinks to a real pixel grid and snaps every pixel to the
-32-color palette in `art/palette.hex` (Endesga 32), so all art matches.
+32-color palette in `art/palette.hex` (Endesga 32), so all art matches. Add `--keep-bg` for
+backdrops. `art/sources.json` records which generated image each sprite came from.
+
+Other art the game picks up by id: `art/resources/<id>.png` (icons in the resource bar and costs) and
+`art/backgrounds/<dungeon id>.png` (the battle backdrop). In battle, heroes face right and enemies
+face left; set `"faces": "right"` or `"left"` in a hero or enemy data file if its art looks the
+other way.
+
+**UI look.** Colors, text sizes and the framed pixel panels and buttons all live in
+`src/ui/ui_kit.gd`. The pixel font is generated: edit the glyphs in `tools/make_font.py` and run
+`python3 tools/make_font.py`.
 
 **Content packs.** A folder in `packs/<name>/` (or `user://packs/<name>/` on the device) with the same
 layout as `data/` is loaded after the base data. An entry with an existing id replaces it, a new id

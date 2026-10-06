@@ -60,6 +60,7 @@ func _heal(battle, effect: Dictionary, source: Dictionary, target: Dictionary) -
 	var healed := mini(amount, int(target.max_hp) - int(target.hp))
 	target.hp = int(target.hp) + healed
 	battle.add_log("%s heals %s for %d" % [source.name, target.name, healed])
+	battle.event.emit({"type": "heal", "target": target.uid, "amount": healed})
 
 
 func _status(battle, effect: Dictionary, source: Dictionary, target: Dictionary) -> void:
@@ -71,6 +72,7 @@ func _status(battle, effect: Dictionary, source: Dictionary, target: Dictionary)
 		status["damage"] = maxi(1, roundi(float(source.atk) * float(effect.get("power", 0.3))))
 	target.statuses[id] = status
 	battle.add_log("%s is affected by %s" % [target.name, id])
+	battle.event.emit({"type": "status", "target": target.uid, "status": id})
 
 
 func _cleanse(battle, _effect: Dictionary, _source: Dictionary, target: Dictionary) -> void:

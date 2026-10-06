@@ -123,8 +123,8 @@ def despeckle(img):
     return img
 
 
-def pixelize(img, size, palette, tolerance=60, max_colors=16, clean=True):
-    img = remove_background(img, tolerance)
+def pixelize(img, size, palette, tolerance=60, max_colors=16, clean=True, keep_bg=False):
+    img = img.convert("RGBA") if keep_bg else remove_background(img, tolerance)
     bbox = img.getbbox()
     if bbox is None:
         raise SystemExit("Image is empty after removing the background")
@@ -161,11 +161,12 @@ def main():
     parser.add_argument("--palette", default=str(DEFAULT_PALETTE))
     parser.add_argument("--tolerance", type=int, default=60, help="background color tolerance (default 60)")
     parser.add_argument("--max-colors", type=int, default=16, help="most palette colors one sprite may use (default 16, 0 = no limit)")
+    parser.add_argument("--keep-bg", action="store_true", help="keep the background (for backdrops and scenes)")
     parser.add_argument("--no-clean", action="store_true", help="keep lone stray pixels")
     parser.add_argument("--preview", help="also write an 8x enlarged copy for checking by eye")
     args = parser.parse_args()
 
-    out = pixelize(Image.open(args.input), args.size, load_palette(args.palette), args.tolerance, args.max_colors, not args.no_clean)
+    out = pixelize(Image.open(args.input), args.size, load_palette(args.palette), args.tolerance, args.max_colors, not args.no_clean, args.keep_bg)
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     out.save(args.output)
     if args.preview:

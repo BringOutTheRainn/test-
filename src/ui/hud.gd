@@ -1,6 +1,7 @@
 extends PanelContainer
 ## Resource bar at the top of every screen. Shows every resource marked
-## "hud": true in data/resources, so new resources appear automatically.
+## "hud": true in data/resources, so new resources appear automatically. A
+## resource with art/resources/<id>.png shows its icon, otherwise its name.
 
 const UI := preload("res://src/ui/ui_kit.gd")
 
@@ -10,18 +11,25 @@ var _refresh_left := 0.0
 
 
 func _ready() -> void:
+	add_theme_stylebox_override("panel", UI.frame("dark"))
 	var flow := HFlowContainer.new()
-	flow.add_theme_constant_override("h_separation", 22)
+	flow.add_theme_constant_override("h_separation", 18)
 	flow.add_theme_constant_override("v_separation", 6)
 	add_child(flow)
 	for res in Content.list("resources"):
 		if not res.get("hud", false):
 			continue
-		var l := UI.label("", 24, Color(str(res.get("color", "#ffffff"))))
+		var chip := HBoxContainer.new()
+		chip.add_theme_constant_override("separation", 6)
+		flow.add_child(chip)
+		var tex := UI.resource_icon(res.id, Content)
+		if tex != null:
+			chip.add_child(UI.icon_rect(tex, 30))
+		var l := UI.label("", UI.SMALL, Color(str(res.get("color", "#ffffff"))))
 		l.autowrap_mode = TextServer.AUTOWRAP_OFF
-		flow.add_child(l)
+		chip.add_child(l)
 		_labels[res.id] = l
-	_builders = UI.label("", 24, UI.MUTED)
+	_builders = UI.label("", UI.SMALL, UI.TEXT)
 	_builders.autowrap_mode = TextServer.AUTOWRAP_OFF
 	flow.add_child(_builders)
 	_refresh()
@@ -37,7 +45,9 @@ func _refresh() -> void:
 	_refresh_left = 0.25
 	for id in _labels:
 		var res: Dictionary = Content.entry("resources", id)
-		var text := "%s %d" % [res.get("name", id), Game.inventory.whole(id)]
+		var text := str(Game.inventory.whole(id))
+		if UI.resource_icon(id, Content) == null:
+			text = "%s %s" % [res.get("name", id), text]
 		var cap: float = Game.inventory.cap(id)
 		if cap != INF:
 			text += "/%d" % int(cap)

@@ -13,6 +13,10 @@ extends RefCounted
 signal logged(text: String)
 signal turn_started(unit: Dictionary)
 signal ended(outcome: String)
+## What happened, for animation: {"type": "action", "source", "skill", "targets"},
+## {"type": "damage", "target", "amount", "fell"}, {"type": "heal", "target",
+## "amount"} or {"type": "status", "target", "status"}. Uids, not unit dicts.
+signal event(data: Dictionary)
 
 const Effects := preload("res://src/combat/effects.gd")
 
@@ -177,6 +181,7 @@ func act(skill_id: String, target_uid: String = "") -> bool:
 		targets = [target_uid]
 	u.energy = int(u.energy) - int(s.get("cost", 0))
 	add_log("%s uses %s" % [u.name, s.get("name", skill_id)])
+	event.emit({"type": "action", "source": u.uid, "skill": skill_id, "targets": targets.duplicate()})
 	for uid in targets:
 		var t := unit(uid)
 		for effect in s.get("effects", []):
@@ -221,6 +226,7 @@ func choose_action(u: Dictionary) -> Dictionary:
 func deal_damage(target: Dictionary, amount: int, text: String) -> void:
 	target.hp = maxi(0, int(target.hp) - amount)
 	add_log(text)
+	event.emit({"type": "damage", "target": target.uid, "amount": amount, "fell": int(target.hp) == 0})
 	if int(target.hp) == 0:
 		target.statuses = {}
 		add_log("%s falls" % target.name)

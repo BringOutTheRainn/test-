@@ -21,6 +21,87 @@
       "model": "nano_banana_pro",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_5df520e6-7282-443e-8391-ebf21681dadf.png",
       "size": 64
+    },
+    "buildings/house.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093857_928d785b-3280-4004-ad31-1db2b2767799.png",
+      "size": 64
+    },
+    "buildings/lumber_mill.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093857_4b58f02d-b55a-492e-ae20-4f9c3e518007.png",
+      "size": 64
+    },
+    "buildings/quarry.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093858_b0abd602-87f8-437c-9ac4-fec2d9ffa772.png",
+      "size": 64
+    },
+    "buildings/granary.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093856_bf818417-6272-4ff6-b864-62b1c15bca51.png",
+      "size": 64
+    },
+    "buildings/warehouse.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093857_9344b04c-d9e6-4973-a099-cb87a4ee8832.png",
+      "size": 64
+    },
+    "buildings/tavern.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093857_b2e3fea4-b67d-4215-82fb-a733ba9eaa71.png",
+      "size": 64
+    },
+    "heroes/ranger.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094033_9643a3cf-81c0-46ca-b899-54acb5b590d4.png",
+      "size": 64
+    },
+    "heroes/cleric.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094034_8564b059-34e1-4020-8476-536850cb2bb2.png",
+      "size": 64
+    },
+    "enemies/goblin_archer.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094033_d79b2b7e-0ff6-40c5-9de7-661c027e943c.png",
+      "size": 64
+    },
+    "enemies/goblin_shaman.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094033_31544c18-3733-4cd6-8a5d-b06c7775a845.png",
+      "size": 64
+    },
+    "enemies/orc_chief.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094033_37029b59-cf48-4d88-b717-e555e3bc3f05.png",
+      "size": 84
+    },
+    "backgrounds/goblin_warren.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094034_b2987571-aa52-4cc3-978e-d7323425c1af.png",
+      "size": 240,
+      "flags": "--keep-bg --max-colors 24"
+    },
+    "resources/gold.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094040_b7de7626-3c4f-4b2b-8bd1-79479bf47f7c.png",
+      "size": 16
+    },
+    "resources/crystals.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094040_fb57bb3b-4567-4478-8711-cf8984a69fc0.png",
+      "size": 16
+    },
+    "resources/wood.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094300_a67ffcba-9397-4d9a-8f9e-4757d81f69bb.png",
+      "size": 16
+    },
+    "resources/stone.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094300_f275c9f4-9220-49b0-8151-e84c22fab7f1.png",
+      "size": 16
     }
   }
 }
