@@ -72,6 +72,19 @@ them together and forwards their signals to `EventBus`, which the UI listens to.
 
 The logic tests check that every id referenced in the data exists, so a typo fails the tests.
 
+**Art.** A building, hero or enemy uses `art/<type>/<id>.png` if that file exists (for example
+`art/buildings/farm.png`), or the path in its `"sprite"` field. Anything without art keeps its colored
+placeholder, so art can land one file at a time. Sprites are small pixel art, drawn sharp (no
+smoothing). To clean up an AI-generated image, generate it on a solid magenta `#FF00FF` background
+and run:
+
+```sh
+python3 tools/pixelize.py raw.png art/buildings/farm.png --size 64 --preview check.png
+```
+
+It removes the background, crops, shrinks to a real pixel grid and snaps every pixel to the
+32-color palette in `art/palette.hex` (Endesga 32), so all art matches.
+
 **Content packs.** A folder in `packs/<name>/` (or `user://packs/<name>/` on the device) with the same
 layout as `data/` is loaded after the base data. An entry with an existing id replaces it, a new id
 adds content. This is the hook for events and downloadable content later.

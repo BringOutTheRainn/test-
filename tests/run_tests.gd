@@ -24,6 +24,7 @@ func _initialize() -> void:
 	for test in [
 		"test_content_loads",
 		"test_content_references",
+		"test_sprite_paths",
 		"test_inventory_caps",
 		"test_place_and_build",
 		"test_builders_limit",
@@ -96,6 +97,14 @@ func test_content_references() -> void:
 				check(res in resources, "dungeon %s loot %s is a resource" % [d.id, res])
 	for id in content.setting("starting_party", []):
 		check(content.has_entry("heroes", id), "starting hero %s exists" % id)
+
+
+## A "sprite" named in data must point at a real file.
+func test_sprite_paths() -> void:
+	for type in ContentDB.TYPES:
+		for e in content.list(type):
+			if e.has("sprite"):
+				check(FileAccess.file_exists(str(e.sprite)), "%s %s sprite %s exists" % [type, e.id, e.sprite])
 
 
 # --- City ---------------------------------------------------------------------
