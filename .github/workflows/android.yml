@@ -68,12 +68,23 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /home/runner/debug.keystore
           GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+          # A release build is much smaller and faster than a debug one. It's
+          # signed with the same throwaway key, so it's for testing only; a
+          # Play Store build needs a real upload key kept in a secret.
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: /home/runner/debug.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: android
         run: |
           mkdir -p build
           # Plugins need Godot's Gradle build, so install its Android template first.
-          ./godot --headless --install-android-build-template --export-debug "Android" build/city-builder-rpg.apk
+          ./godot --headless --install-android-build-template --export-release "Android" build/city-builder-rpg.apk
           ls -la build
           test -s build/city-builder-rpg.apk
+
+      - name: Check the notifications plugin is inside the APK
+        run: |
+          unzip -p build/city-builder-rpg.apk 'classes*.dex' | grep -a -q "CityNotifications"
+          echo "CityNotifications plugin found in the APK"
 
       - uses: actions/upload-artifact@v4
         with:
