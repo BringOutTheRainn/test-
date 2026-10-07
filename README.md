@@ -45,13 +45,21 @@ data/                 All game content, one JSON file per thing
   heroes/ enemies/    Stats, row and skill list
   skills/             Target rule plus a list of effects
   dungeons/           Rooms, enemies and loot
+  items/ stats/       Gear and the stats it changes
+  recipes/            What the Blacksmith crafts
+  quests/             The goal chain shown above the town
+  daily_quests/       The pool today's three daily quests are picked from
+  shop/               Shop offers: gem packs, builders, resource crates
 src/
   core/               Autoloads: EventBus (signals), Content (loads data), Game (state, saving)
-  systems/            Inventory, TimerService, City, Economy: plain classes, no UI
+  systems/            Inventory, TimerService, City, Heroes, Crafting, Quests, Daily, Shop: no UI
+  platform/           Phone features behind small wrappers: notifications, store
   combat/             Battle, Effects, DungeonRun: plain classes, no UI
   ui/                 Screens built in code
 tests/                Headless tests
 packs/                Optional content packs (see below)
+plugins/              Android plugin source (notifications), built by the Android workflow
+addons/               Editor plugin that adds that Android plugin to exports
 ```
 
 The systems are independent: they don't reference the UI or each other's internals. `Game` wires
@@ -111,6 +119,25 @@ need one; a room drops it with `"blueprints": [...]`). Goal types are listed in
 `src/systems/quests.gd`. `tests/first_session.gd` plays the whole chain to catch balance or data
 changes that would block it.
 
+**Early game.** Town Hall 3 and 4 unlock the Blacksmith (crafts recipes from `data/recipes/`, one
+at a time; its level, from the `"crafting"` it provides, sets which recipes are known), the Barracks
+(every hero earns its `"hero_xp_per_hour"`, even while the game is closed) and the Mine (iron). The
+Spider Caves and Iron Depths follow; a room's `"first_clear_items"` drop only on the first win.
+The quest chain runs through all of it, and `tests/first_session.gd` plays it with a fake clock,
+waiting for resources the way a player would, and prints how many hours that took.
+
+**Daily loop.** The Daily screen has a 7-day login track (config `"daily_login"`), three quests a day
+picked from `data/daily_quests/` (each counts how much a counter like `fights_won` rose today; the
+game adds to counters with `Game.count()`), and a bonus for finishing all three. When the app goes
+to the background the game schedules phone notifications for finished builds and crafts, full
+storage and tomorrow's reward (texts in config `"notifications"`), and cancels them when the player
+returns. Each kind can be switched off in Settings.
+
+**Shop.** Offers live in `data/shop/`: gem packs and the starter pack and monthly card cost real money
+(`"price_usd"`), builders and resource crates cost gems (`"cost"`). Real-money purchases go through
+`src/platform/store.gd`, which is in test mode until store billing is added: every purchase is free
+and the shop says so. Upgrades short of resources can buy what's missing (config `"shop"."gem_value"`).
+
 **Content packs.** A folder in `packs/<name>/` (or `user://packs/<name>/` on the device) with the same
 layout as `data/` is loaded after the base data. An entry with an existing id replaces it, a new id
 adds content. This is the hook for events and downloadable content later.
@@ -120,5 +147,10 @@ adds content. This is the hook for events and downloadable content later.
 
 ## Exporting to phones
 
-When creating Android and iOS export presets, add `data/*, packs/*` to *Resources > Filters to export
-non-resource files* so the JSON content is included in the build.
+The Android build runs on GitHub (`.github/workflows/android.yml`): it builds the notifications
+plugin with Gradle, exports with Godot's Gradle build, and attaches `city-builder-rpg-apk` to the
+run. That APK is signed with a throwaway key, so it's for testing; a Play Store build needs a real
+upload key stored as a repository secret.
+
+When creating an iOS preset, add `data/*, packs/*` to *Resources > Filters to export non-resource
+files* so the JSON content is included, as the Android preset does.
