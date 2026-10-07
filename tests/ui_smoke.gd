@@ -98,6 +98,14 @@ func _run() -> void:
 	await _frames(5)
 	_shot("04g_settings")
 
+	# The phone's back button returns to the town from any screen.
+	main.go_back()
+	await _frames(3)
+	if main._screen != "city":
+		printerr("FAIL: back button didn't return to the town")
+		quit(1)
+		return
+
 	root.get_node("EventBus").screen_requested.emit("battle", {"dungeon": "goblin_warren"})
 	await _frames(10)
 	_shot("05_battle")

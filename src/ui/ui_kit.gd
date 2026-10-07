@@ -254,14 +254,22 @@ static func scroll_body(parent: Control, kind: String = "panel") -> VBoxContaine
 	var p := panel(kind)
 	p.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(p)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll := scroller()
 	p.add_child(scroll)
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 12)
 	scroll.add_child(body)
 	return body
+
+
+## A vertical scroll area for touch: a drag must move a few pixels before it
+## scrolls, so taps on buttons inside still count as taps.
+static func scroller() -> ScrollContainer:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 12
+	return scroll
 
 
 ## Removes every child of a node (for panels rebuilt in place).

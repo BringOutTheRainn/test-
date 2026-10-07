@@ -44,8 +44,7 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, 380)
 	add_child(panel)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll := UI.scroller()
 	panel.add_child(scroll)
 	_panel_body = VBoxContainer.new()
 	_panel_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -94,6 +93,17 @@ func _process(delta: float) -> void:
 		if _quest_sig() != _quest_signature:
 			_rebuild_quest()
 		_update_daily_badge()
+
+
+## Back button: close the dungeon list or the selected tile first.
+func go_back() -> bool:
+	if _mode == "" and _selected.x < 0:
+		return false
+	_mode = ""
+	_selected = Vector2i(-1, -1)
+	_grid.selected = _selected
+	_rebuild_panel()
+	return true
 
 
 func _bar_button(text: String, screen: String, height: int = 72) -> Button:

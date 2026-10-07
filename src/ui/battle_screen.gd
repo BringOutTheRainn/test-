@@ -478,6 +478,21 @@ func _finish_run() -> void:
 	_show_overlay(title, paid.resources, note, "Back to town", func(): EventBus.screen_requested.emit("city", {}), extra)
 
 
+## Back button mid-battle asks before retreating, so a stray swipe doesn't
+## end the run. Returns true: the battle screen handles back itself.
+func go_back() -> bool:
+	if _overlay != null or run.finished:
+		return false
+	var dialog := ConfirmationDialog.new()
+	dialog.dialog_text = "Retreat? You keep only part of the loot."
+	dialog.ok_button_text = "Retreat"
+	dialog.cancel_button_text = "Keep fighting"
+	dialog.confirmed.connect(_retreat)
+	add_child(dialog)
+	dialog.popup_centered()
+	return true
+
+
 func _retreat() -> void:
 	if _overlay != null or run.finished:
 		return

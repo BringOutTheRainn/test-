@@ -18,6 +18,8 @@ const SCREENS := {
 var _holder: Control
 var _toast: Label
 var _toast_left := 0.0
+var _screen := ""
+var _intro: Control
 
 
 func _ready() -> void:
@@ -31,10 +33,10 @@ func _ready() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var safe := _safe_margins()
-	margin.add_theme_constant_override("margin_left", 16 + safe.x)
-	margin.add_theme_constant_override("margin_right", 16 + safe.x)
-	margin.add_theme_constant_override("margin_top", 12 + safe.y)
-	margin.add_theme_constant_override("margin_bottom", 12 + safe.y)
+	margin.add_theme_constant_override("margin_left", 16 + safe.position.x)
+	margin.add_theme_constant_override("margin_right", 16 + safe.size.x)
+	margin.add_theme_constant_override("margin_top", 12 + safe.position.y)
+	margin.add_theme_constant_override("margin_bottom", 12 + safe.size.y)
 	add_child(margin)
 
 	var column := VBoxContainer.new()
@@ -68,12 +70,51 @@ func _process(delta: float) -> void:
 		_toast.visible = _toast_left > 0.0
 
 
+## Android's back button / gesture: close what's open, go back to the town,
+## and only then ask to leave.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		go_back()
+
+
+func go_back() -> void:
+	# An open dialog closes first; the intro must be read.
+	for dialog in get_tree().root.find_children("*", "AcceptDialog", true, false):
+		if dialog.visible:
+			dialog.hide()
+			dialog.queue_free()
+			return
+	if is_instance_valid(_intro):
+		return
+	var current := _holder.get_child(0) if _holder.get_child_count() > 0 else null
+	if current != null and current.has_method("go_back") and current.go_back():
+		return
+	if _screen != "city":
+		show_screen("city", {})
+		return
+	_confirm_quit()
+
+
+func _confirm_quit() -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.dialog_text = "Leave the game? Your town keeps working while you're away."
+	dialog.ok_button_text = "Leave"
+	dialog.cancel_button_text = "Stay"
+	dialog.confirmed.connect(func():
+		Game.save_game()
+		get_tree().quit())
+	add_child(dialog)
+	dialog.popup_centered()
+
+
 func show_screen(screen: String, args: Dictionary) -> void:
 	if not SCREENS.has(screen):
 		push_error("Unknown screen: %s" % screen)
 		return
 	for child in _holder.get_children():
+		_holder.remove_child(child)
 		child.queue_free()
+	_screen = screen
 	var node: Control = SCREENS[screen].new()
 	if node.has_method("setup"):
 		node.setup(args)
@@ -86,6 +127,7 @@ func _show_intro() -> void:
 	if intro.is_empty():
 		return
 	var overlay := ColorRect.new()
+	_intro = overlay
 	overlay.color = Color(0.09, 0.08, 0.15, 0.85)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(overlay)
@@ -112,15 +154,22 @@ func show_toast(message: String) -> void:
 	_toast.text = message
 	_toast.reset_size()
 	_toast.position.x = (size.x - _toast.size.x) / 2.0
+	# Above the bottom buttons, clear of headers and the battle's turn order.
+	_toast.position.y = size.y * 0.62
 	_toast_left = 2.5
 	_toast.visible = true
 
 
-## Extra margins for notches and rounded corners, in viewport pixels.
-func _safe_margins() -> Vector2i:
+## Extra margins for notches, rounded corners and the gesture bar, in
+## viewport pixels: position = left/top, size = right/bottom.
+func _safe_margins() -> Rect2i:
 	var screen := DisplayServer.screen_get_size()
 	var safe := DisplayServer.get_display_safe_area()
 	if screen.x <= 0 or safe.size.x <= 0 or not OS.has_feature("mobile"):
-		return Vector2i.ZERO
+		return Rect2i()
 	var ratio := get_viewport_rect().size.x / float(screen.x)
-	return Vector2i(int(safe.position.x * ratio), int(safe.position.y * ratio))
+	var left := int(safe.position.x * ratio)
+	var top := int(safe.position.y * ratio)
+	var right := int((screen.x - safe.end.x) * ratio)
+	var bottom := int((screen.y - safe.end.y) * ratio)
+	return Rect2i(left, top, right, bottom)

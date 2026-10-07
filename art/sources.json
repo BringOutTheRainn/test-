@@ -297,6 +297,16 @@
       "model": "nano_banana_2",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_b5d9a397-8a08-4592-beb7-335f7073d36a.png",
       "size": 32
+    },
+    "../icon.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_092119_c2dd8438-ebcb-4f30-9340-a34360cf9099.png",
+      "size": 64
+    },
+    "app/adaptive_foreground.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_092119_ff08e870-1014-4ef1-9f78-33345e16f2eb.png",
+      "size": 64
     }
   }
 }

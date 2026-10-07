@@ -38,8 +38,7 @@ func _ready() -> void:
 	var panel := UI.panel()
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_child(panel)
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll := UI.scroller()
 	panel.add_child(scroll)
 	_sheet = VBoxContainer.new()
 	_sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
