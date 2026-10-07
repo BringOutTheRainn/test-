@@ -1,0 +1,11 @@
+{
+  "id": "gems_vault",
+  "name": "Vault of Gems",
+  "section": "gems",
+  "order": 13,
+  "price_usd": 19.99,
+  "grant": {
+    "gems": 2400
+  },
+  "tag": "+50% bonus"
+}

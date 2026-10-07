@@ -86,6 +86,13 @@ func _run() -> void:
 	game.count("fights_won", 3)
 	await _frames(5)
 	_shot("04f_daily_claimed")
+	root.get_node("EventBus").screen_requested.emit("shop", {})
+	await _frames(5)
+	_shot("04h_shop")
+	game.buy_offer("monthly_card")
+	game.buy_offer("builder_4")
+	await _frames(5)
+	_shot("04i_shop_bought")
 	game.flags["notifications"] = true
 	root.get_node("EventBus").screen_requested.emit("settings", {})
 	await _frames(5)

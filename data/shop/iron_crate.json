@@ -1,0 +1,13 @@
+{
+  "id": "iron_crate",
+  "name": "Crate of Iron",
+  "section": "resources",
+  "order": 44,
+  "cost": {
+    "gems": 90
+  },
+  "grant": {
+    "iron": 300
+  },
+  "unlock_town_hall": 3
+}

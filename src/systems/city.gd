@@ -21,6 +21,8 @@ var buildings: Dictionary = {}
 ## Building ids unlocked by blueprints. A definition with "blueprint": true
 ## can only be built once its blueprint is found (bosses drop them).
 var blueprints: Array = []
+## Builders hired permanently (shop), on top of config and buildings.
+var bonus_builders := 0
 var _next_uid := 1
 
 
@@ -37,6 +39,7 @@ func setup(content_db, inv, timer_service) -> void:
 func new_city() -> void:
 	buildings = {}
 	blueprints = []
+	bonus_builders = 0
 	_next_uid = 1
 	for start in content.setting("starting_buildings", []):
 		var b := _add_building(str(start.id), int(start.x), int(start.y))
@@ -110,7 +113,7 @@ func is_busy(uid: String) -> bool:
 
 
 func builders_total() -> int:
-	return int(content.setting("starting_builders", 2)) + int(provided_total("builders"))
+	return int(content.setting("starting_builders", 2)) + int(provided_total("builders")) + bonus_builders
 
 
 func builders_free() -> int:
@@ -271,11 +274,12 @@ func _on_timer_finished(timer: Dictionary) -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"next_uid": _next_uid, "buildings": buildings.duplicate(true), "blueprints": blueprints.duplicate()}
+	return {"next_uid": _next_uid, "buildings": buildings.duplicate(true), "blueprints": blueprints.duplicate(), "bonus_builders": bonus_builders}
 
 
 func from_dict(data: Dictionary) -> void:
 	_next_uid = int(data.get("next_uid", 1))
+	bonus_builders = int(data.get("bonus_builders", 0))
 	blueprints = Array(data.get("blueprints", [])).filter(func(id): return not definition(str(id)).is_empty())
 	buildings = {}
 	var saved: Dictionary = data.get("buildings", {})

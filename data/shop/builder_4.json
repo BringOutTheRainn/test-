@@ -1,0 +1,13 @@
+{
+  "id": "builder_4",
+  "name": "Hire a 4th builder",
+  "section": "builders",
+  "order": 30,
+  "cost": {
+    "gems": 500
+  },
+  "limit": 1,
+  "builders": 1,
+  "description": "One more building at a time, forever.",
+  "sprite": "res://art/shop/builder.png"
+}

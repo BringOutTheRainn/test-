@@ -15,6 +15,7 @@ const Heroes := preload("res://src/systems/heroes.gd")
 const Quests := preload("res://src/systems/quests.gd")
 const Crafting := preload("res://src/systems/crafting.gd")
 const Daily := preload("res://src/systems/daily.gd")
+const Shop := preload("res://src/systems/shop.gd")
 
 var failures = 0
 var checks = 0
@@ -41,6 +42,7 @@ func _initialize() -> void:
 		"test_quests",
 		"test_crafting",
 		"test_daily",
+		"test_shop",
 		"test_battle_rules",
 		"test_battle_auto_resolves",
 		"test_dungeon_run",
@@ -380,6 +382,38 @@ func test_daily() -> void:
 	for q in content.list("daily_quests"):
 		for res in q.get("reward", {}):
 			check(content.has_entry("resources", res), "daily quest %s rewards a known resource" % q.id)
+
+
+func test_shop() -> void:
+	var inv = Inventory.new()
+	var shop = Shop.new()
+	shop.setup(content, inv)
+	inv.add_all({"gems": 600})
+	check(shop.can_buy("builder_5") == "Not available yet", "the 5th builder needs the 4th first")
+	check(not shop.is_visible(shop.offer("builder_5"), 5), "the 5th builder is hidden until the 4th is hired")
+	check(not shop.pay("builder_4").is_empty() and inv.whole("gems") == 100, "a gem offer spends gems")
+	check(shop.can_buy("builder_4") == "Already bought", "one-time offers can't be bought twice")
+	check(shop.is_visible(shop.offer("builder_5"), 5), "the 5th builder shows once the 4th is hired")
+	check(shop.can_buy("builder_5") == "Not enough gems", "gem offers need the gems")
+	check(not shop.pay("gems_pouch").is_empty(), "real-money offers are paid by the store, not gems")
+	shop.start_card(100, 30)
+	check(shop.card_days_left(100) == 30 and shop.can_claim_card(100), "the monthly card starts today")
+	check(not shop.claim_card(100).is_empty() and shop.claim_card(100).is_empty(), "the card pays once a day")
+	check(shop.can_claim_card(129) and not shop.card_active(130), "the card lasts 30 days")
+	inv.caps = {"wood": 1000}
+	check(shop.missing_gems({"wood": 1100}) > 0, "missing resources have a gem price")
+	check(shop.missing_gems({"wood": 0}) == 0, "nothing missing costs nothing")
+	check(inv.add("wood", 5000, true) == 5000.0 and inv.whole("wood") == 5000, "bought resources can go over the cap")
+	var copy = Shop.new()
+	copy.setup(content, inv)
+	copy.from_dict(shop.to_dict())
+	check(copy.times_bought("builder_4") == 1 and copy.card_until == shop.card_until, "shop state survives a save")
+	for o in content.list("shop"):
+		check(o.has("price_usd") != o.has("cost"), "offer %s has exactly one price" % o.id)
+		for res in o.get("grant", {}).keys() + o.get("cost", {}).keys():
+			check(content.has_entry("resources", res), "offer %s uses a known resource" % o.id)
+		for id in o.get("items", []):
+			check(content.has_entry("items", id), "offer %s gives a known item" % o.id)
 
 
 # --- Combat -------------------------------------------------------------------

@@ -1,0 +1,13 @@
+{
+  "id": "stone_crate",
+  "name": "Crate of Stone",
+  "section": "resources",
+  "order": 41,
+  "cost": {
+    "gems": 80
+  },
+  "grant": {
+    "stone": 1000
+  },
+  "unlock_town_hall": 1
+}

@@ -26,21 +26,23 @@ func is_full(id: String) -> bool:
 	return amount(id) >= cap(id)
 
 
-## Adds up to the cap and returns how much was actually added.
+## Adds up to the cap and returns how much was actually added. With
+## over_cap (purchases), the cap is ignored so nothing paid for is lost.
 ## Negative amounts remove resources (never below zero).
-func add(id: String, value: float) -> float:
+func add(id: String, value: float, over_cap: bool = false) -> float:
 	var before := amount(id)
-	var after := clampf(before + value, 0.0, maxf(cap(id), before))
+	var top := INF if over_cap else maxf(cap(id), before)
+	var after := clampf(before + value, 0.0, top)
 	amounts[id] = after
 	if not is_equal_approx(after, before):
 		changed.emit()
 	return after - before
 
 
-func add_all(values: Dictionary) -> Dictionary:
+func add_all(values: Dictionary, over_cap: bool = false) -> Dictionary:
 	var added := {}
 	for id in values:
-		added[id] = add(id, float(values[id]))
+		added[id] = add(id, float(values[id]), over_cap)
 	return added
 
 

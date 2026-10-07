@@ -1,0 +1,13 @@
+{
+  "id": "wood_crate",
+  "name": "Crate of Wood",
+  "section": "resources",
+  "order": 40,
+  "cost": {
+    "gems": 60
+  },
+  "grant": {
+    "wood": 1000
+  },
+  "unlock_town_hall": 1
+}

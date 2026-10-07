@@ -55,14 +55,23 @@ func _ready() -> void:
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 12)
 	add_child(bar)
-	var dungeon := UI.button("Dungeon", _enter_dungeon, 96, "primary")
+	var dungeon := UI.button("Dungeon", _enter_dungeon, 88, "primary")
 	dungeon.add_theme_font_size_override("font_size", UI.LARGE)
 	dungeon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(dungeon)
+	var shop := _bar_button("Shop", "shop", 88)
+	shop.custom_minimum_size.x = 200
+	shop.size_flags_horizontal = Control.SIZE_FILL
+	shop.add_theme_font_size_override("font_size", UI.LARGE)
+	UI.style_button(shop, "selected")
+	bar.add_child(shop)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	add_child(row)
 	_daily_button = _bar_button("Daily", "daily")
-	bar.add_child(_bar_button("Heroes", "heroes"))
-	bar.add_child(_daily_button)
-	bar.add_child(_bar_button("Menu", "settings"))
+	row.add_child(_bar_button("Heroes", "heroes"))
+	row.add_child(_daily_button)
+	row.add_child(_bar_button("Menu", "settings"))
 
 	EventBus.building_changed.connect(func(_b): _rebuild_panel())
 	EventBus.timer_finished.connect(func(_t): _rebuild_panel())
@@ -87,16 +96,17 @@ func _process(delta: float) -> void:
 		_update_daily_badge()
 
 
-func _bar_button(text: String, screen: String) -> Button:
-	var b := UI.button(text, func(): EventBus.screen_requested.emit(screen, {}), 96)
-	b.custom_minimum_size.x = 132
+func _bar_button(text: String, screen: String, height: int = 72) -> Button:
+	var b := UI.button(text, func(): EventBus.screen_requested.emit(screen, {}), height)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return b
 
 
 ## The Daily button turns gold when there are rewards to collect.
 func _update_daily_badge() -> void:
-	var ready: bool = Game.daily.ready_count(Game.counters) > 0
-	UI.style_button(_daily_button, "selected" if ready else "button")
+	var ready: bool = Game.daily.ready_count(Game.counters) > 0 or Game.shop.can_claim_card(Game.daily.today())
+	_daily_button.text = "Daily !" if ready else "Daily"
+	UI.style_button(_daily_button, "primary" if ready else "button")
 
 
 func _on_tile_tapped(cell: Vector2i) -> void:
@@ -223,6 +233,7 @@ func _show_building(b: Dictionary) -> void:
 	var uid: String = b.uid
 	var card := _build_card({"name": "Upgrade to level %d" % next}, data, reason, func(): Game.city.upgrade(uid))
 	_panel_body.add_child(card)
+	_add_buy_missing(data.get("cost", {}), reason)
 
 
 ## A tappable card: sprite, name, cost icons and build time, or why it can't be built.
@@ -268,6 +279,22 @@ func _build_card(def: Dictionary, data: Dictionary, reason: String, on_pressed: 
 		why.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		column.add_child(why)
 	return b
+
+
+## "Buy missing for N gems" under a card that's short of resources.
+func _add_buy_missing(cost: Dictionary, reason: String) -> void:
+	if reason != "Not enough resources":
+		return
+	var gems: int = Game.shop.missing_gems(cost)
+	if gems <= 0:
+		return
+	var b := UI.button("Buy what's missing for %d gems" % gems, func():
+		if not Game.buy_missing(cost):
+			EventBus.toast.emit("Not enough gems")
+		_rebuild_panel(), 64, "primary")
+	b.add_theme_font_size_override("font_size", UI.SMALL)
+	b.disabled = Game.inventory.whole("gems") < gems
+	_panel_body.add_child(b)
 
 
 func _labeled_amounts(text: String, amounts: Dictionary) -> HBoxContainer:

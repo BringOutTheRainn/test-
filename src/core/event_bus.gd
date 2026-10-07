@@ -13,5 +13,7 @@ signal quests_changed
 signal counted(counter: String, amount: int)
 ## Login reward or daily quests changed (claimed, or a new day).
 signal daily_changed
+## Something was bought, or the monthly card was collected.
+signal shop_changed
 signal toast(message: String)
 signal screen_requested(screen: String, args: Dictionary)

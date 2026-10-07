@@ -148,5 +148,33 @@
       }
     },
     "min_seconds": 60
+  },
+  "shop": {
+    "card_daily": 100,
+    "sections": [
+      {
+        "id": "offers",
+        "name": "Special offers"
+      },
+      {
+        "id": "gems",
+        "name": "Gems"
+      },
+      {
+        "id": "builders",
+        "name": "Builders"
+      },
+      {
+        "id": "resources",
+        "name": "Resources"
+      }
+    ],
+    "gem_value": {
+      "wood": 7,
+      "stone": 9,
+      "food": 6,
+      "gold": 8,
+      "iron": 35
+    }
   }
 }

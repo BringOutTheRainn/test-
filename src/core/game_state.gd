@@ -13,6 +13,8 @@ const Quests := preload("res://src/systems/quests.gd")
 const Crafting := preload("res://src/systems/crafting.gd")
 const Daily := preload("res://src/systems/daily.gd")
 const Notifications := preload("res://src/platform/notifications.gd")
+const Shop := preload("res://src/systems/shop.gd")
+const Store := preload("res://src/platform/store.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -34,6 +36,8 @@ var counters: Dictionary = {}
 var crafting: Crafting
 var daily: Daily
 var notifications: Notifications
+var shop: Shop
+var store: Store
 var _daily_check_left := 0.0
 ## Barracks training XP not yet whole, carried between ticks.
 var _xp_carry := 0.0
@@ -56,6 +60,9 @@ func _ready() -> void:
 	daily = Daily.new()
 	daily.setup(Content, func(): return timers.now())
 	notifications = Notifications.new()
+	shop = Shop.new()
+	shop.setup(Content, inventory)
+	store = Store.new()
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
@@ -65,6 +72,7 @@ func _ready() -> void:
 	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
 	crafting.crafted.connect(_on_crafted)
 	daily.changed.connect(func(): EventBus.daily_changed.emit())
+	shop.changed.connect(func(): EventBus.shop_changed.emit())
 
 	if not load_game():
 		new_game()
@@ -106,6 +114,7 @@ func new_game() -> void:
 	counters = {}
 	_xp_carry = 0.0
 	daily.from_dict({})
+	shop.from_dict({})
 	daily.refresh(counters, city.town_hall_level())
 	_last_tick = timers.now()
 	save_game()
@@ -195,6 +204,59 @@ func claim_daily_bonus() -> Dictionary:
 		grant(reward)
 		save_game()
 	return reward
+
+
+# --- Shop ------------------------------------------------------------------------
+
+## Buys a shop offer: real-money offers go through the store first. Calls
+## `done.call(ok: bool)` when finished.
+func buy_offer(id: String, done: Callable = Callable()) -> void:
+	var reason := shop.can_buy(id)
+	if reason != "":
+		EventBus.toast.emit(reason)
+		if done.is_valid():
+			done.call(false)
+		return
+	var o := shop.offer(id)
+	if not shop.is_real_money(o):
+		_finish_purchase(id, done, true)
+		return
+	store.purchase(id, func(ok: bool): _finish_purchase(id, done, ok))
+
+
+func _finish_purchase(id: String, done: Callable, ok: bool) -> void:
+	var o: Dictionary = shop.pay(id) if ok else {}
+	if not o.is_empty():
+		count("gems_spent", int(o.get("cost", {}).get("gems", 0)))
+		inventory.add_all(o.get("grant", {}), true)
+		city.bonus_builders += int(o.get("builders", 0))
+		for item_id in o.get("items", []):
+			roster.add_item(str(item_id))
+		if int(o.get("card_days", 0)) > 0:
+			shop.start_card(daily.today(), int(o.card_days))
+		EventBus.resources_changed.emit()
+		EventBus.toast.emit("Purchased: %s" % o.get("name", id))
+		save_game()
+	if done.is_valid():
+		done.call(not o.is_empty())
+
+
+func claim_card() -> Dictionary:
+	var reward := shop.claim_card(daily.today())
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+## Buys whatever is missing for a cost with gems. Returns false if unaffordable.
+func buy_missing(cost: Dictionary) -> bool:
+	var gems := shop.missing_gems(cost)
+	if gems <= 0 or not inventory.spend({"gems": gems}):
+		return false
+	count("gems_spent", gems)
+	inventory.add_all(inventory.missing(cost), true)
+	return true
 
 
 # --- Notifications ---------------------------------------------------------------
@@ -376,6 +438,7 @@ func save_game() -> void:
 		"counters": counters,
 		"xp_carry": _xp_carry,
 		"daily": daily.to_dict(),
+		"shop": shop.to_dict(),
 	}, save_path)
 
 
@@ -398,6 +461,7 @@ func load_game() -> bool:
 	counters = data.get("counters", {})
 	_xp_carry = float(data.get("xp_carry", 0.0))
 	daily.from_dict(data.get("daily", {}))
+	shop.from_dict(data.get("shop", {}))
 	catch_up(float(data.get("saved_at", timers.now())))
 	daily.refresh(counters, city.town_hall_level())
 	return true

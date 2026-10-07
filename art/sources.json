@@ -252,6 +252,51 @@
       "model": "nano_banana_2",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090518_ec08223c-9563-468e-9302-745893e9ab53.png",
       "size": 240
+    },
+    "shop/gems_handful.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091555_f0d22f9c-60fa-4173-9549-67a836987116.png",
+      "size": 32
+    },
+    "shop/gems_pouch.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091555_c1a8973f-bfcf-4643-becc-20066b40078c.png",
+      "size": 32
+    },
+    "shop/gems_chest.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_023f4a8e-b2bb-4784-a834-9dd86c1bc300.png",
+      "size": 32
+    },
+    "shop/gems_vault.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_030339ed-0d2c-4074-9484-deaf5d3f0743.png",
+      "size": 32
+    },
+    "shop/gems_treasury.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_d5b36ef4-87b6-4534-b885-e67b50fd38a0.png",
+      "size": 32
+    },
+    "shop/gems_hoard.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_d5c6b5ce-8b3d-43e8-8afd-368519f2f528.png",
+      "size": 32
+    },
+    "shop/builder.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_c88e80b5-3f7d-4063-9210-0e7899113945.png",
+      "size": 32
+    },
+    "shop/starter_pack.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_15604836-4475-4c88-af22-ca284ba74319.png",
+      "size": 32
+    },
+    "shop/monthly_card.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_091554_b5d9a397-8a08-4592-beb7-335f7073d36a.png",
+      "size": 32
     }
   }
 }

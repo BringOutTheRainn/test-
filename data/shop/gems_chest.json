@@ -1,0 +1,11 @@
+{
+  "id": "gems_chest",
+  "name": "Chest of Gems",
+  "section": "gems",
+  "order": 12,
+  "price_usd": 9.99,
+  "grant": {
+    "gems": 1100
+  },
+  "tag": "+37% bonus"
+}

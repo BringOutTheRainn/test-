@@ -19,6 +19,7 @@ func _ready() -> void:
 	_body = UI.scroll_body(self)
 	EventBus.daily_changed.connect(_rebuild)
 	EventBus.quests_changed.connect(_rebuild)
+	EventBus.shop_changed.connect(_rebuild)
 	Game.daily.refresh(Game.counters, Game.city.town_hall_level())
 	_rebuild()
 
@@ -28,6 +29,7 @@ func _rebuild() -> void:
 		return
 	UI.clear(_body)
 	_show_login()
+	_show_card()
 	_show_quests()
 
 
@@ -75,6 +77,27 @@ func _show_login() -> void:
 			EventBus.toast.emit("Collected: " + UI.format_amounts(reward, Content)), 80, "primary" if ready else "button")
 	claim.disabled = not ready
 	_body.add_child(claim)
+
+
+## The monthly card's daily gems, while it's active.
+func _show_card() -> void:
+	var today: int = Game.daily.today()
+	if not Game.shop.card_active(today):
+		return
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_body.add_child(row)
+	var l := UI.label("Monthly card: %d days left" % Game.shop.card_days_left(today), UI.FONT_SIZE, UI.ENERGY)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(l)
+	if Game.shop.can_claim_card(today):
+		var b := UI.button("Collect", func():
+			Game.claim_card()
+			_rebuild(), 72, "selected")
+		b.custom_minimum_size.x = 150
+		row.add_child(b)
+	else:
+		row.add_child(UI.label("Collected", UI.SMALL, UI.GOOD))
 
 
 func _show_quests() -> void:
