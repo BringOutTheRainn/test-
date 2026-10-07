@@ -19,5 +19,5 @@ android {
 
 dependencies {
     // Provided by the game at runtime; only needed to compile against.
-    compileOnly 'org.godotengine:godot:4.3.stable'
+    compileOnly 'org.godotengine:godot:4.3.0.stable'
 }
