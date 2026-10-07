@@ -1,0 +1,12 @@
+{
+  "id": "collect_login",
+  "order": 8,
+  "text": "Collect the daily reward",
+  "counter": "logins",
+  "count": 1,
+  "reward": {
+    "food": 200,
+    "gems": 5
+  },
+  "unlock_town_hall": 1
+}

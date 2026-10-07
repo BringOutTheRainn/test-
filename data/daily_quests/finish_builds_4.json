@@ -1,0 +1,12 @@
+{
+  "id": "finish_builds_4",
+  "order": 6,
+  "text": "Finish 4 builds or upgrades",
+  "counter": "builds_finished",
+  "count": 4,
+  "reward": {
+    "stone": 400,
+    "gems": 10
+  },
+  "unlock_town_hall": 3
+}

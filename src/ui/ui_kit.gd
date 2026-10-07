@@ -233,3 +233,38 @@ static func format_amounts(amounts: Dictionary, content) -> String:
 		var res: Dictionary = content.entry("resources", id)
 		parts.append("%d %s" % [int(amounts[id]), res.get("name", id)])
 	return ", ".join(parts) if not parts.is_empty() else "Free"
+
+
+## A screen's top row: its title and a Back button to the town.
+static func header(title: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var l := label(title, LARGE, ACCENT)
+	l.autowrap_mode = TextServer.AUTOWRAP_OFF
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(l)
+	var back := button("Back", func(): EventBus.screen_requested.emit("city", {}), 64)
+	back.custom_minimum_size.x = 140
+	row.add_child(back)
+	return row
+
+
+## A framed, vertically scrolling area filling the rest of a screen. Returns
+## the column to add content to.
+static func scroll_body(parent: Control, kind: String = "panel") -> VBoxContainer:
+	var p := panel(kind)
+	p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(p)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	p.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 12)
+	scroll.add_child(body)
+	return body
+
+
+## Removes every child of a node (for panels rebuilt in place).
+static func clear(node: Node) -> void:
+	for child in node.get_children():
+		child.queue_free()

@@ -22,6 +22,7 @@ var _skip_button: Button
 var _craft_label: Label
 var _craft_bar: ProgressBar
 var _craft_skip: Button
+var _daily_button: Button
 
 
 func setup(_args: Dictionary) -> void:
@@ -58,13 +59,10 @@ func _ready() -> void:
 	dungeon.add_theme_font_size_override("font_size", UI.LARGE)
 	dungeon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(dungeon)
-	var heroes := UI.button("Heroes", func(): EventBus.screen_requested.emit("heroes", {}), 96)
-	heroes.custom_minimum_size.x = 170
-	bar.add_child(heroes)
-	var reset := UI.button("New", _confirm_reset, 96, "danger")
-	reset.add_theme_font_size_override("font_size", UI.SMALL)
-	reset.custom_minimum_size.x = 110
-	bar.add_child(reset)
+	_daily_button = _bar_button("Daily", "daily")
+	bar.add_child(_bar_button("Heroes", "heroes"))
+	bar.add_child(_daily_button)
+	bar.add_child(_bar_button("Menu", "settings"))
 
 	EventBus.building_changed.connect(func(_b): _rebuild_panel())
 	EventBus.timer_finished.connect(func(_t): _rebuild_panel())
@@ -86,6 +84,19 @@ func _process(delta: float) -> void:
 			_rebuild_panel()
 		if _quest_sig() != _quest_signature:
 			_rebuild_quest()
+		_update_daily_badge()
+
+
+func _bar_button(text: String, screen: String) -> Button:
+	var b := UI.button(text, func(): EventBus.screen_requested.emit(screen, {}), 96)
+	b.custom_minimum_size.x = 132
+	return b
+
+
+## The Daily button turns gold when there are rewards to collect.
+func _update_daily_badge() -> void:
+	var ready: bool = Game.daily.ready_count(Game.counters) > 0
+	UI.style_button(_daily_button, "selected" if ready else "button")
 
 
 func _on_tile_tapped(cell: Vector2i) -> void:
@@ -447,29 +458,13 @@ func _shadowless(l: Label) -> Label:
 	return l
 
 
-## Phones ask for permission here once the app is built for them; until then
-## this records the player's choice so the tutorial can finish.
+## Asks whether to notify; "Yes" also shows the phone's permission prompt.
 func _ask_notifications() -> void:
 	var dialog := ConfirmationDialog.new()
 	dialog.dialog_text = "Get a notification when a build finishes?"
 	dialog.ok_button_text = "Yes"
 	dialog.cancel_button_text = "Not now"
-	dialog.confirmed.connect(func():
-		Game.set_flag("notifications", true)
-		Game.set_flag("notifications_asked", true))
+	dialog.confirmed.connect(func(): Game.enable_notifications(true))
 	dialog.canceled.connect(func(): Game.set_flag("notifications_asked", true))
-	add_child(dialog)
-	dialog.popup_centered()
-
-
-func _confirm_reset() -> void:
-	var dialog := ConfirmationDialog.new()
-	dialog.dialog_text = "Start a new game? Your current town will be lost."
-	dialog.confirmed.connect(func():
-		Game.reset_game()
-		_mode = ""
-		_selected = Vector2i(-1, -1)
-		_grid.selected = _selected
-		_rebuild_panel())
 	add_child(dialog)
 	dialog.popup_centered()

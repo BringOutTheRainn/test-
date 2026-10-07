@@ -1,0 +1,13 @@
+{
+  "id": "clear_dungeon",
+  "order": 3,
+  "text": "Clear a dungeon",
+  "counter": "dungeons_cleared",
+  "count": 1,
+  "reward": {
+    "wood": 300,
+    "stone": 200,
+    "gems": 5
+  },
+  "unlock_town_hall": 1
+}

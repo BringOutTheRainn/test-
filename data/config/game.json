@@ -87,5 +87,66 @@
       "Rebuild, gather heroes, and drive the goblins back into the dark."
     ],
     "button": "Rebuild"
+  },
+  "daily_login": {
+    "rewards": [
+      {
+        "gold": 300
+      },
+      {
+        "wood": 400,
+        "stone": 200
+      },
+      {
+        "gems": 10
+      },
+      {
+        "food": 400,
+        "gold": 300
+      },
+      {
+        "crystals": 5
+      },
+      {
+        "wood": 800,
+        "stone": 400,
+        "iron": 100
+      },
+      {
+        "gems": 30
+      }
+    ]
+  },
+  "daily_quests": {
+    "per_day": 3,
+    "bonus": {
+      "gems": 15
+    }
+  },
+  "notifications": {
+    "_about": "Local notifications scheduled when the app goes to the background. Each kind can be switched off in Settings.",
+    "kinds": {
+      "build_done": {
+        "name": "Builds finished",
+        "title": "Construction finished",
+        "text": "%s is ready. Come back and keep building!"
+      },
+      "craft_done": {
+        "name": "Crafting finished",
+        "title": "The Blacksmith is done",
+        "text": "Your %s is ready."
+      },
+      "storage_full": {
+        "name": "Storage full",
+        "title": "Storage is full",
+        "text": "Your %s storage is full. Spend it before it goes to waste!"
+      },
+      "daily_ready": {
+        "name": "Daily reward",
+        "title": "Your daily reward is ready",
+        "text": "A new day, a new reward. Your quests have reset too."
+      }
+    },
+    "min_seconds": 60
   }
 }

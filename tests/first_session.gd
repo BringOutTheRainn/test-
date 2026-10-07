@@ -39,6 +39,17 @@ func _run() -> void:
 		print("done: %s  (waited %.1f h so far)" % [q.text, waited / 3600.0])
 	_check(quests.all_done(), "every quest can be finished")
 	_check(game.roster.heroes.size() >= 3, "the party has three heroes")
+	# Notifications planned for when the player leaves: a running build and
+	# tomorrow's login reward.
+	game.enable_notifications(true)
+	game.claim_login_reward()
+	var mill: Dictionary = game.city.buildings.values().filter(func(b): return b.id == "lumber_mill")[0]
+	_wait_for(game.city.level_data("lumber_mill", int(mill.level) + 1).get("cost", {}))
+	game.city.upgrade(mill.uid)
+	var kinds: Array = game.planned_notifications().map(func(n): return n.kind)
+	_check("build_done" in kinds and "daily_ready" in kinds, "notifications are planned for builds and the daily reward (%s)" % str(kinds))
+	game.set_flag("notify_build_done", false)
+	_check(not "build_done" in game.planned_notifications().map(func(n): return n.kind), "a switched-off kind is not planned")
 	print("waited for resources: %.1f hours; hero levels: %s" % [waited / 3600.0, str(game.party_levels())])
 	game.SaveService.delete(game.save_path)
 	print("first session: %s" % ("OK" if failures == 0 else "%d failed" % failures))

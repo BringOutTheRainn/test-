@@ -14,6 +14,7 @@ const DungeonRun := preload("res://src/combat/dungeon_run.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
 const Quests := preload("res://src/systems/quests.gd")
 const Crafting := preload("res://src/systems/crafting.gd")
+const Daily := preload("res://src/systems/daily.gd")
 
 var failures = 0
 var checks = 0
@@ -39,6 +40,7 @@ func _initialize() -> void:
 		"test_blueprints",
 		"test_quests",
 		"test_crafting",
+		"test_daily",
 		"test_battle_rules",
 		"test_battle_auto_resolves",
 		"test_dungeon_run",
@@ -333,6 +335,51 @@ func test_crafting() -> void:
 		check(content.has_entry("items", str(r.item)), "recipe %s makes a known item" % r.id)
 		for res in r.get("cost", {}):
 			check(content.has_entry("resources", res), "recipe %s costs a known resource" % r.id)
+
+
+func test_daily() -> void:
+	var now := {"t": 86400.0 * 100 + 3600.0}
+	var daily = Daily.new()
+	daily.setup(content, func(): return now.t)
+	daily.utc_offset = 0
+	var rewards: Array = daily.login_rewards()
+	check(rewards.size() == 7, "a 7-day login track")
+	check(daily.can_claim_login(), "the first login reward is ready")
+	check(daily.claim_login() == rewards[0], "day 1 pays the first reward")
+	check(not daily.can_claim_login() and daily.claim_login().is_empty(), "one login reward a day")
+	now.t += 86400.0 * 3
+	check(daily.claim_login() == rewards[1], "a missed day doesn't reset the track")
+	var counters := {"fights_won": 10, "builds_finished": 4, "dungeons_cleared": 1, "logins": 2}
+	daily.refresh(counters, 1)
+	var quests: Array = daily.quests()
+	check(quests.size() == 3, "three daily quests")
+	var used := {}
+	for q in quests:
+		check(int(q.get("unlock_town_hall", 1)) <= 1, "daily quests respect the Town Hall level")
+		check(not used.has(q.counter), "no two daily quests count the same thing")
+		used[q.counter] = true
+		check(daily.progress(q, counters)[0] == 0, "progress counts from the start of the day")
+	var first: Dictionary = quests[0]
+	check(daily.claim(first.id, counters).is_empty(), "an unfinished daily quest can't be claimed")
+	var done := counters.duplicate()
+	for q in quests:
+		done[q.counter] = int(done[q.counter]) + int(q.count)
+	for q in quests:
+		check(not daily.claim(q.id, done).is_empty(), "a finished daily quest pays")
+	check(daily.can_claim_bonus() and not daily.claim_bonus().is_empty(), "finishing all three pays the bonus")
+	var ids: Array = daily.quest_ids.duplicate()
+	var copy = Daily.new()
+	copy.setup(content, func(): return now.t)
+	copy.utc_offset = 0
+	copy.from_dict(daily.to_dict())
+	copy.refresh(done, 1)
+	check(copy.quest_ids == ids and copy.bonus_claimed, "daily state survives a save on the same day")
+	now.t += 86400.0
+	copy.refresh(done, 1)
+	check(copy.quest_claimed.is_empty() and not copy.bonus_claimed, "a new day brings new quests")
+	for q in content.list("daily_quests"):
+		for res in q.get("reward", {}):
+			check(content.has_entry("resources", res), "daily quest %s rewards a known resource" % q.id)
 
 
 # --- Combat -------------------------------------------------------------------

@@ -79,6 +79,18 @@ func _run() -> void:
 	await _frames(5)
 	_shot("04b_heroes")
 
+	root.get_node("EventBus").screen_requested.emit("daily", {})
+	await _frames(5)
+	_shot("04e_daily")
+	game.claim_login_reward()
+	game.count("fights_won", 3)
+	await _frames(5)
+	_shot("04f_daily_claimed")
+	game.flags["notifications"] = true
+	root.get_node("EventBus").screen_requested.emit("settings", {})
+	await _frames(5)
+	_shot("04g_settings")
+
 	root.get_node("EventBus").screen_requested.emit("battle", {"dungeon": "goblin_warren"})
 	await _frames(10)
 	_shot("05_battle")

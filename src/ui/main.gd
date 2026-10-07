@@ -10,6 +10,8 @@ const SCREENS := {
 	"city": preload("res://src/ui/city_screen.gd"),
 	"battle": preload("res://src/ui/battle_screen.gd"),
 	"heroes": preload("res://src/ui/heroes_screen.gd"),
+	"daily": preload("res://src/ui/daily_screen.gd"),
+	"settings": preload("res://src/ui/settings_screen.gd"),
 }
 
 var _holder: Control

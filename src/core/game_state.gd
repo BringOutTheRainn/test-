@@ -11,6 +11,8 @@ const Economy := preload("res://src/systems/economy.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
 const Quests := preload("res://src/systems/quests.gd")
 const Crafting := preload("res://src/systems/crafting.gd")
+const Daily := preload("res://src/systems/daily.gd")
+const Notifications := preload("res://src/platform/notifications.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -30,6 +32,9 @@ var flags: Dictionary = {}
 ## ...), for quest goals of type "count". See count().
 var counters: Dictionary = {}
 var crafting: Crafting
+var daily: Daily
+var notifications: Notifications
+var _daily_check_left := 0.0
 ## Barracks training XP not yet whole, carried between ticks.
 var _xp_carry := 0.0
 var save_path := SaveService.DEFAULT_PATH
@@ -48,6 +53,9 @@ func _ready() -> void:
 	quests.setup(Content)
 	crafting = Crafting.new()
 	crafting.setup(Content, inventory, timers, city)
+	daily = Daily.new()
+	daily.setup(Content, func(): return timers.now())
+	notifications = Notifications.new()
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
@@ -56,6 +64,7 @@ func _ready() -> void:
 	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [Content.entry("heroes", id).get("name", id), lvl]))
 	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
 	crafting.crafted.connect(_on_crafted)
+	daily.changed.connect(func(): EventBus.daily_changed.emit())
 
 	if not load_game():
 		new_game()
@@ -66,6 +75,11 @@ func _process(delta: float) -> void:
 	# app or closing it is handled the same way as a normal frame.
 	catch_up(_last_tick)
 	_autosave_left -= delta
+	_daily_check_left -= delta
+	if _daily_check_left <= 0.0:
+		# Picks new daily quests when the day changes while the game is open.
+		_daily_check_left = 5.0
+		daily.refresh(counters, city.town_hall_level())
 	if _autosave_left <= 0.0:
 		save_game()
 
@@ -73,6 +87,10 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
 		save_game()
+		schedule_notifications()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		# The player is back: anything still scheduled would be stale.
+		notifications.cancel_all()
 
 
 func new_game() -> void:
@@ -87,6 +105,8 @@ func new_game() -> void:
 	flags = {}
 	counters = {}
 	_xp_carry = 0.0
+	daily.from_dict({})
+	daily.refresh(counters, city.town_hall_level())
 	_last_tick = timers.now()
 	save_game()
 
@@ -129,6 +149,8 @@ func skip_timer(timer_id: String) -> bool:
 		EventBus.toast.emit("Not enough gems")
 		return false
 	timers.finish_now(timer_id)
+	if cost > 0:
+		count("gems_spent", cost)
 	return true
 
 
@@ -145,6 +167,89 @@ func count(counter: String, amount: int = 1) -> void:
 	counters[counter] = int(counters.get(counter, 0)) + amount
 	EventBus.counted.emit(counter, amount)
 	EventBus.quests_changed.emit()
+
+
+# --- Daily rewards and quests ---------------------------------------------------
+
+func claim_login_reward() -> Dictionary:
+	var reward := daily.claim_login()
+	if reward.is_empty():
+		return {}
+	grant(reward)
+	count("logins")
+	save_game()
+	return reward
+
+
+func claim_daily_quest(id: String) -> Dictionary:
+	var reward := daily.claim(id, counters)
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+func claim_daily_bonus() -> Dictionary:
+	var reward := daily.claim_bonus()
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+# --- Notifications ---------------------------------------------------------------
+
+func notification_kinds() -> Dictionary:
+	return Content.setting("notifications", {}).get("kinds", {})
+
+
+## Whether the player wants this kind of notification (Settings; on by default).
+func notify_enabled(kind: String) -> bool:
+	return bool(flags.get("notifications", false)) and bool(flags.get("notify_" + kind, true))
+
+
+## What should pop up while the player is away: [{id, kind, title, text, seconds}].
+func planned_notifications() -> Array:
+	var out: Array = []
+	var kinds := notification_kinds()
+	var min_seconds := float(Content.setting("notifications", {}).get("min_seconds", 60))
+	var add := func(kind: String, subject: String, seconds: float):
+		if seconds < min_seconds or not notify_enabled(kind) or not kinds.has(kind):
+			return
+		var k: Dictionary = kinds[kind]
+		var text := str(k.get("text", ""))
+		if text.contains("%s"):
+			text = text % subject
+		out.append({"id": out.size() + 1, "kind": kind, "title": str(k.get("title", "")), "text": text, "seconds": seconds})
+	for t in timers.timers.values():
+		if t.kind == City.BUILD_TIMER:
+			var b := city.get_building(t.ref)
+			add.call("build_done", str(city.definition(str(b.get("id", ""))).get("name", "A building")), timers.remaining(t))
+		elif t.kind == Crafting.CRAFT_TIMER:
+			add.call("craft_done", str(Content.entry("items", str(t.data.get("item", ""))).get("name", "item")), timers.remaining(t))
+	var rates := city.production_per_hour()
+	for res in rates:
+		var cap := inventory.cap(res)
+		if float(rates[res]) <= 0.0 or cap == INF or inventory.is_full(res):
+			continue
+		add.call("storage_full", str(Content.entry("resources", res).get("name", res)).to_lower(), (cap - inventory.amount(res)) / float(rates[res]) * 3600.0)
+	if not daily.can_claim_login():
+		add.call("daily_ready", "", daily.seconds_to_tomorrow() + 9 * 3600.0)
+	return out
+
+
+## Turns notifications on or off; turning them on asks the phone for permission.
+func enable_notifications(on: bool) -> void:
+	flags["notifications_asked"] = true
+	set_flag("notifications", on)
+	if on:
+		notifications.request_permission()
+
+
+func schedule_notifications() -> void:
+	notifications.cancel_all()
+	for n in planned_notifications():
+		notifications.schedule(int(n.id), str(n.title), str(n.text), float(n.seconds))
 
 
 func set_flag(flag: String, value = true) -> void:
@@ -270,6 +375,7 @@ func save_game() -> void:
 		"flags": flags,
 		"counters": counters,
 		"xp_carry": _xp_carry,
+		"daily": daily.to_dict(),
 	}, save_path)
 
 
@@ -291,7 +397,9 @@ func load_game() -> bool:
 	flags = data.get("flags", {})
 	counters = data.get("counters", {})
 	_xp_carry = float(data.get("xp_carry", 0.0))
+	daily.from_dict(data.get("daily", {}))
 	catch_up(float(data.get("saved_at", timers.now())))
+	daily.refresh(counters, city.town_hall_level())
 	return true
 
 
@@ -330,4 +438,5 @@ func _on_timer_finished(timer: Dictionary) -> void:
 		if not b.is_empty():
 			EventBus.toast.emit("%s reached level %d" % [city.definition(b.id).get("name", b.id), int(b.level)])
 			count("buildings_upgraded" if int(b.level) > 1 else "buildings_built")
+			count("builds_finished")
 	save_game()
