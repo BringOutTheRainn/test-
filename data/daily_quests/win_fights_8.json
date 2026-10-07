@@ -1,0 +1,12 @@
+{
+  "id": "win_fights_8",
+  "order": 2,
+  "text": "Win 8 fights",
+  "counter": "fights_won",
+  "count": 8,
+  "reward": {
+    "gold": 400,
+    "gems": 10
+  },
+  "unlock_town_hall": 2
+}

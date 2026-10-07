@@ -1,0 +1,11 @@
+{
+  "id": "gems_hoard",
+  "name": "Dragon's Hoard",
+  "section": "gems",
+  "order": 15,
+  "price_usd": 99.99,
+  "grant": {
+    "gems": 14000
+  },
+  "tag": "+75% bonus"
+}

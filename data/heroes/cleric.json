@@ -16,5 +16,15 @@
     "smite",
     "defend",
     "mend"
-  ]
+  ],
+  "growth": {
+    "hp": 10,
+    "atk": 1.0,
+    "def": 0.7,
+    "spd": 0.25
+  },
+  "recruit": {
+    "cost": {},
+    "text": "Free for new towns"
+  }
 }

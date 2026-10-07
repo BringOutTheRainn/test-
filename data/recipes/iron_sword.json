@@ -1,0 +1,12 @@
+{
+  "id": "iron_sword",
+  "item": "iron_sword",
+  "order": 3,
+  "blacksmith_level": 1,
+  "cost": {
+    "iron": 60,
+    "wood": 100,
+    "gold": 300
+  },
+  "seconds": 300
+}

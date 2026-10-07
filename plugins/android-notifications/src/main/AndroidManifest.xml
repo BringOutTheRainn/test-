@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Tells Godot to load this plugin; GDScript reaches it as
+             Engine.get_singleton("CityNotifications"). -->
+        <meta-data
+            android:name="org.godotengine.plugin.v2.CityNotifications"
+            android:value="com.bringouttherainn.notifications.CityNotifications" />
+        <receiver
+            android:name="com.bringouttherainn.notifications.NotificationReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

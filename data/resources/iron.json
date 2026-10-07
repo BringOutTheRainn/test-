@@ -2,7 +2,8 @@
   "id": "iron",
   "name": "Iron",
   "color": "#78909c",
-  "hud": false,
+  "hud": true,
   "order": 5,
-  "base_cap": 500
+  "base_cap": 500,
+  "hud_town_hall": 3
 }

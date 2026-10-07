@@ -1,0 +1,14 @@
+{
+  "id": "town_hall_3",
+  "order": 9,
+  "text": "Upgrade the Town Hall to level 3",
+  "hint": "New buildings and a new dungeon open up.",
+  "goal": {
+    "type": "build",
+    "building": "town_hall",
+    "level": 3
+  },
+  "reward": {
+    "gems": 20
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "clear_spider_caves",
+  "order": 13,
+  "text": "Clear the Spider Caves",
+  "hint": "Gear up first. The queen drops iron and a rare cloak.",
+  "goal": {
+    "type": "clear_dungeon",
+    "dungeon": "spider_caves"
+  },
+  "reward": {
+    "gems": 30
+  }
+}

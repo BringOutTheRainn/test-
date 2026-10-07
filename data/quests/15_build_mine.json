@@ -1,0 +1,13 @@
+{
+  "id": "build_mine",
+  "order": 15,
+  "text": "Build a Mine",
+  "hint": "Mines dig iron for better gear.",
+  "goal": {
+    "type": "place",
+    "building": "mine"
+  },
+  "reward": {
+    "iron": 100
+  }
+}

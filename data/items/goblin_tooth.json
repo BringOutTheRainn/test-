@@ -1,0 +1,12 @@
+{
+  "id": "goblin_tooth",
+  "name": "Goblin Tooth Necklace",
+  "slot": "trinket",
+  "rarity": "rare",
+  "stats": {
+    "atk": 3,
+    "spd": 1
+  },
+  "description": "Taken from the Orc Chief's den.",
+  "order": 7
+}

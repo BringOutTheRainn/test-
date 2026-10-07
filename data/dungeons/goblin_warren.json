@@ -1,9 +1,9 @@
 {
   "id": "goblin_warren",
   "name": "Goblin Warren",
-  "unlock_town_hall": 1,
+  "unlock_town_hall": 2,
   "order": 1,
-  "description": "A test dungeon: one fight and a boss under the old town.",
+  "description": "Goblin tunnels under the old town, ruled by an Orc Chief.",
   "rooms": [
     {
       "type": "fight",
@@ -46,7 +46,10 @@
         "stone": 150,
         "gold": 150,
         "crystals": 5
-      }
+      },
+      "items": [
+        "goblin_tooth"
+      ]
     }
   ]
 }

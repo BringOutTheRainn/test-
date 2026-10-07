@@ -3,7 +3,7 @@ extends RefCounted
 ## each migration step in order, so an update never wipes a player's progress.
 ## When the save format changes: bump CURRENT_VERSION and add a step to _migrate_step.
 
-const CURRENT_VERSION := 1
+const CURRENT_VERSION := 2
 const DEFAULT_PATH := "user://save.json"
 
 
@@ -52,5 +52,9 @@ static func _migrate_step(from_version: int, data: Dictionary) -> Dictionary:
 	match from_version:
 		0:
 			# Unversioned saves from before the format existed share v1's layout.
+			pass
+		1:
+			# v2 adds "roster" (hero levels, XP, gear and items). Without it the
+			# game builds a fresh roster from the party, so nothing to change here.
 			pass
 	return data

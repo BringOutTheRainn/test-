@@ -1,0 +1,13 @@
+{
+  "id": "clear_iron_depths",
+  "order": 16,
+  "text": "Clear the Iron Depths",
+  "hint": "The stone troll guards a Troll Heart.",
+  "goal": {
+    "type": "clear_dungeon",
+    "dungeon": "iron_depths"
+  },
+  "reward": {
+    "gems": 50
+  }
+}

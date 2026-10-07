@@ -1,0 +1,13 @@
+{
+  "id": "food_sack",
+  "name": "Sack of Food",
+  "section": "resources",
+  "order": 42,
+  "cost": {
+    "gems": 50
+  },
+  "grant": {
+    "food": 1000
+  },
+  "unlock_town_hall": 1
+}

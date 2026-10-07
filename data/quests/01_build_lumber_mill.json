@@ -1,0 +1,13 @@
+{
+  "id": "build_lumber_mill",
+  "order": 1,
+  "text": "Build a Lumber Mill",
+  "hint": "Tap an empty tile, then pick Lumber Mill.",
+  "goal": {
+    "type": "build",
+    "building": "lumber_mill"
+  },
+  "reward": {
+    "wood": 100
+  }
+}

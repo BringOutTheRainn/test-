@@ -1,0 +1,51 @@
+{
+  "id": "blacksmith",
+  "name": "Blacksmith",
+  "short": "Smith",
+  "category": "crafting",
+  "color": "#a04000",
+  "order": 9,
+  "description": "Crafts weapons and armor for your heroes. Higher levels know more recipes.",
+  "unlock_town_hall": 3,
+  "max_count": [
+    0,
+    0,
+    1,
+    1,
+    1
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 600,
+        "stone": 300
+      },
+      "build_seconds": 300,
+      "provides": {
+        "crafting": 1
+      }
+    },
+    {
+      "cost": {
+        "wood": 1200,
+        "stone": 700,
+        "iron": 150
+      },
+      "build_seconds": 1800,
+      "provides": {
+        "crafting": 2
+      }
+    },
+    {
+      "cost": {
+        "wood": 2400,
+        "stone": 1500,
+        "iron": 500
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "crafting": 3
+      }
+    }
+  ]
+}

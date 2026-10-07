@@ -1,0 +1,12 @@
+{
+  "id": "troll_heart",
+  "name": "Troll Heart",
+  "slot": "trinket",
+  "rarity": "epic",
+  "stats": {
+    "hp": 60,
+    "def": 3
+  },
+  "description": "Still beating, slowly.",
+  "order": 17
+}

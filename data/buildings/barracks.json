@@ -1,0 +1,52 @@
+{
+  "id": "barracks",
+  "name": "Barracks",
+  "short": "Barr",
+  "category": "heroes",
+  "color": "#922b21",
+  "order": 10,
+  "description": "Trains every hero a little each hour, even while you are away.",
+  "unlock_town_hall": 3,
+  "max_count": [
+    0,
+    0,
+    1,
+    1,
+    1
+  ],
+  "levels": [
+    {
+      "cost": {
+        "wood": 500,
+        "stone": 400,
+        "gold": 300
+      },
+      "build_seconds": 600,
+      "provides": {
+        "hero_xp_per_hour": 20
+      }
+    },
+    {
+      "cost": {
+        "wood": 1000,
+        "stone": 800,
+        "gold": 600
+      },
+      "build_seconds": 1800,
+      "provides": {
+        "hero_xp_per_hour": 40
+      }
+    },
+    {
+      "cost": {
+        "wood": 2000,
+        "stone": 1600,
+        "gold": 1200
+      },
+      "build_seconds": 3600,
+      "provides": {
+        "hero_xp_per_hour": 70
+      }
+    }
+  ]
+}

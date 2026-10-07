@@ -1,0 +1,13 @@
+{
+  "id": "build_tavern",
+  "order": 4,
+  "text": "Build a Tavern",
+  "hint": "Heroes gather at the Tavern.",
+  "goal": {
+    "type": "build",
+    "building": "tavern"
+  },
+  "reward": {
+    "gold": 100
+  }
+}

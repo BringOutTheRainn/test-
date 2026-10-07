@@ -12,17 +12,37 @@ var room_index := 0
 var hero_hp: Dictionary = {}
 var party: Array = []
 var loot: Dictionary = {}
+## XP earned from enemies beaten, shared by every hero in the party.
+var xp := 0
+## Item ids found (data/items), from a room's "items" list.
+var items: Array = []
+## Building ids whose blueprints were found (a room's "blueprints" list).
+var blueprints: Array = []
+## Items from a room's "first_clear_items"; the game only gives them the first
+## time the dungeon is won.
+var first_clear_items: Array = []
+var fights_won := 0
+## Hero id -> stats to fight with (leveled and geared); missing uses the data file.
+var hero_stats: Dictionary = {}
+var hero_levels: Dictionary = {}
 var finished := false
 var won := false
 var battle: Battle
 
 
-func setup(content_db, dungeon_id: String, party_ids: Array) -> void:
+func setup(content_db, dungeon_id: String, party_ids: Array, stats_by_hero: Dictionary = {}, levels_by_hero: Dictionary = {}) -> void:
 	content = content_db
 	dungeon = content.entry("dungeons", dungeon_id)
 	party = party_ids.duplicate()
+	hero_stats = stats_by_hero
+	hero_levels = levels_by_hero
 	room_index = 0
 	loot = {}
+	xp = 0
+	items = []
+	blueprints = []
+	first_clear_items = []
+	fights_won = 0
 	hero_hp = {}
 	finished = dungeon.get("rooms", []).is_empty()
 
@@ -41,6 +61,10 @@ func start_battle(seed_value: int = -1) -> Battle:
 	var heroes: Array = []
 	for id in party:
 		var h := {"id": id}
+		if hero_stats.has(id):
+			h["stats"] = hero_stats[id]
+		if hero_levels.has(id):
+			h["level"] = hero_levels[id]
 		if hero_hp.has(id):
 			h["hp"] = hero_hp[id]
 		heroes.append(h)
@@ -58,6 +82,13 @@ func finish_battle() -> void:
 		var room_loot: Dictionary = current_room().get("loot", {})
 		for res in room_loot:
 			loot[res] = loot.get(res, 0) + int(room_loot[res])
+		for u in battle.units:
+			if u.team == "enemy":
+				xp += int(u.get("xp", 0))
+		items.append_array(current_room().get("items", []))
+		blueprints.append_array(current_room().get("blueprints", []))
+		first_clear_items.append_array(current_room().get("first_clear_items", []))
+		fights_won += 1
 		room_index += 1
 		if room_index >= rooms().size():
 			finished = true
@@ -68,6 +99,8 @@ func finish_battle() -> void:
 		var keep := float(content.setting("combat", {}).get("lose_loot_fraction", 0.5))
 		for res in loot:
 			loot[res] = int(floor(loot[res] * keep))
+		var keep_xp := float(content.setting("hero_leveling", {}).get("xp_kept_on_loss", 0.5))
+		xp = int(floor(xp * keep_xp))
 
 
 ## Gives up mid-fight; counts as a loss for loot.
@@ -78,4 +111,4 @@ func retreat() -> void:
 
 
 func result() -> Dictionary:
-	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot}
+	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot, "xp": xp, "items": items, "blueprints": blueprints, "first_clear_items": first_clear_items, "fights_won": fights_won}

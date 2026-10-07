@@ -26,5 +26,8 @@ jobs:
       - name: Logic tests
         run: ./godot --headless --script res://tests/run_tests.gd
 
+      - name: First session playthrough
+        run: ./godot --headless --script res://tests/first_session.gd
+
       - name: UI smoke test
         run: ./godot --headless --script res://tests/ui_smoke.gd

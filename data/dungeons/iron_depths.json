@@ -1,0 +1,100 @@
+{
+  "id": "iron_depths",
+  "name": "Iron Depths",
+  "unlock_town_hall": 4,
+  "order": 3,
+  "description": "Old dwarf mines where the dead still dig. A stone troll sleeps at the bottom.",
+  "rooms": [
+    {
+      "type": "fight",
+      "name": "Collapsed Shaft",
+      "enemies": [
+        {
+          "id": "skeleton",
+          "row": "front"
+        },
+        {
+          "id": "skeleton",
+          "row": "front"
+        },
+        {
+          "id": "skeleton_mage",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "stone": 300,
+        "iron": 80
+      }
+    },
+    {
+      "type": "fight",
+      "name": "Bone Pit",
+      "enemies": [
+        {
+          "id": "skeleton",
+          "row": "front"
+        },
+        {
+          "id": "skeleton_mage",
+          "row": "back"
+        },
+        {
+          "id": "skeleton_mage",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "gold": 250,
+        "iron": 100
+      },
+      "first_clear_items": [
+        "bone_ring"
+      ]
+    },
+    {
+      "type": "fight",
+      "name": "Ore Vault",
+      "enemies": [
+        {
+          "id": "skeleton",
+          "row": "front"
+        },
+        {
+          "id": "skeleton",
+          "row": "front"
+        },
+        {
+          "id": "cave_spider",
+          "row": "front"
+        }
+      ],
+      "loot": {
+        "iron": 150,
+        "crystals": 5
+      }
+    },
+    {
+      "type": "boss",
+      "name": "Troll's Hall",
+      "enemies": [
+        {
+          "id": "stone_troll",
+          "row": "front"
+        },
+        {
+          "id": "skeleton_mage",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "gold": 500,
+        "iron": 250,
+        "crystals": 12
+      },
+      "first_clear_items": [
+        "troll_heart"
+      ]
+    }
+  ]
+}

@@ -34,6 +34,16 @@ func _run() -> void:
 	var main: Control = load("res://src/main.tscn").instantiate()
 	root.add_child(main)
 	await _frames(10)
+	_shot("00_intro")
+	# Start over past the intro, with the heroes the tutorial recruits.
+	main.queue_free()
+	game.flags["intro_seen"] = true
+	for id in ["knight", "cleric"]:
+		game.roster.recruit(id)
+		game.party.append(id)
+	main = load("res://src/main.tscn").instantiate()
+	root.add_child(main)
+	await _frames(10)
 	_shot("01_city")
 
 	var city_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_on_tile_tapped"))[0]
@@ -46,6 +56,55 @@ func _run() -> void:
 	city_screen._on_tile_tapped(Vector2i(3, 4))
 	await _frames(5)
 	_shot("04_town_hall")
+
+	# Early game: a Town Hall 3 town with a Blacksmith, crafting gear.
+	game.city.buildings[game.city.building_at(3, 4).uid].level = 3
+	var smith: Dictionary = game.city._add_building("blacksmith", 1, 0)
+	smith.level = 1
+	game.inventory.add_all({"wood": 900, "gold": 900, "food": 400, "iron": 100})
+	city_screen._on_tile_tapped(Vector2i(1, 0))
+	await _frames(5)
+	_shot("04c_blacksmith")
+	game.crafting.start("longbow")
+	await _frames(5)
+	city_screen._rebuild_panel()
+	await _frames(5)
+	_shot("04d_crafting")
+
+	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": "knight"})
+	await _frames(5)
+	var heroes_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_show_sheet"))[0]
+	heroes_screen._picking = "weapon"
+	heroes_screen._rebuild()
+	await _frames(5)
+	_shot("04b_heroes")
+
+	root.get_node("EventBus").screen_requested.emit("daily", {})
+	await _frames(5)
+	_shot("04e_daily")
+	game.claim_login_reward()
+	game.count("fights_won", 3)
+	await _frames(5)
+	_shot("04f_daily_claimed")
+	root.get_node("EventBus").screen_requested.emit("shop", {})
+	await _frames(5)
+	_shot("04h_shop")
+	game.buy_offer("monthly_card")
+	game.buy_offer("builder_4")
+	await _frames(5)
+	_shot("04i_shop_bought")
+	game.flags["notifications"] = true
+	root.get_node("EventBus").screen_requested.emit("settings", {})
+	await _frames(5)
+	_shot("04g_settings")
+
+	# The phone's back button returns to the town from any screen.
+	main.go_back()
+	await _frames(3)
+	if main._screen != "city":
+		printerr("FAIL: back button didn't return to the town")
+		quit(1)
+		return
 
 	root.get_node("EventBus").screen_requested.emit("battle", {"dungeon": "goblin_warren"})
 	await _frames(10)

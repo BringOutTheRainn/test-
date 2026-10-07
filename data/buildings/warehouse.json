@@ -19,7 +19,7 @@
       "cost": {
         "wood": 75
       },
-      "build_seconds": 10,
+      "build_seconds": 300,
       "provides": {
         "storage": {
           "wood": 1000,
@@ -84,5 +84,6 @@
         }
       }
     }
-  ]
+  ],
+  "blueprint": true
 }

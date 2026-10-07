@@ -1,0 +1,12 @@
+{
+  "id": "win_fights_3",
+  "order": 1,
+  "text": "Win 3 fights",
+  "counter": "fights_won",
+  "count": 3,
+  "reward": {
+    "gold": 200,
+    "gems": 5
+  },
+  "unlock_town_hall": 1
+}

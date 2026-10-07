@@ -1,0 +1,12 @@
+{
+  "id": "silk_cloak",
+  "name": "Silk Cloak",
+  "slot": "armor",
+  "rarity": "rare",
+  "stats": {
+    "def": 4,
+    "spd": 3
+  },
+  "description": "Spider silk, tough as chain and light as cloth.",
+  "order": 15
+}

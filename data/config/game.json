@@ -20,9 +20,7 @@
     }
   ],
   "starting_party": [
-    "knight",
-    "ranger",
-    "cleric"
+    "ranger"
   ],
   "base_party_size": 3,
   "max_offline_hours": 12,
@@ -36,5 +34,147 @@
     "energy_per_turn": 1,
     "lose_loot_fraction": 0.5,
     "damage_scale": 1.5
+  },
+  "hero_leveling": {
+    "max_level": 30,
+    "xp_to_level_2": 60,
+    "xp_growth": 1.35,
+    "xp_kept_on_loss": 0.5
+  },
+  "equipment_slots": [
+    {
+      "id": "weapon",
+      "name": "Weapon"
+    },
+    {
+      "id": "armor",
+      "name": "Armor"
+    },
+    {
+      "id": "trinket",
+      "name": "Trinket"
+    }
+  ],
+  "rarities": {
+    "common": {
+      "name": "Common",
+      "color": "#c0cbdc"
+    },
+    "rare": {
+      "name": "Rare",
+      "color": "#0099db"
+    },
+    "epic": {
+      "name": "Epic",
+      "color": "#b55088"
+    },
+    "legendary": {
+      "name": "Legendary",
+      "color": "#feae34"
+    }
+  },
+  "starting_items": [
+    "rusty_sword",
+    "oak_bow",
+    "padded_vest",
+    "lucky_charm"
+  ],
+  "intro": {
+    "title": "The town below",
+    "lines": [
+      "Monsters came up from the tunnels below and ruined your town.",
+      "Only the Town Hall still stands, and one ranger stayed behind.",
+      "Rebuild, gather heroes, and drive the goblins back into the dark."
+    ],
+    "button": "Rebuild"
+  },
+  "daily_login": {
+    "rewards": [
+      {
+        "gold": 300
+      },
+      {
+        "wood": 400,
+        "stone": 200
+      },
+      {
+        "gems": 10
+      },
+      {
+        "food": 400,
+        "gold": 300
+      },
+      {
+        "crystals": 5
+      },
+      {
+        "wood": 800,
+        "stone": 400,
+        "iron": 100
+      },
+      {
+        "gems": 30
+      }
+    ]
+  },
+  "daily_quests": {
+    "per_day": 3,
+    "bonus": {
+      "gems": 15
+    }
+  },
+  "notifications": {
+    "_about": "Local notifications scheduled when the app goes to the background. Each kind can be switched off in Settings.",
+    "kinds": {
+      "build_done": {
+        "name": "Builds finished",
+        "title": "Construction finished",
+        "text": "%s is ready. Come back and keep building!"
+      },
+      "craft_done": {
+        "name": "Crafting finished",
+        "title": "The Blacksmith is done",
+        "text": "Your %s is ready."
+      },
+      "storage_full": {
+        "name": "Storage full",
+        "title": "Storage is full",
+        "text": "Your %s storage is full. Spend it before it goes to waste!"
+      },
+      "daily_ready": {
+        "name": "Daily reward",
+        "title": "Your daily reward is ready",
+        "text": "A new day, a new reward. Your quests have reset too."
+      }
+    },
+    "min_seconds": 60
+  },
+  "shop": {
+    "card_daily": 100,
+    "sections": [
+      {
+        "id": "offers",
+        "name": "Special offers"
+      },
+      {
+        "id": "gems",
+        "name": "Gems"
+      },
+      {
+        "id": "builders",
+        "name": "Builders"
+      },
+      {
+        "id": "resources",
+        "name": "Resources"
+      }
+    ],
+    "gem_value": {
+      "wood": 7,
+      "stone": 9,
+      "food": 6,
+      "gold": 8,
+      "iron": 35
+    }
   }
 }

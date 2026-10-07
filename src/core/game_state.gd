@@ -8,6 +8,13 @@ const Inventory := preload("res://src/systems/inventory.gd")
 const TimerService := preload("res://src/systems/timer_service.gd")
 const City := preload("res://src/systems/city.gd")
 const Economy := preload("res://src/systems/economy.gd")
+const Heroes := preload("res://src/systems/heroes.gd")
+const Quests := preload("res://src/systems/quests.gd")
+const Crafting := preload("res://src/systems/crafting.gd")
+const Daily := preload("res://src/systems/daily.gd")
+const Notifications := preload("res://src/platform/notifications.gd")
+const Shop := preload("res://src/systems/shop.gd")
+const Store := preload("res://src/platform/store.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -15,7 +22,25 @@ const AUTOSAVE_SECONDS := 30.0
 var inventory: Inventory
 var timers: TimerService
 var city: City
+var roster: Heroes
+## Hero ids that go into dungeons, in order (the first party_size() fight).
 var party: Array = []
+var quests: Quests
+## Dungeon ids won at least once.
+var cleared: Array = []
+## Small one-off facts (intro seen, notifications asked, ...).
+var flags: Dictionary = {}
+## Lifetime totals of things the player did ("fights_won", "items_crafted",
+## ...), for quest goals of type "count". See count().
+var counters: Dictionary = {}
+var crafting: Crafting
+var daily: Daily
+var notifications: Notifications
+var shop: Shop
+var store: Store
+var _daily_check_left := 0.0
+## Barracks training XP not yet whole, carried between ticks.
+var _xp_carry := 0.0
 var save_path := SaveService.DEFAULT_PATH
 var _autosave_left := AUTOSAVE_SECONDS
 var _last_tick := 0.0
@@ -26,11 +51,28 @@ func _ready() -> void:
 	timers = TimerService.new()
 	city = City.new()
 	city.setup(Content, inventory, timers)
+	roster = Heroes.new()
+	roster.setup(Content)
+	quests = Quests.new()
+	quests.setup(Content)
+	crafting = Crafting.new()
+	crafting.setup(Content, inventory, timers, city)
+	daily = Daily.new()
+	daily.setup(Content, func(): return timers.now())
+	notifications = Notifications.new()
+	shop = Shop.new()
+	shop.setup(Content, inventory)
+	store = Store.new()
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
 	timers.started.connect(func(t): EventBus.timer_started.emit(t))
 	timers.finished.connect(_on_timer_finished)
+	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [Content.entry("heroes", id).get("name", id), lvl]))
+	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
+	crafting.crafted.connect(_on_crafted)
+	daily.changed.connect(func(): EventBus.daily_changed.emit())
+	shop.changed.connect(func(): EventBus.shop_changed.emit())
 
 	if not load_game():
 		new_game()
@@ -41,6 +83,11 @@ func _process(delta: float) -> void:
 	# app or closing it is handled the same way as a normal frame.
 	catch_up(_last_tick)
 	_autosave_left -= delta
+	_daily_check_left -= delta
+	if _daily_check_left <= 0.0:
+		# Picks new daily quests when the day changes while the game is open.
+		_daily_check_left = 5.0
+		daily.refresh(counters, city.town_hall_level())
 	if _autosave_left <= 0.0:
 		save_game()
 
@@ -48,6 +95,10 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
 		save_game()
+		schedule_notifications()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		# The player is back: anything still scheduled would be stale.
+		notifications.cancel_all()
 
 
 func new_game() -> void:
@@ -56,6 +107,15 @@ func new_game() -> void:
 	city.new_city()
 	inventory.add_all(Content.setting("starting_resources", {}))
 	party = Content.setting("starting_party", []).duplicate()
+	roster.new_roster(party, Content.setting("starting_items", []))
+	quests.index = 0
+	cleared = []
+	flags = {}
+	counters = {}
+	_xp_carry = 0.0
+	daily.from_dict({})
+	shop.from_dict({})
+	daily.refresh(counters, city.town_hall_level())
 	_last_tick = timers.now()
 	save_game()
 
@@ -71,6 +131,7 @@ func catch_up(from_time: float) -> void:
 		var next_end := minf(timers.next_end(), to_time)
 		if next_end > t:
 			city.tick(next_end - t)
+			_train_heroes(next_end - t)
 			t = next_end
 		_last_tick = t
 		var real_clock := timers.clock
@@ -97,6 +158,8 @@ func skip_timer(timer_id: String) -> bool:
 		EventBus.toast.emit("Not enough gems")
 		return false
 	timers.finish_now(timer_id)
+	if cost > 0:
+		count("gems_spent", cost)
 	return true
 
 
@@ -106,6 +169,256 @@ func party_size() -> int:
 
 func grant(loot: Dictionary) -> Dictionary:
 	return inventory.add_all(loot)
+
+
+## Adds to a lifetime counter (fights won, items crafted, ...).
+func count(counter: String, amount: int = 1) -> void:
+	counters[counter] = int(counters.get(counter, 0)) + amount
+	EventBus.counted.emit(counter, amount)
+	EventBus.quests_changed.emit()
+
+
+# --- Daily rewards and quests ---------------------------------------------------
+
+func claim_login_reward() -> Dictionary:
+	var reward := daily.claim_login()
+	if reward.is_empty():
+		return {}
+	grant(reward)
+	count("logins")
+	save_game()
+	return reward
+
+
+func claim_daily_quest(id: String) -> Dictionary:
+	var reward := daily.claim(id, counters)
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+func claim_daily_bonus() -> Dictionary:
+	var reward := daily.claim_bonus()
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+# --- Shop ------------------------------------------------------------------------
+
+## Buys a shop offer: real-money offers go through the store first. Calls
+## `done.call(ok: bool)` when finished.
+func buy_offer(id: String, done: Callable = Callable()) -> void:
+	var reason := shop.can_buy(id)
+	if reason != "":
+		EventBus.toast.emit(reason)
+		if done.is_valid():
+			done.call(false)
+		return
+	var o := shop.offer(id)
+	if not shop.is_real_money(o):
+		_finish_purchase(id, done, true)
+		return
+	store.purchase(id, func(ok: bool): _finish_purchase(id, done, ok))
+
+
+func _finish_purchase(id: String, done: Callable, ok: bool) -> void:
+	var o: Dictionary = shop.pay(id) if ok else {}
+	if not o.is_empty():
+		count("gems_spent", int(o.get("cost", {}).get("gems", 0)))
+		inventory.add_all(o.get("grant", {}), true)
+		city.bonus_builders += int(o.get("builders", 0))
+		for item_id in o.get("items", []):
+			roster.add_item(str(item_id))
+		if int(o.get("card_days", 0)) > 0:
+			shop.start_card(daily.today(), int(o.card_days))
+		EventBus.resources_changed.emit()
+		EventBus.toast.emit("Purchased: %s" % o.get("name", id))
+		save_game()
+	if done.is_valid():
+		done.call(not o.is_empty())
+
+
+func claim_card() -> Dictionary:
+	var reward := shop.claim_card(daily.today())
+	if not reward.is_empty():
+		grant(reward)
+		save_game()
+	return reward
+
+
+## Buys whatever is missing for a cost with gems. Returns false if unaffordable.
+func buy_missing(cost: Dictionary) -> bool:
+	var gems := shop.missing_gems(cost)
+	if gems <= 0 or not inventory.spend({"gems": gems}):
+		return false
+	count("gems_spent", gems)
+	inventory.add_all(inventory.missing(cost), true)
+	return true
+
+
+# --- Notifications ---------------------------------------------------------------
+
+func notification_kinds() -> Dictionary:
+	return Content.setting("notifications", {}).get("kinds", {})
+
+
+## Whether the player wants this kind of notification (Settings; on by default).
+func notify_enabled(kind: String) -> bool:
+	return bool(flags.get("notifications", false)) and bool(flags.get("notify_" + kind, true))
+
+
+## What should pop up while the player is away: [{id, kind, title, text, seconds}].
+func planned_notifications() -> Array:
+	var out: Array = []
+	var kinds := notification_kinds()
+	var min_seconds := float(Content.setting("notifications", {}).get("min_seconds", 60))
+	var add := func(kind: String, subject: String, seconds: float):
+		if seconds < min_seconds or not notify_enabled(kind) or not kinds.has(kind):
+			return
+		var k: Dictionary = kinds[kind]
+		var text := str(k.get("text", ""))
+		if text.contains("%s"):
+			text = text % subject
+		out.append({"id": out.size() + 1, "kind": kind, "title": str(k.get("title", "")), "text": text, "seconds": seconds})
+	for t in timers.timers.values():
+		if t.kind == City.BUILD_TIMER:
+			var b := city.get_building(t.ref)
+			add.call("build_done", str(city.definition(str(b.get("id", ""))).get("name", "A building")), timers.remaining(t))
+		elif t.kind == Crafting.CRAFT_TIMER:
+			add.call("craft_done", str(Content.entry("items", str(t.data.get("item", ""))).get("name", "item")), timers.remaining(t))
+	var rates := city.production_per_hour()
+	for res in rates:
+		var cap := inventory.cap(res)
+		if float(rates[res]) <= 0.0 or cap == INF or inventory.is_full(res):
+			continue
+		add.call("storage_full", str(Content.entry("resources", res).get("name", res)).to_lower(), (cap - inventory.amount(res)) / float(rates[res]) * 3600.0)
+	if not daily.can_claim_login():
+		add.call("daily_ready", "", daily.seconds_to_tomorrow() + 9 * 3600.0)
+	return out
+
+
+## Turns notifications on or off; turning them on asks the phone for permission.
+func enable_notifications(on: bool) -> void:
+	flags["notifications_asked"] = true
+	set_flag("notifications", on)
+	if on:
+		notifications.request_permission()
+
+
+func schedule_notifications() -> void:
+	notifications.cancel_all()
+	for n in planned_notifications():
+		notifications.schedule(int(n.id), str(n.title), str(n.text), float(n.seconds))
+
+
+func set_flag(flag: String, value = true) -> void:
+	flags[flag] = value
+	EventBus.quests_changed.emit()
+	save_game()
+
+
+# --- Heroes and the Tavern -----------------------------------------------------
+
+## Heroes the Tavern offers: data entries with a "recruit" block not yet owned.
+func recruitable() -> Array:
+	return Content.list("heroes").filter(func(h): return h.has("recruit") and not roster.has_hero(h.id))
+
+
+## Why a hero can't be recruited now, or "".
+func can_recruit(id: String) -> String:
+	var def: Dictionary = Content.entry("heroes", id)
+	if not def.has("recruit") or roster.has_hero(id):
+		return "Not available"
+	if city.best_level("tavern") < 1:
+		return "Build a Tavern first"
+	if city.town_hall_level() < int(def.recruit.get("unlock_town_hall", 1)):
+		return "Needs Town Hall %d" % int(def.recruit.unlock_town_hall)
+	if not inventory.can_afford(def.recruit.get("cost", {})):
+		return "Not enough resources"
+	return ""
+
+
+func recruit(id: String) -> bool:
+	if can_recruit(id) != "":
+		return false
+	inventory.spend(Content.entry("heroes", id).recruit.get("cost", {}))
+	roster.recruit(id)
+	if party.size() < party_size():
+		party.append(id)
+	EventBus.toast.emit("%s joined your party!" % Content.entry("heroes", id).get("name", id))
+	EventBus.quests_changed.emit()
+	save_game()
+	return true
+
+
+# --- Quests ----------------------------------------------------------------------
+
+## What quest goals are checked against.
+func quest_facts() -> Dictionary:
+	var levels := {}
+	var counts := {}
+	for b in city.buildings.values():
+		levels[b.id] = levels.get(b.id, []) + [int(b.level)]
+		counts[b.id] = int(counts.get(b.id, 0)) + 1
+	return {"building_levels": levels, "building_counts": counts, "heroes": roster.heroes.size(), "cleared": cleared, "flags": flags, "counters": counters}
+
+
+func claim_quest() -> bool:
+	if not quests.is_complete(quests.current(), quest_facts()):
+		return false
+	grant(quests.claim(quest_facts()))
+	EventBus.quests_changed.emit()
+	save_game()
+	return true
+
+
+## Stats and levels for the fighting party, for DungeonRun.setup().
+func party_stats() -> Dictionary:
+	var out := {}
+	for id in party:
+		if roster.has_hero(id):
+			out[id] = roster.stats(id)
+	return out
+
+
+func party_levels() -> Dictionary:
+	var out := {}
+	for id in party:
+		out[id] = roster.level(id)
+	return out
+
+
+## Pays out a finished dungeon run: resources, items, and XP for each hero who
+## went. Returns {"resources", "items", "xp", "level_ups": {hero id: new level}}.
+func grant_run(result: Dictionary, heroes_in_run: Array) -> Dictionary:
+	var added := grant(result.get("loot", {}))
+	var gained := {}
+	for id in added:
+		if int(added[id]) > 0:
+			gained[id] = int(added[id])
+	var items: Array = result.get("items", []).duplicate()
+	# A room's "first_clear_items" drop only the first time a dungeon is won.
+	if result.get("won", false) and not str(result.get("dungeon", "")) in cleared:
+		items.append_array(result.get("first_clear_items", []))
+	for item_id in items:
+		roster.add_item(str(item_id))
+	count("fights_won", int(result.get("fights_won", 0)))
+	if result.get("won", false):
+		count("dungeons_cleared")
+	for building_id in result.get("blueprints", []):
+		city.unlock_blueprint(str(building_id))
+	if result.get("won", false) and not str(result.get("dungeon", "")) in cleared:
+		cleared.append(str(result.dungeon))
+	var level_ups := {}
+	for id in heroes_in_run:
+		if roster.add_xp(id, int(result.get("xp", 0))) > 0:
+			level_ups[id] = roster.level(id)
+	save_game()
+	EventBus.quests_changed.emit()
+	return {"resources": gained, "items": items, "blueprints": result.get("blueprints", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
 
 
 # --- Saving ------------------------------------------------------------------
@@ -118,6 +431,14 @@ func save_game() -> void:
 		"timers": timers.to_dict(),
 		"city": city.to_dict(),
 		"party": party,
+		"roster": roster.to_dict(),
+		"quests": quests.to_dict(),
+		"cleared": cleared,
+		"flags": flags,
+		"counters": counters,
+		"xp_carry": _xp_carry,
+		"daily": daily.to_dict(),
+		"shop": shop.to_dict(),
 	}, save_path)
 
 
@@ -129,7 +450,20 @@ func load_game() -> bool:
 	city.from_dict(data.get("city", {}))
 	inventory.from_dict(data.get("inventory", {}))
 	party = data.get("party", Content.setting("starting_party", []))
+	if data.has("roster"):
+		roster.from_dict(data.roster)
+	else:
+		roster.new_roster(party, Content.setting("starting_items", []))
+	party = party.filter(func(id): return roster.has_hero(id))
+	quests.from_dict(data.get("quests", {}))
+	cleared = data.get("cleared", [])
+	flags = data.get("flags", {})
+	counters = data.get("counters", {})
+	_xp_carry = float(data.get("xp_carry", 0.0))
+	daily.from_dict(data.get("daily", {}))
+	shop.from_dict(data.get("shop", {}))
 	catch_up(float(data.get("saved_at", timers.now())))
+	daily.refresh(counters, city.town_hall_level())
 	return true
 
 
@@ -137,6 +471,28 @@ func reset_game() -> void:
 	SaveService.delete(save_path)
 	new_game()
 	EventBus.resources_changed.emit()
+	EventBus.quests_changed.emit()
+
+
+## Barracks: every hero earns "hero_xp_per_hour" while time passes.
+func _train_heroes(seconds: float) -> void:
+	var rate := city.provided_total("hero_xp_per_hour")
+	if rate <= 0.0 or roster.heroes.is_empty():
+		return
+	_xp_carry += rate * seconds / 3600.0
+	var whole := floori(_xp_carry)
+	if whole <= 0:
+		return
+	_xp_carry -= whole
+	for id in roster.heroes:
+		roster.add_xp(id, whole)
+
+
+func _on_crafted(item_id: String) -> void:
+	if roster.add_item(item_id).is_empty():
+		return
+	count("items_crafted")
+	EventBus.toast.emit("Crafted %s!" % Content.entry("items", item_id).get("name", item_id))
 
 
 func _on_timer_finished(timer: Dictionary) -> void:
@@ -145,4 +501,6 @@ func _on_timer_finished(timer: Dictionary) -> void:
 		var b := city.get_building(timer.ref)
 		if not b.is_empty():
 			EventBus.toast.emit("%s reached level %d" % [city.definition(b.id).get("name", b.id), int(b.level)])
+			count("buildings_upgraded" if int(b.level) > 1 else "buildings_built")
+			count("builds_finished")
 	save_game()
