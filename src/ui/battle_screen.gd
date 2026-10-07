@@ -136,7 +136,7 @@ func _ready() -> void:
 	_backdrop.texture = Sprites.load_texture(Sprites.ART_ROOT.path_join("backgrounds").path_join(_dungeon_id + ".png"))
 	run = DungeonRun.new()
 	var party: Array = Game.party.slice(0, Game.party_size())
-	run.setup(Content, _dungeon_id, party, Game.party_stats(), Game.party_levels())
+	run.setup(Content, _dungeon_id, Game.party_entries())
 	if run.finished:
 		EventBus.toast.emit("This dungeon has no rooms")
 		EventBus.screen_requested.emit.call_deferred("city", {})
@@ -433,8 +433,7 @@ func _refresh_turn_order() -> void:
 		slot.custom_minimum_size = Vector2(52, 52)
 		slot.add_theme_stylebox_override("panel", _tight(UI.frame("selected" if i == 0 else ("dark" if u.team == "hero" else "danger"), 1)))
 		_turns.add_child(slot)
-		var type := "heroes" if u.team == "hero" else "enemies"
-		var tex := Sprites.for_entry(type, Content.entry(type, u.id))
+		var tex := Sprites.for_unit(u, Content)
 		if tex != null:
 			slot.add_child(UI.icon_rect(tex, 40))
 		else:
@@ -470,7 +469,7 @@ func _finish_run() -> void:
 	if int(paid.xp) > 0:
 		extra.append(["+%d XP for each hero" % int(paid.xp), UI.ENERGY])
 	for id in paid.level_ups:
-		extra.append(["%s reached level %d!" % [Content.entry("heroes", id).get("name", id), int(paid.level_ups[id])], UI.ACCENT])
+		extra.append(["%s reached level %d!" % [Game.roster.hero_name(id), int(paid.level_ups[id])], UI.ACCENT])
 	for building_id in paid.blueprints:
 		extra.append(["Blueprint: %s! You can build it now." % Content.entry("buildings", building_id).get("name", building_id), UI.ACCENT])
 	for item_id in paid.items:

@@ -1,0 +1,10 @@
+{
+  "id": "devotion",
+  "name": "Devotion",
+  "passive": true,
+  "stats": {
+    "hp": 10,
+    "def": 1
+  },
+  "description": "+10 HP and +1 DEF per rank."
+}

@@ -8,5 +8,7 @@
     "spd": 1
   },
   "description": "Hits hard from the back row.",
-  "order": 11
+  "order": 11,
+  "weapon_type": "bow",
+  "attack": "shoot"
 }

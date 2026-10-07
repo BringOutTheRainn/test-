@@ -1,0 +1,13 @@
+{
+  "id": "iron_helm",
+  "name": "Iron Helm",
+  "slot": "head",
+  "rarity": "rare",
+  "stats": {
+    "def": 4,
+    "hp": 15,
+    "spd": -1
+  },
+  "description": "Heavy, but your head will thank you.",
+  "order": 14
+}

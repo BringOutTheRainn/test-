@@ -7,5 +7,7 @@
     "atk": 7
   },
   "description": "A proper blade at last.",
-  "order": 12
+  "order": 12,
+  "weapon_type": "sword",
+  "attack": "strike"
 }

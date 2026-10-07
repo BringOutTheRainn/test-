@@ -22,20 +22,20 @@ var blueprints: Array = []
 ## time the dungeon is won.
 var first_clear_items: Array = []
 var fights_won := 0
-## Hero id -> stats to fight with (leveled and geared); missing uses the data file.
-var hero_stats: Dictionary = {}
-var hero_levels: Dictionary = {}
+## What each hero fights with (Heroes.battle_entry), in party order.
+var hero_entries: Array = []
 var finished := false
 var won := false
 var battle: Battle
 
 
-func setup(content_db, dungeon_id: String, party_ids: Array, stats_by_hero: Dictionary = {}, levels_by_hero: Dictionary = {}) -> void:
+## heroes: Heroes.battle_entry() dicts (or bare ids, which fight as a plain
+## data/heroes entry; tests use that).
+func setup(content_db, dungeon_id: String, heroes: Array) -> void:
 	content = content_db
 	dungeon = content.entry("dungeons", dungeon_id)
-	party = party_ids.duplicate()
-	hero_stats = stats_by_hero
-	hero_levels = levels_by_hero
+	hero_entries = heroes.map(func(h): return h.duplicate() if h is Dictionary else {"id": str(h)})
+	party = hero_entries.map(func(h): return str(h.id))
 	room_index = 0
 	loot = {}
 	xp = 0
@@ -59,14 +59,10 @@ func current_room() -> Dictionary:
 ## Builds the battle for the current room.
 func start_battle(seed_value: int = -1) -> Battle:
 	var heroes: Array = []
-	for id in party:
-		var h := {"id": id}
-		if hero_stats.has(id):
-			h["stats"] = hero_stats[id]
-		if hero_levels.has(id):
-			h["level"] = hero_levels[id]
-		if hero_hp.has(id):
-			h["hp"] = hero_hp[id]
+	for entry in hero_entries:
+		var h: Dictionary = entry.duplicate()
+		if hero_hp.has(h.id):
+			h["hp"] = hero_hp[h.id]
 		heroes.append(h)
 	battle = Battle.new()
 	battle.setup(content, heroes, current_room().get("enemies", []), seed_value)

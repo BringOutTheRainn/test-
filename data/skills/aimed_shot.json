@@ -1,0 +1,16 @@
+{
+  "id": "aimed_shot",
+  "name": "Aimed Shot",
+  "cost": 2,
+  "target": "enemy_any",
+  "weapons": [
+    "bow"
+  ],
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.8
+    }
+  ],
+  "description": "One heavy arrow. Needs a bow."
+}

@@ -38,6 +38,7 @@ func _initialize() -> void:
 		"test_skip_cost",
 		"test_save_roundtrip",
 		"test_hero_levels_and_gear",
+		"test_hero_build",
 		"test_blueprints",
 		"test_quests",
 		"test_crafting",
@@ -98,7 +99,7 @@ func test_content_references() -> void:
 					check(res in resources, "%s %s uses known resource %s" % [b.id, key, res])
 	for type in ["heroes", "enemies"]:
 		for u in content.list(type):
-			for s in u.skills:
+			for s in u.get("skills", []):
 				check(content.has_entry("skills", s), "%s %s has skill %s" % [type, u.id, s])
 	for d in content.list("dungeons"):
 		for room in d.rooms:
@@ -106,8 +107,25 @@ func test_content_references() -> void:
 				check(content.has_entry("enemies", e.id), "dungeon %s enemy %s exists" % [d.id, e.id])
 			for res in room.get("loot", {}):
 				check(res in resources, "dungeon %s loot %s is a resource" % [d.id, res])
-	for id in content.setting("starting_party", []):
-		check(content.has_entry("heroes", id), "starting hero %s exists" % id)
+	check(not content.list("heroes").is_empty(), "there is a hero base to recruit")
+	for p in content.list("paths"):
+		for node in p.get("nodes", []):
+			check(content.has_entry("skills", str(node.skill)), "path %s has skill %s" % [p.id, node.skill])
+			check(int(node.get("tier", 1)) >= 1, "path %s node %s has a tier" % [p.id, node.skill])
+	var weapon_types: Array = []
+	for item in content.list("items"):
+		if item.has("attack"):
+			check(content.has_entry("skills", str(item.attack)), "item %s attack %s exists" % [item.id, item.attack])
+		if item.has("weapon_type"):
+			weapon_types.append(str(item.weapon_type))
+	for sk in content.list("skills"):
+		for t in sk.get("weapons", []):
+			check(t in weapon_types, "skill %s needs weapon type %s that some item has" % [sk.id, t])
+		for stat in sk.get("stats", {}):
+			check(content.has_entry("stats", stat), "passive %s changes known stat %s" % [sk.id, stat])
+	check(content.has_entry("skills", str(content.setting("hero_build", {}).get("unarmed_attack", "punch"))), "the unarmed attack exists")
+	for id in content.setting("starting_equipped", []):
+		check(id in content.setting("starting_items", []), "starting gear %s is in the starting items" % id)
 	var stats = content.list("stats").map(func(s): return s.id)
 	var slots = content.setting("equipment_slots", []).map(func(s): return s.id)
 	for item in content.list("items"):
@@ -235,37 +253,118 @@ func test_save_roundtrip() -> void:
 func test_hero_levels_and_gear() -> void:
 	var roster = Heroes.new()
 	roster.setup(content)
-	roster.new_roster(["knight", "ranger"], ["rusty_sword", "rusty_sword", "padded_vest"])
-	var base: Dictionary = content.entry("heroes", "knight").stats
-	check(roster.stats("knight").atk == int(base.atk), "level 1 hero has its data stats")
+	roster.new_roster(["Aldo", "Mira"], ["rusty_sword", "rusty_sword", "padded_vest", "oak_bow"])
+	var a: String = roster.heroes.keys()[0]
+	var b: String = roster.heroes.keys()[1]
+	check(roster.hero_name(a) == "Aldo" and a != b, "heroes get their own ids and names")
+	var base: Dictionary = roster.base_def(a).stats
+	check(roster.stats(a) == roster.stats(b), "every recruit starts the same")
+	check(roster.stats(a).atk == int(base.atk), "level 1 hero has the base stats")
+	check(roster.role(a).role == "", "a new hero has no role yet")
 	var need: int = roster.xp_to_next(1)
-	check(roster.add_xp("knight", need + 5) == 1 and roster.level("knight") == 2, "enough XP levels up")
-	check(int(roster.hero("knight").xp) == 5, "extra XP carries over")
-	check(roster.stats("knight").hp > int(base.hp), "levels raise stats")
+	check(roster.add_xp(a, need + 5) == 1 and roster.level(a) == 2, "enough XP levels up")
+	check(int(roster.hero(a).xp) == 5, "extra XP carries over")
+	check(roster.stats(a).hp > int(base.hp), "levels raise stats")
 	check(roster.xp_to_next(2) > need, "each level needs more XP")
-	var swords: Array = roster.free_items("weapon")
+	var swords: Array = roster.free_items("weapon").filter(func(i): return i.id == "rusty_sword")
 	check(swords.size() == 2, "both swords are spare")
-	var atk_before: int = roster.stats("knight").atk
-	check(roster.equip("knight", swords[0].uid), "can equip a weapon")
-	check(roster.stats("knight").atk == atk_before + 4, "weapon adds its attack")
-	check(roster.free_items("weapon").size() == 1, "worn item leaves the bag")
-	roster.equip("ranger", swords[0].uid)
-	check(roster.owner_of(swords[0].uid) == "ranger" and roster.hero("knight").gear.is_empty(), "equipping moves an item between heroes")
-	check(not roster.equip("knight", roster.free_items("armor")[0].uid) or roster.hero("knight").gear.has("armor"), "armor goes in the armor slot")
+	var atk_before: int = roster.stats(a).atk
+	check(roster.basic_attack(a) == "punch", "no weapon means punching")
+	check(roster.equip(a, swords[0].uid), "can equip a weapon")
+	check(roster.stats(a).atk == atk_before + 4, "weapon adds its attack")
+	check(roster.basic_attack(a) == "strike" and roster.weapon_type(a) == "sword", "the weapon gives the basic attack")
+	check(roster.look(a).size() == 2, "worn gear is drawn on the hero")
+	check(roster.free_items("weapon").size() == 2, "worn item leaves the bag")
+	roster.equip(b, swords[0].uid)
+	check(roster.owner_of(swords[0].uid) == b and roster.hero(a).gear.is_empty(), "equipping moves an item between heroes")
+	check(roster.equip(a, roster.free_items("armor")[0].uid) and roster.hero(a).gear.has("armor"), "armor goes in the armor slot")
 	var copy = Heroes.new()
 	copy.setup(content)
 	copy.from_dict(JSON.parse_string(JSON.stringify(roster.to_dict())))
-	check(copy.level("knight") == 2 and copy.stats("ranger") == roster.stats("ranger"), "roster survives a save")
+	check(copy.level(a) == 2 and copy.stats(b) == roster.stats(b), "roster survives a save")
 	check(copy.add_item("lucky_charm").uid not in roster.items, "new items get fresh ids after loading")
+	check(copy.recruit().id not in roster.heroes, "new heroes get fresh ids after loading")
 	var run = DungeonRun.new()
-	run.setup(content, "goblin_warren", ["knight"], {"knight": {"hp": 999, "atk": 1, "def": 0, "spd": 1}})
+	var entry: Dictionary = roster.battle_entry(a)
+	entry.stats = {"hp": 999, "atk": 1, "def": 0, "spd": 1}
+	run.setup(content, "goblin_warren", [entry])
 	var battle = run.start_battle(1)
-	check(battle.units.filter(func(u): return u.team == "hero")[0].max_hp == 999, "battles use the roster's stats")
+	var unit: Dictionary = battle.units.filter(func(u): return u.team == "hero")[0]
+	check(unit.max_hp == 999 and unit.name == "Aldo", "battles use the roster's stats and names")
+	check(unit.look == roster.look(a) and unit.look.size() == 2, "battles show the hero's gear")
 	for u in battle.alive("enemy"):
 		u.hp = 0
 	battle._check_outcome()
 	run.finish_battle()
 	check(run.xp > 0, "beating enemies earns XP")
+
+
+func test_hero_build() -> void:
+	var roster = Heroes.new()
+	roster.setup(content)
+	roster.new_roster(["Aldo"], ["oak_bow", "wooden_staff"])
+	var h: String = roster.heroes.keys()[0]
+	var cfg: Dictionary = content.setting("hero_build", {})
+	check(roster.skill_points_left(h) == int(cfg.start_skill_points), "a recruit starts with skill points")
+	check(roster.stat_points_left(h) == int(cfg.start_stat_points), "a recruit starts with stat points")
+	var hp: int = roster.stats(h).hp
+	check(roster.add_stat_point(h, "hp") and roster.stats(h).hp == hp + int(roster.per_point("hp")), "a stat point raises the stat")
+	while roster.stat_points_left(h) > 0:
+		roster.add_stat_point(h, "atk")
+	check(not roster.add_stat_point(h, "atk"), "can't spend points you don't have")
+	check(roster.can_learn(h, "volley").begins_with("Needs"), "later tiers need points in the path first")
+	check(roster.learn(h, "aimed_shot"), "a hero learns a first-tier skill")
+	check(roster.role(h).name == "Ranger", "points in a path give the hero that role")
+	check(not "aimed_shot" in roster.battle_skills(h), "bow skills need a bow")
+	roster.equip(h, roster.free_items("weapon").filter(func(i): return i.id == "oak_bow")[0].uid)
+	check("aimed_shot" in roster.battle_skills(h) and roster.battle_skills(h)[0] == "shoot", "with a bow the hero shoots and can use bow skills")
+	check(roster.can_learn(h, "quick_feet") == "No skill points left", "learning costs skill points")
+	roster.add_xp(h, 100000)
+	for i in 3:
+		roster.learn(h, "quick_feet")
+	check(roster.skill_rank(h, "quick_feet") == 3 and not roster.learn(h, "quick_feet"), "passives have a top rank")
+	check(roster.passive_stats(h).spd == 3, "passive skills add stats")
+	check(roster.learn(h, "volley"), "enough points in a path opens the next tier")
+	roster.learn(h, "mend")
+	roster.equip(h, roster.free_items("weapon")[0].uid)
+	check("mend" in roster.battle_skills(h) and not "aimed_shot" in roster.battle_skills(h), "changing weapon changes which skills work")
+	var copy = Heroes.new()
+	copy.setup(content)
+	copy.from_dict(JSON.parse_string(JSON.stringify(roster.to_dict())))
+	check(copy.stats(h) == roster.stats(h) and copy.battle_skills(h) == roster.battle_skills(h), "builds survive a save")
+	roster.reset_points(h)
+	check(roster.skill_points_left(h) == roster.skill_points_total(h) and roster.stat_points_left(h) == roster.stat_points_total(h), "a reset gives every point back")
+	# A save from before blank heroes: class ids become blank heroes.
+	var old = Heroes.new()
+	old.setup(content)
+	old.from_dict({"heroes": {"knight": {"id": "knight", "level": 4, "xp": 7, "gear": {"weapon": "i1"}}, "ranger": {"id": "ranger", "level": 2, "xp": 0, "gear": {}}},
+		"items": {"i1": {"uid": "i1", "id": "rusty_sword"}}, "next_item": 2})
+	var k: String = old.renamed.get("knight", "")
+	check(old.heroes.size() == 2 and k != "" and old.level(k) == 4 and old.weapon_type(k) == "sword", "old class heroes keep their level and gear")
+	check(old.skill_points_left(k) == old.skill_points_total(k), "old heroes get all their points to spend")
+	check(old.row(old.renamed.ranger) == "back", "old rangers stay in the back row")
+
+
+func classic_party() -> Array:
+	var roster = Heroes.new()
+	roster.setup(content)
+	roster.new_roster(["Tank", "Ranger", "Priest"], ["rusty_sword", "oak_bow", "wooden_staff", "padded_vest"])
+	var ids: Array = roster.heroes.keys()
+	var gear := ["rusty_sword", "oak_bow", "wooden_staff"]
+	var skills := ["taunt", "aimed_shot", "mend"]
+	var points := ["hp", "spd", "atk"]
+	for i in 3:
+		roster.equip(ids[i], roster.free_items("weapon").filter(func(it): return it.id == gear[i])[0].uid)
+		roster.learn(ids[i], skills[i])
+		while roster.stat_points_left(ids[i]) > 0:
+			roster.add_stat_point(ids[i], points[i])
+	roster.equip(ids[0], roster.free_items("armor")[0].uid)
+	roster.set_row(ids[1], "back")
+	roster.set_row(ids[2], "back")
+	return ids.map(func(id):
+		var e: Dictionary = roster.battle_entry(id)
+		e.id = str(e.name).to_lower()
+		return e)
 
 
 func test_blueprints() -> void:
@@ -420,14 +519,14 @@ func test_shop() -> void:
 
 func test_battle_rules() -> void:
 	var battle = Battle.new()
-	battle.setup(content, [{"id": "knight"}, {"id": "ranger"}, {"id": "cleric"}],
+	battle.setup(content, classic_party(),
 		[{"id": "goblin", "row": "front"}, {"id": "goblin_archer", "row": "back"}], 7)
 	check(battle.current.name == "Ranger", "fastest unit acts first")
 	var archer = battle.alive("enemy").filter(func(u): return u.row == "back")[0]
-	var knight = battle.alive("hero").filter(func(u): return u.id == "knight")[0]
+	var knight = battle.alive("hero").filter(func(u): return u.id == "tank")[0]
 	check(not archer.uid in battle.valid_targets(knight, "strike"), "melee cannot reach the back row")
 	check(archer.uid in battle.valid_targets(battle.current, "shoot"), "ranged reaches the back row")
-	check(not battle.is_usable(battle.current, "volley"), "skills need energy")
+	check(not battle.is_usable(battle.current, "aimed_shot"), "skills need energy")
 	var events: Array = []
 	battle.event.connect(func(e): events.append(e))
 	check(battle.act("shoot", archer.uid), "player can act")
@@ -442,7 +541,7 @@ func test_battle_auto_resolves() -> void:
 	var wins = 0
 	for seed_value in range(20):
 		var battle = Battle.new()
-		battle.setup(content, [{"id": "knight"}, {"id": "ranger"}, {"id": "cleric"}],
+		battle.setup(content, classic_party(),
 			content.entry("dungeons", "goblin_warren").rooms[0].enemies, seed_value)
 		var turns = 0
 		while battle.outcome == "" and turns < 500:
@@ -457,7 +556,7 @@ func test_battle_auto_resolves() -> void:
 
 func test_dungeon_run() -> void:
 	var run = DungeonRun.new()
-	run.setup(content, "goblin_warren", ["knight", "ranger", "cleric"])
+	run.setup(content, "goblin_warren", classic_party())
 	var battle = run.start_battle(3)
 	for u in battle.alive("enemy"):
 		u.hp = 0

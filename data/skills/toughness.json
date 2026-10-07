@@ -1,0 +1,9 @@
+{
+  "id": "toughness",
+  "name": "Toughness",
+  "passive": true,
+  "stats": {
+    "hp": 20
+  },
+  "description": "+20 HP per rank."
+}

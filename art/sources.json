@@ -12,11 +12,6 @@
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085655_af7c4854-05eb-4bef-9b33-6de112a6583b.png",
       "size": 64
     },
-    "heroes/knight.png": {
-      "model": "nano_banana_pro",
-      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_efb38526-76fb-4437-b18c-25e6f20fc403.png",
-      "size": 64
-    },
     "enemies/goblin.png": {
       "model": "nano_banana_pro",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_085656_5df520e6-7282-443e-8391-ebf21681dadf.png",
@@ -50,16 +45,6 @@
     "buildings/tavern.png": {
       "model": "gpt_image_2_5",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_093857_b2e3fea4-b67d-4215-82fb-a733ba9eaa71.png",
-      "size": 64
-    },
-    "heroes/ranger.png": {
-      "model": "nano_banana_2",
-      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094033_9643a3cf-81c0-46ca-b899-54acb5b590d4.png",
-      "size": 64
-    },
-    "heroes/cleric.png": {
-      "model": "nano_banana_2",
-      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_094034_8564b059-34e1-4020-8476-536850cb2bb2.png",
       "size": 64
     },
     "enemies/goblin_archer.png": {
@@ -307,6 +292,122 @@
       "model": "nano_banana_2",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_092119_ff08e870-1014-4ef1-9f78-33345e16f2eb.png",
       "size": 64
+    },
+    "heroes/adventurer.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_212815_92ca4feb-2a11-4f2d-88f0-be50b1fd9e9b.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py (body)"
+    },
+    "gear/rusty_sword.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_ace88e18-5373-45a8-8de2-cb85d9e978f3.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/iron_sword.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_67a57b13-c6ac-43ce-8f03-1b5433d56e5b.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/oak_bow.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_36ec31bd-26eb-4560-8310-de3919f0cc0c.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/longbow.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_f35d4572-a8db-4b1e-9ec3-269079f7f1f5.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/blessed_mace.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_75f8f2e5-1a83-47e4-849f-564af569b4af.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/holy_staff.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_afce5f76-87fd-4a04-893e-7b54eb8fe589.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/wooden_staff.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_7c02cdb7-9cf5-4999-8b34-cf5ae900eb65.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/padded_vest.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_175d5e45-aa4c-4048-9f49-17a1dfd5f055.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/leather_armor.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_3709fb10-bccb-4c1b-b8f4-1200049dc4d6.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/chain_mail.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_e4caf620-97c3-4e60-94aa-f7abb929bf5d.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/iron_plate.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_212922_4288f2d7-b7e3-4669-9e03-3245ea078437.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/silk_cloak.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_c4826263-fbf5-4659-9e2b-f291214f62e0.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/leather_cap.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213247_35b1067e-de4c-48bd-b779-a472f003c75f.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/iron_helm.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213253_3871c180-0bcf-49cc-84b5-8c44fc002f18.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "gear/white_hood.png": {
+      "model": "nano_banana_pro (edit of heroes/adventurer.png)",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213253_6011a7b4-c741-4c04-ab8d-58e1cf72f668.png",
+      "size": 80,
+      "tool": "tools/gear_layers.py"
+    },
+    "items/wooden_staff.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213309_6dd418f5-9fd8-41f8-a543-f3701b54f631.png",
+      "size": 24
+    },
+    "items/leather_cap.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213309_c49dd3ea-1b91-46c1-9280-27ea35174ec5.png",
+      "size": 24
+    },
+    "items/iron_helm.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213309_931ab8f7-7188-4729-8e42-527034bfe820.png",
+      "size": 24
+    },
+    "items/white_hood.png": {
+      "model": "nano_banana_pro",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_213309_308880c5-0a9a-4bcd-b818-a00aec01d30d.png",
+      "size": 24
     }
   }
 }

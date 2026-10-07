@@ -1,0 +1,14 @@
+{
+  "id": "bless",
+  "name": "Bless",
+  "cost": 1,
+  "target": "ally",
+  "effects": [
+    {
+      "type": "status",
+      "status": "shield",
+      "turns": 2
+    }
+  ],
+  "description": "An ally takes half damage for 2 turns."
+}

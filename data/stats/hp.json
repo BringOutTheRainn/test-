@@ -4,5 +4,6 @@
   "short": "HP",
   "description": "How much damage the unit can take.",
   "color": "#63c74d",
-  "order": 1
+  "order": 1,
+  "per_point": 8
 }

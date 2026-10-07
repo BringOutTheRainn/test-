@@ -1,0 +1,17 @@
+{
+  "id": "execute",
+  "name": "Finish Off",
+  "cost": 2,
+  "target": "enemy_any",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.0,
+      "bonus_below_hp": {
+        "threshold": 0.4,
+        "multiplier": 2.5
+      }
+    }
+  ],
+  "description": "Huge damage to an enemy below 40% HP."
+}

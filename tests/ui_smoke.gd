@@ -38,9 +38,9 @@ func _run() -> void:
 	# Start over past the intro, with the heroes the tutorial recruits.
 	main.queue_free()
 	game.flags["intro_seen"] = true
-	for id in ["knight", "cleric"]:
-		game.roster.recruit(id)
-		game.party.append(id)
+	for i in 2:
+		game.party.append(game.roster.recruit().id)
+	_dress_party(game)
 	main = load("res://src/main.tscn").instantiate()
 	root.add_child(main)
 	await _frames(10)
@@ -71,13 +71,23 @@ func _run() -> void:
 	await _frames(5)
 	_shot("04d_crafting")
 
-	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": "knight"})
+	var tavern: Dictionary = game.city._add_building("tavern", 2, 0)
+	tavern.level = 1
+	city_screen._on_tile_tapped(Vector2i(2, 0))
 	await _frames(5)
+	_shot("04a_tavern")
+
+	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": game.party[0]})
+	await _frames(5)
+	_shot("04b_heroes")
 	var heroes_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_show_sheet"))[0]
 	heroes_screen._picking = "weapon"
 	heroes_screen._rebuild()
 	await _frames(5)
-	_shot("04b_heroes")
+	_shot("04b_heroes_picker")
+	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": game.party[1], "tab": "skills"})
+	await _frames(5)
+	_shot("04b_heroes_skills")
 
 	root.get_node("EventBus").screen_requested.emit("daily", {})
 	await _frames(5)
@@ -123,6 +133,28 @@ func _run() -> void:
 	game.SaveService.delete(game.save_path)
 	print("UI smoke OK (room result shown: %s)" % str(battle_screen._overlay != null))
 	quit(0 if battle_screen._overlay != null else 1)
+
+
+## Three different builds, so screenshots show gear changing the look.
+func _dress_party(game) -> void:
+	var r = game.roster
+	for item_id in ["iron_plate", "iron_helm", "leather_armor", "leather_cap", "silk_cloak", "white_hood"]:
+		r.add_item(item_id)
+	var plans := [
+		["front", ["iron_plate", "iron_helm"], ["taunt"], "hp"],
+		["back", ["oak_bow", "leather_armor", "leather_cap"], ["aimed_shot"], "atk"],
+		["back", ["wooden_staff", "silk_cloak", "white_hood"], ["mend"], "atk"],
+	]
+	for i in plans.size():
+		var id: String = game.party[i]
+		r.set_row(id, plans[i][0])
+		for item_id in plans[i][1]:
+			var spare: Array = r.free_items().filter(func(it): return it.id == item_id)
+			if not spare.is_empty():
+				r.equip(id, spare[0].uid)
+		for s in plans[i][2]:
+			r.learn(id, s)
+		r.add_stat_point(id, plans[i][3])
 
 
 func _frames(n: int) -> void:

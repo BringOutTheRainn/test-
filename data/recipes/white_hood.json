@@ -1,0 +1,10 @@
+{
+  "id": "white_hood",
+  "item": "white_hood",
+  "blacksmith_level": 1,
+  "cost": {
+    "food": 250,
+    "gold": 200
+  },
+  "seconds": 180
+}

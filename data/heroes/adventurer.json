@@ -1,0 +1,21 @@
+{
+  "id": "adventurer",
+  "name": "Adventurer",
+  "description": "Every hero starts like this. Gear, stat points and skills decide what they become.",
+  "color": "#c0cbdc",
+  "faces": "right",
+  "stats": {
+    "hp": 100,
+    "atk": 12,
+    "def": 6,
+    "spd": 10
+  },
+  "growth": {
+    "hp": 6,
+    "atk": 0.5,
+    "def": 0.3
+  },
+  "skills": [
+    "defend"
+  ]
+}

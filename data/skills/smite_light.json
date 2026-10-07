@@ -1,0 +1,17 @@
+{
+  "id": "smite_light",
+  "name": "Holy Light",
+  "cost": 2,
+  "target": "all_enemies",
+  "weapons": [
+    "staff",
+    "mace"
+  ],
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.6
+    }
+  ],
+  "description": "Burns every enemy with light. Needs a staff or mace."
+}

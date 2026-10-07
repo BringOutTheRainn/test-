@@ -68,8 +68,9 @@ func _ready() -> void:
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
 	timers.started.connect(func(t): EventBus.timer_started.emit(t))
 	timers.finished.connect(_on_timer_finished)
-	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [Content.entry("heroes", id).get("name", id), lvl]))
+	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [roster.hero_name(id), lvl]))
 	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
+	roster.learned.connect(func(_id, _skill): set_flag("learned_skill", true))
 	crafting.crafted.connect(_on_crafted)
 	daily.changed.connect(func(): EventBus.daily_changed.emit())
 	shop.changed.connect(func(): EventBus.shop_changed.emit())
@@ -106,8 +107,16 @@ func new_game() -> void:
 	timers.from_dict({})
 	city.new_city()
 	inventory.add_all(Content.setting("starting_resources", {}))
-	party = Content.setting("starting_party", []).duplicate()
-	roster.new_roster(party, Content.setting("starting_items", []))
+	var names: Array = []
+	names.resize(int(Content.setting("starting_heroes", 1)))
+	names.fill("")
+	roster.new_roster(names, Content.setting("starting_items", []))
+	party = roster.heroes.keys()
+	# The first hero starts wearing config "starting_equipped" from the bag.
+	for item_id in Content.setting("starting_equipped", []):
+		var spare: Array = roster.free_items().filter(func(i): return i.id == item_id)
+		if not spare.is_empty() and not party.is_empty():
+			roster.equip(party[0], spare[0].uid)
 	quests.index = 0
 	cleared = []
 	flags = {}
@@ -322,34 +331,86 @@ func set_flag(flag: String, value = true) -> void:
 
 # --- Heroes and the Tavern -----------------------------------------------------
 
-## Heroes the Tavern offers: data entries with a "recruit" block not yet owned.
-func recruitable() -> Array:
-	return Content.list("heroes").filter(func(h): return h.has("recruit") and not roster.has_hero(h.id))
+## What the next recruit costs (config "recruit.costs", by how many heroes
+## you have), or null when the roster is full.
+func recruit_cost():
+	var costs: Array = Content.setting("recruit", {}).get("costs", [])
+	var n := roster.heroes.size()
+	return costs[n] if n < costs.size() else null
 
 
-## Why a hero can't be recruited now, or "".
-func can_recruit(id: String) -> String:
-	var def: Dictionary = Content.entry("heroes", id)
-	if not def.has("recruit") or roster.has_hero(id):
-		return "Not available"
+func max_heroes() -> int:
+	return Content.setting("recruit", {}).get("costs", []).size()
+
+
+## Why a new hero can't be recruited now, or "".
+func can_recruit() -> String:
 	if city.best_level("tavern") < 1:
 		return "Build a Tavern first"
-	if city.town_hall_level() < int(def.recruit.get("unlock_town_hall", 1)):
-		return "Needs Town Hall %d" % int(def.recruit.unlock_town_hall)
-	if not inventory.can_afford(def.recruit.get("cost", {})):
+	var cost = recruit_cost()
+	if cost == null:
+		return "Your roster is full"
+	if not inventory.can_afford(cost):
 		return "Not enough resources"
 	return ""
 
 
-func recruit(id: String) -> bool:
-	if can_recruit(id) != "":
-		return false
-	inventory.spend(Content.entry("heroes", id).recruit.get("cost", {}))
-	roster.recruit(id)
+## Recruits a new blank hero. Returns their uid, or "".
+func recruit() -> String:
+	if can_recruit() != "":
+		return ""
+	inventory.spend(recruit_cost())
+	var h := roster.recruit()
 	if party.size() < party_size():
-		party.append(id)
-	EventBus.toast.emit("%s joined your party!" % Content.entry("heroes", id).get("name", id))
+		party.append(h.id)
+	EventBus.toast.emit("%s joined your party!" % h.name)
 	EventBus.quests_changed.emit()
+	save_game()
+	return h.id
+
+
+func in_party(id: String) -> bool:
+	return id in party.slice(0, party_size())
+
+
+## Moves a hero into the party (benching the last member if it is full) or out
+## of it (keeping at least one hero in).
+func toggle_party(id: String) -> void:
+	if not roster.has_hero(id):
+		return
+	if in_party(id):
+		if party.size() > 1:
+			party.erase(id)
+	else:
+		party.erase(id)
+		party = party.slice(0, party_size() - 1)
+		party.append(id)
+	EventBus.heroes_changed.emit(id)
+	save_game()
+
+
+## Gold to reset a hero's skill and stat points (config hero_build.respec_cost_per_level).
+func respec_cost(id: String) -> Dictionary:
+	var out := {}
+	var per: Dictionary = Content.setting("hero_build", {}).get("respec_cost_per_level", {})
+	for res in per:
+		out[res] = int(per[res]) * roster.level(id)
+	return out
+
+
+func can_respec(id: String) -> String:
+	if roster.points_spent(id) == 0:
+		return "Nothing to reset"
+	if not inventory.can_afford(respec_cost(id)):
+		return "Not enough resources"
+	return ""
+
+
+func respec(id: String) -> bool:
+	if can_respec(id) != "":
+		return false
+	inventory.spend(respec_cost(id))
+	roster.reset_points(id)
 	save_game()
 	return true
 
@@ -375,13 +436,9 @@ func claim_quest() -> bool:
 	return true
 
 
-## Stats and levels for the fighting party, for DungeonRun.setup().
-func party_stats() -> Dictionary:
-	var out := {}
-	for id in party:
-		if roster.has_hero(id):
-			out[id] = roster.stats(id)
-	return out
+## The fighting party as Heroes.battle_entry() dicts, for DungeonRun.setup().
+func party_entries() -> Array:
+	return party.slice(0, party_size()).filter(func(id): return roster.has_hero(id)).map(func(id): return roster.battle_entry(id))
 
 
 func party_levels() -> Dictionary:
@@ -449,12 +506,14 @@ func load_game() -> bool:
 	timers.from_dict(data.get("timers", {}))
 	city.from_dict(data.get("city", {}))
 	inventory.from_dict(data.get("inventory", {}))
-	party = data.get("party", Content.setting("starting_party", []))
-	if data.has("roster"):
-		roster.from_dict(data.roster)
-	else:
-		roster.new_roster(party, Content.setting("starting_items", []))
-	party = party.filter(func(id): return roster.has_hero(id))
+	party = data.get("party", [])
+	roster.from_dict(data.get("roster", {}))
+	if roster.heroes.is_empty():
+		roster.recruit()
+	# Saves from before blank heroes used class ids ("knight") for the party.
+	party = party.map(func(id): return roster.renamed.get(id, id)).filter(func(id): return roster.has_hero(id))
+	if party.is_empty():
+		party = roster.heroes.keys().slice(0, party_size())
 	quests.from_dict(data.get("quests", {}))
 	cleared = data.get("cleared", [])
 	flags = data.get("flags", {})
