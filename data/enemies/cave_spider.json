@@ -1,0 +1,16 @@
+{
+  "id": "cave_spider",
+  "faces": "left",
+  "name": "Cave Spider",
+  "color": "#6c3483",
+  "stats": {
+    "hp": 80,
+    "atk": 18,
+    "def": 5,
+    "spd": 10
+  },
+  "skills": [
+    "bite"
+  ],
+  "xp": 16
+}

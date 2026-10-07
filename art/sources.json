@@ -147,6 +147,111 @@
       "model": "gpt_image_2_5",
       "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261006_095817_77964ab9-8e7a-4ae1-92e9-a5c1825aca04.png",
       "size": 24
+    },
+    "enemies/cave_spider.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085931_e24d5327-cfff-46ff-8bcf-8c62805f4416.png",
+      "size": 64
+    },
+    "enemies/cave_bat.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085931_81714451-1bba-4ae5-b037-e6ce6a5bfb56.png",
+      "size": 64
+    },
+    "enemies/spider_queen.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085931_7fe08e56-842c-481d-8fb2-c14496173db7.png",
+      "size": 84
+    },
+    "enemies/skeleton.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085932_2c8076e0-bae4-45d1-b7a7-1c10ea354346.png",
+      "size": 64
+    },
+    "enemies/skeleton_mage.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085932_16f131d3-f2c3-48b5-bdf5-9486fd4640fb.png",
+      "size": 64
+    },
+    "enemies/stone_troll.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085931_2a5859ef-d5f5-4568-9dc0-e40becb7c878.png",
+      "size": 84
+    },
+    "buildings/blacksmith.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085941_73c96e97-3de3-4e82-94ab-c50ef206eac1.png",
+      "size": 64
+    },
+    "buildings/barracks.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_085942_07e6dddb-0d93-4a14-94ee-246e022952c0.png",
+      "size": 64
+    },
+    "buildings/mine.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090333_c277a8b6-a32b-4631-870b-6bc46f31285d.png",
+      "size": 64
+    },
+    "items/leather_armor.png": {
+      "model": "gpt_image_2_5",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090333_03037e56-331e-487b-b11a-a394e4003651.png",
+      "size": 24
+    },
+    "items/longbow.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_d5b08e4f-7cad-4364-a474-927f565db9a9.png",
+      "size": 24
+    },
+    "items/iron_sword.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_ab0fe46f-e60c-4d1d-a3e3-6d64e495b067.png",
+      "size": 24
+    },
+    "items/holy_staff.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_ea48f6aa-a3eb-4cc3-b299-e695228838ac.png",
+      "size": 24
+    },
+    "items/iron_plate.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_9e4e9b30-5b1d-4fcc-a533-29c603231898.png",
+      "size": 24
+    },
+    "items/silk_cloak.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_a631e775-8175-4786-a47a-7916726758fd.png",
+      "size": 24
+    },
+    "items/bone_ring.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_748ceed8-d874-45fc-94c6-04ff1ca1c0bc.png",
+      "size": 24
+    },
+    "items/troll_heart.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090502_714a7bb9-1fd1-4226-bf60-17756cdab7d4.png",
+      "size": 24
+    },
+    "resources/iron.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090501_f93c3a34-bfb6-4e80-959a-cc1fa39a2937.png",
+      "size": 16
+    },
+    "backgrounds/old_cellar.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090517_29a92142-7ee1-4227-a469-d395c684af76.png",
+      "size": 240
+    },
+    "backgrounds/spider_caves.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090517_3c177293-f6ed-4849-a87d-f74ec7cfaebd.png",
+      "size": 240
+    },
+    "backgrounds/iron_depths.png": {
+      "model": "nano_banana_2",
+      "raw": "https://d8j0ntlcm91z4.cloudfront.net/user_3JwitmIjkM8j9RzmHVmJ1lEDv1S/hf_20261007_090518_ec08223c-9563-468e-9302-745893e9ab53.png",
+      "size": 240
     }
   }
 }

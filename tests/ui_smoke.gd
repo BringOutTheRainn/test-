@@ -57,6 +57,20 @@ func _run() -> void:
 	await _frames(5)
 	_shot("04_town_hall")
 
+	# Early game: a Town Hall 3 town with a Blacksmith, crafting gear.
+	game.city.buildings[game.city.building_at(3, 4).uid].level = 3
+	var smith: Dictionary = game.city._add_building("blacksmith", 1, 0)
+	smith.level = 1
+	game.inventory.add_all({"wood": 900, "gold": 900, "food": 400, "iron": 100})
+	city_screen._on_tile_tapped(Vector2i(1, 0))
+	await _frames(5)
+	_shot("04c_blacksmith")
+	game.crafting.start("longbow")
+	await _frames(5)
+	city_screen._rebuild_panel()
+	await _frames(5)
+	_shot("04d_crafting")
+
 	root.get_node("EventBus").screen_requested.emit("heroes", {"hero": "knight"})
 	await _frames(5)
 	var heroes_screen = main.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.has_method("_show_sheet"))[0]

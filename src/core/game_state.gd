@@ -10,6 +10,7 @@ const City := preload("res://src/systems/city.gd")
 const Economy := preload("res://src/systems/economy.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
 const Quests := preload("res://src/systems/quests.gd")
+const Crafting := preload("res://src/systems/crafting.gd")
 const SaveService := preload("res://src/core/save_service.gd")
 
 const AUTOSAVE_SECONDS := 30.0
@@ -25,6 +26,12 @@ var quests: Quests
 var cleared: Array = []
 ## Small one-off facts (intro seen, notifications asked, ...).
 var flags: Dictionary = {}
+## Lifetime totals of things the player did ("fights_won", "items_crafted",
+## ...), for quest goals of type "count". See count().
+var counters: Dictionary = {}
+var crafting: Crafting
+## Barracks training XP not yet whole, carried between ticks.
+var _xp_carry := 0.0
 var save_path := SaveService.DEFAULT_PATH
 var _autosave_left := AUTOSAVE_SECONDS
 var _last_tick := 0.0
@@ -39,6 +46,8 @@ func _ready() -> void:
 	roster.setup(Content)
 	quests = Quests.new()
 	quests.setup(Content)
+	crafting = Crafting.new()
+	crafting.setup(Content, inventory, timers, city)
 
 	inventory.changed.connect(func(): EventBus.resources_changed.emit())
 	city.building_changed.connect(func(b): EventBus.building_changed.emit(b))
@@ -46,6 +55,7 @@ func _ready() -> void:
 	timers.finished.connect(_on_timer_finished)
 	roster.leveled_up.connect(func(id, lvl): EventBus.toast.emit("%s reached level %d!" % [Content.entry("heroes", id).get("name", id), lvl]))
 	roster.changed.connect(func(id): EventBus.heroes_changed.emit(id))
+	crafting.crafted.connect(_on_crafted)
 
 	if not load_game():
 		new_game()
@@ -75,6 +85,8 @@ func new_game() -> void:
 	quests.index = 0
 	cleared = []
 	flags = {}
+	counters = {}
+	_xp_carry = 0.0
 	_last_tick = timers.now()
 	save_game()
 
@@ -90,6 +102,7 @@ func catch_up(from_time: float) -> void:
 		var next_end := minf(timers.next_end(), to_time)
 		if next_end > t:
 			city.tick(next_end - t)
+			_train_heroes(next_end - t)
 			t = next_end
 		_last_tick = t
 		var real_clock := timers.clock
@@ -125,6 +138,13 @@ func party_size() -> int:
 
 func grant(loot: Dictionary) -> Dictionary:
 	return inventory.add_all(loot)
+
+
+## Adds to a lifetime counter (fights won, items crafted, ...).
+func count(counter: String, amount: int = 1) -> void:
+	counters[counter] = int(counters.get(counter, 0)) + amount
+	EventBus.counted.emit(counter, amount)
+	EventBus.quests_changed.emit()
 
 
 func set_flag(flag: String, value = true) -> void:
@@ -176,7 +196,7 @@ func quest_facts() -> Dictionary:
 	for b in city.buildings.values():
 		levels[b.id] = levels.get(b.id, []) + [int(b.level)]
 		counts[b.id] = int(counts.get(b.id, 0)) + 1
-	return {"building_levels": levels, "building_counts": counts, "heroes": roster.heroes.size(), "cleared": cleared, "flags": flags}
+	return {"building_levels": levels, "building_counts": counts, "heroes": roster.heroes.size(), "cleared": cleared, "flags": flags, "counters": counters}
 
 
 func claim_quest() -> bool:
@@ -212,8 +232,15 @@ func grant_run(result: Dictionary, heroes_in_run: Array) -> Dictionary:
 	for id in added:
 		if int(added[id]) > 0:
 			gained[id] = int(added[id])
-	for item_id in result.get("items", []):
+	var items: Array = result.get("items", []).duplicate()
+	# A room's "first_clear_items" drop only the first time a dungeon is won.
+	if result.get("won", false) and not str(result.get("dungeon", "")) in cleared:
+		items.append_array(result.get("first_clear_items", []))
+	for item_id in items:
 		roster.add_item(str(item_id))
+	count("fights_won", int(result.get("fights_won", 0)))
+	if result.get("won", false):
+		count("dungeons_cleared")
 	for building_id in result.get("blueprints", []):
 		city.unlock_blueprint(str(building_id))
 	if result.get("won", false) and not str(result.get("dungeon", "")) in cleared:
@@ -224,7 +251,7 @@ func grant_run(result: Dictionary, heroes_in_run: Array) -> Dictionary:
 			level_ups[id] = roster.level(id)
 	save_game()
 	EventBus.quests_changed.emit()
-	return {"resources": gained, "items": result.get("items", []), "blueprints": result.get("blueprints", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
+	return {"resources": gained, "items": items, "blueprints": result.get("blueprints", []), "xp": int(result.get("xp", 0)), "level_ups": level_ups}
 
 
 # --- Saving ------------------------------------------------------------------
@@ -241,6 +268,8 @@ func save_game() -> void:
 		"quests": quests.to_dict(),
 		"cleared": cleared,
 		"flags": flags,
+		"counters": counters,
+		"xp_carry": _xp_carry,
 	}, save_path)
 
 
@@ -260,6 +289,8 @@ func load_game() -> bool:
 	quests.from_dict(data.get("quests", {}))
 	cleared = data.get("cleared", [])
 	flags = data.get("flags", {})
+	counters = data.get("counters", {})
+	_xp_carry = float(data.get("xp_carry", 0.0))
 	catch_up(float(data.get("saved_at", timers.now())))
 	return true
 
@@ -271,10 +302,32 @@ func reset_game() -> void:
 	EventBus.quests_changed.emit()
 
 
+## Barracks: every hero earns "hero_xp_per_hour" while time passes.
+func _train_heroes(seconds: float) -> void:
+	var rate := city.provided_total("hero_xp_per_hour")
+	if rate <= 0.0 or roster.heroes.is_empty():
+		return
+	_xp_carry += rate * seconds / 3600.0
+	var whole := floori(_xp_carry)
+	if whole <= 0:
+		return
+	_xp_carry -= whole
+	for id in roster.heroes:
+		roster.add_xp(id, whole)
+
+
+func _on_crafted(item_id: String) -> void:
+	if roster.add_item(item_id).is_empty():
+		return
+	count("items_crafted")
+	EventBus.toast.emit("Crafted %s!" % Content.entry("items", item_id).get("name", item_id))
+
+
 func _on_timer_finished(timer: Dictionary) -> void:
 	EventBus.timer_finished.emit(timer)
 	if timer.kind == City.BUILD_TIMER:
 		var b := city.get_building(timer.ref)
 		if not b.is_empty():
 			EventBus.toast.emit("%s reached level %d" % [city.definition(b.id).get("name", b.id), int(b.level)])
+			count("buildings_upgraded" if int(b.level) > 1 else "buildings_built")
 	save_game()

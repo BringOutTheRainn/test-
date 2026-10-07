@@ -10,6 +10,7 @@ extends RefCounted
 ##   {"type": "heroes", "count": n}                              heroes recruited
 ##   {"type": "clear_dungeon", "dungeon": id}                   dungeon won once
 ##   {"type": "flag", "flag": name}                             a game flag is set
+##   {"type": "count", "counter": name, "count": n}             a lifetime counter (Game.count) reached n
 ## When the goal is met the player claims the quest's "reward" (resources).
 
 signal advanced(quest: Dictionary)
@@ -52,6 +53,8 @@ func progress(quest: Dictionary, facts: Dictionary) -> Array:
 			return [1 if str(goal.dungeon) in facts.get("cleared", []) else 0, 1]
 		"flag":
 			return [1 if facts.get("flags", {}).get(str(goal.flag), false) else 0, 1]
+		"count":
+			return [int(facts.get("counters", {}).get(str(goal.counter), 0)), int(goal.get("count", 1))]
 	push_error("Unknown quest goal: %s" % goal)
 	return [0, 1]
 

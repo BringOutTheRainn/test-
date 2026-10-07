@@ -1,0 +1,97 @@
+{
+  "id": "spider_caves",
+  "name": "Spider Caves",
+  "unlock_town_hall": 3,
+  "order": 2,
+  "description": "Webbed caves full of bats and spiders. Their queen guards a seam of iron.",
+  "rooms": [
+    {
+      "type": "fight",
+      "name": "Bat Roost",
+      "enemies": [
+        {
+          "id": "cave_bat",
+          "row": "front"
+        },
+        {
+          "id": "cave_bat",
+          "row": "front"
+        },
+        {
+          "id": "cave_bat",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "wood": 200,
+        "gold": 100
+      }
+    },
+    {
+      "type": "fight",
+      "name": "Web Tunnel",
+      "enemies": [
+        {
+          "id": "cave_spider",
+          "row": "front"
+        },
+        {
+          "id": "cave_spider",
+          "row": "front"
+        },
+        {
+          "id": "cave_bat",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "stone": 200,
+        "iron": 40
+      }
+    },
+    {
+      "type": "fight",
+      "name": "Egg Chamber",
+      "enemies": [
+        {
+          "id": "cave_spider",
+          "row": "front"
+        },
+        {
+          "id": "cave_spider",
+          "row": "front"
+        },
+        {
+          "id": "cave_spider",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "gold": 150,
+        "iron": 60
+      }
+    },
+    {
+      "type": "boss",
+      "name": "Queen's Nest",
+      "enemies": [
+        {
+          "id": "spider_queen",
+          "row": "front"
+        },
+        {
+          "id": "cave_bat",
+          "row": "back"
+        }
+      ],
+      "loot": {
+        "gold": 300,
+        "iron": 120,
+        "crystals": 8
+      },
+      "first_clear_items": [
+        "silk_cloak"
+      ]
+    }
+  ]
+}

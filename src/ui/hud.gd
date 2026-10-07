@@ -6,6 +6,8 @@ extends PanelContainer
 const UI := preload("res://src/ui/ui_kit.gd")
 
 var _labels: Dictionary = {}
+## Resource id -> chip; a resource with "hud_town_hall" stays hidden until then.
+var _chips: Dictionary = {}
 var _builders: Label
 var _refresh_left := 0.0
 
@@ -29,6 +31,7 @@ func _ready() -> void:
 		l.autowrap_mode = TextServer.AUTOWRAP_OFF
 		chip.add_child(l)
 		_labels[res.id] = l
+		_chips[res.id] = chip
 	_builders = UI.label("", UI.SMALL, UI.TEXT)
 	_builders.autowrap_mode = TextServer.AUTOWRAP_OFF
 	flow.add_child(_builders)
@@ -45,6 +48,7 @@ func _refresh() -> void:
 	_refresh_left = 0.25
 	for id in _labels:
 		var res: Dictionary = Content.entry("resources", id)
+		_chips[id].visible = Game.city.town_hall_level() >= int(res.get("hud_town_hall", 0))
 		var text := str(Game.inventory.whole(id))
 		if UI.resource_icon(id, Content) == null:
 			text = "%s %s" % [res.get("name", id), text]

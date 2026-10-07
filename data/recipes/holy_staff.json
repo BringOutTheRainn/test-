@@ -1,0 +1,12 @@
+{
+  "id": "holy_staff",
+  "item": "holy_staff",
+  "order": 4,
+  "blacksmith_level": 2,
+  "cost": {
+    "crystals": 10,
+    "wood": 300,
+    "gold": 400
+  },
+  "seconds": 600
+}

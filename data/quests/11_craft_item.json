@@ -1,0 +1,14 @@
+{
+  "id": "craft_item",
+  "order": 11,
+  "text": "Craft a piece of gear",
+  "hint": "Tap the Blacksmith and pick a recipe.",
+  "goal": {
+    "type": "count",
+    "counter": "items_crafted",
+    "count": 1
+  },
+  "reward": {
+    "gems": 15
+  }
+}

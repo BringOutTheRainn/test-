@@ -1,0 +1,14 @@
+{
+  "id": "town_hall_4",
+  "order": 14,
+  "text": "Upgrade the Town Hall to level 4",
+  "hint": "It takes an hour, and adds a third builder.",
+  "goal": {
+    "type": "build",
+    "building": "town_hall",
+    "level": 4
+  },
+  "reward": {
+    "gems": 30
+  }
+}

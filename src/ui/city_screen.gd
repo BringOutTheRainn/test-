@@ -19,6 +19,9 @@ var _check_left := 0.0
 var _timer_label: Label
 var _timer_bar: ProgressBar
 var _skip_button: Button
+var _craft_label: Label
+var _craft_bar: ProgressBar
+var _craft_skip: Button
 
 
 func setup(_args: Dictionary) -> void:
@@ -65,6 +68,7 @@ func _ready() -> void:
 
 	EventBus.building_changed.connect(func(_b): _rebuild_panel())
 	EventBus.timer_finished.connect(func(_t): _rebuild_panel())
+	EventBus.timer_started.connect(func(_t): _rebuild_panel())
 	EventBus.quests_changed.connect(func():
 		_rebuild_quest()
 		_rebuild_panel())
@@ -109,6 +113,10 @@ func _panel_signature() -> String:
 		parts.append(str(b.level))
 		parts.append(Game.city.can_upgrade(b.uid))
 		parts.append(str(Game.city.is_busy(b.uid)))
+		if b.id == "blacksmith":
+			parts.append(str(Game.crafting.is_busy()))
+			for r in Game.crafting.recipes():
+				parts.append(Game.crafting.can_craft(r.id))
 	return "|".join(parts)
 
 
@@ -117,6 +125,9 @@ func _rebuild_panel() -> void:
 	_timer_label = null
 	_timer_bar = null
 	_skip_button = null
+	_craft_label = null
+	_craft_bar = null
+	_craft_skip = null
 	for child in _panel_body.get_children():
 		child.queue_free()
 	var b := _selected_building()
@@ -177,6 +188,8 @@ func _show_building(b: Dictionary) -> void:
 
 	if b.id == "tavern" and int(b.level) >= 1:
 		_show_recruits()
+	if int(provides.get("crafting", 0)) > 0:
+		_show_crafting()
 
 	var timer: Dictionary = city.timer_for(b.uid)
 	if not timer.is_empty():
@@ -257,6 +270,15 @@ func _labeled_amounts(text: String, amounts: Dictionary) -> HBoxContainer:
 
 
 func _update_live_widgets() -> void:
+	if _craft_label != null:
+		var craft: Dictionary = Game.crafting.current()
+		if not craft.is_empty():
+			var item_name := str(Content.entry("items", str(craft.data.get("item", ""))).get("name", "?"))
+			_craft_label.text = "%s: %s left" % [item_name, UI.format_time(Game.timers.remaining(craft))]
+			_craft_bar.value = Game.timers.progress(craft)
+			var c := Game.skip_cost(craft)
+			_craft_skip.text = "Finish now (free)" if c == 0 else "Finish now (%d gems)" % c
+			_craft_skip.disabled = Game.inventory.whole("gems") < c
 	if _timer_label == null:
 		return
 	var b := _selected_building()
@@ -269,6 +291,55 @@ func _update_live_widgets() -> void:
 	var cost := Game.skip_cost(timer)
 	_skip_button.text = "Finish now (free)" if cost == 0 else "Finish now (%d gems)" % cost
 	_skip_button.disabled = Game.inventory.whole("gems") < cost
+
+
+## Blacksmith recipes, or the item being crafted with its timer.
+func _show_crafting() -> void:
+	_panel_body.add_child(UI.label("Craft gear", UI.FONT_SIZE, UI.ACCENT))
+	var timer: Dictionary = Game.crafting.current()
+	if not timer.is_empty():
+		var item: Dictionary = Content.entry("items", str(timer.data.get("item", "")))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		_panel_body.add_child(row)
+		var tex := Sprites.for_entry("items", item)
+		if tex != null:
+			row.add_child(UI.icon_rect(tex, 64))
+		var column := VBoxContainer.new()
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(column)
+		_craft_label = UI.label("", UI.FONT_SIZE)
+		column.add_child(_craft_label)
+		_craft_bar = UI.progress_bar()
+		column.add_child(_craft_bar)
+		var timer_id: String = timer.id
+		_craft_skip = UI.button("", func(): Game.skip_timer(timer_id), 72, "primary")
+		_panel_body.add_child(_craft_skip)
+		_update_live_widgets()
+	for r in Game.crafting.recipes():
+		var item: Dictionary = Content.entry("items", str(r.item))
+		var recipe_id: String = r.id
+		var reason: String = Game.crafting.can_craft(recipe_id)
+		var card := _build_card({"name": "%s  %s" % [item.get("name", r.item), _stat_text(item)]}, {"cost": r.get("cost", {}), "build_seconds": r.get("seconds", 0)}, reason, func(): Game.crafting.start(recipe_id))
+		var tex := Sprites.for_entry("items", item)
+		if tex != null:
+			var row: HBoxContainer = card.get_child(0)
+			var icon := UI.icon_rect(tex, 64)
+			if reason != "":
+				icon.modulate = Color(0.5, 0.5, 0.5)
+			row.add_child(icon)
+			row.move_child(icon, 0)
+		_panel_body.add_child(card)
+
+
+## "+7 ATK +2 SPD" from an item's stats, using stat short names from data.
+func _stat_text(item: Dictionary) -> String:
+	var parts: Array = []
+	var stats: Dictionary = item.get("stats", {})
+	for id in stats:
+		var short := str(Content.entry("stats", id).get("short", id)).to_upper()
+		parts.append("%s%d %s" % ["+" if int(stats[id]) >= 0 else "", int(stats[id]), short])
+	return " ".join(parts)
 
 
 func _place(id: String) -> void:

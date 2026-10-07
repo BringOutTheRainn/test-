@@ -13,6 +13,7 @@ const Battle := preload("res://src/combat/battle.gd")
 const DungeonRun := preload("res://src/combat/dungeon_run.gd")
 const Heroes := preload("res://src/systems/heroes.gd")
 const Quests := preload("res://src/systems/quests.gd")
+const Crafting := preload("res://src/systems/crafting.gd")
 
 var failures = 0
 var checks = 0
@@ -37,6 +38,7 @@ func _initialize() -> void:
 		"test_hero_levels_and_gear",
 		"test_blueprints",
 		"test_quests",
+		"test_crafting",
 		"test_battle_rules",
 		"test_battle_auto_resolves",
 		"test_dungeon_run",
@@ -117,7 +119,7 @@ func test_content_references() -> void:
 		check(content.has_entry("items", id), "starting item %s exists" % id)
 	for d in content.list("dungeons"):
 		for room in d.rooms:
-			for id in room.get("items", []):
+			for id in room.get("items", []) + room.get("first_clear_items", []):
 				check(content.has_entry("items", id), "dungeon %s drops known item %s" % [d.id, id])
 
 
@@ -307,6 +309,30 @@ func test_quests() -> void:
 			check(content.has_entry("dungeons", goal.dungeon), "quest %s names a known dungeon" % quest.id)
 		for res in quest.get("reward", {}):
 			check(content.has_entry("resources", res), "quest %s rewards a known resource" % quest.id)
+
+
+func test_crafting() -> void:
+	var city = make_city()
+	var crafting = Crafting.new()
+	crafting.setup(content, city.inventory, city.timers, city)
+	var made: Array = []
+	crafting.crafted.connect(func(id): made.append(id))
+	city.inventory.add_all({"wood": 5000, "stone": 5000, "gold": 5000, "food": 1000})
+	check(crafting.can_craft("longbow") == "Build a Blacksmith first", "crafting needs a Blacksmith")
+	var smith: Dictionary = city._add_building("blacksmith", 0, 0)
+	smith.level = 1
+	check(crafting.level() == 1, "the Blacksmith sets the crafting level")
+	check(crafting.can_craft("iron_plate").begins_with("Needs Blacksmith level"), "recipes are gated by Blacksmith level")
+	check(crafting.can_craft("iron_sword") == "Not enough resources", "iron recipes need iron")
+	check(crafting.start("longbow"), "a known recipe starts")
+	check(crafting.can_craft("leather_armor") == "The Blacksmith is busy", "one craft at a time")
+	check(city.builders_free() == city.builders_total(), "crafting does not use a builder")
+	advance(city, float(content.entry("recipes", "longbow").seconds))
+	check(made == ["longbow"], "the item arrives when the timer ends")
+	for r in content.list("recipes"):
+		check(content.has_entry("items", str(r.item)), "recipe %s makes a known item" % r.id)
+		for res in r.get("cost", {}):
+			check(content.has_entry("resources", res), "recipe %s costs a known resource" % r.id)
 
 
 # --- Combat -------------------------------------------------------------------

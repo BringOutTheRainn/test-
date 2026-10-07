@@ -18,6 +18,10 @@ var xp := 0
 var items: Array = []
 ## Building ids whose blueprints were found (a room's "blueprints" list).
 var blueprints: Array = []
+## Items from a room's "first_clear_items"; the game only gives them the first
+## time the dungeon is won.
+var first_clear_items: Array = []
+var fights_won := 0
 ## Hero id -> stats to fight with (leveled and geared); missing uses the data file.
 var hero_stats: Dictionary = {}
 var hero_levels: Dictionary = {}
@@ -37,6 +41,8 @@ func setup(content_db, dungeon_id: String, party_ids: Array, stats_by_hero: Dict
 	xp = 0
 	items = []
 	blueprints = []
+	first_clear_items = []
+	fights_won = 0
 	hero_hp = {}
 	finished = dungeon.get("rooms", []).is_empty()
 
@@ -81,6 +87,8 @@ func finish_battle() -> void:
 				xp += int(u.get("xp", 0))
 		items.append_array(current_room().get("items", []))
 		blueprints.append_array(current_room().get("blueprints", []))
+		first_clear_items.append_array(current_room().get("first_clear_items", []))
+		fights_won += 1
 		room_index += 1
 		if room_index >= rooms().size():
 			finished = true
@@ -103,4 +111,4 @@ func retreat() -> void:
 
 
 func result() -> Dictionary:
-	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot, "xp": xp, "items": items, "blueprints": blueprints}
+	return {"dungeon": dungeon.get("id", ""), "won": won, "rooms_cleared": room_index, "loot": loot, "xp": xp, "items": items, "blueprints": blueprints, "first_clear_items": first_clear_items, "fights_won": fights_won}

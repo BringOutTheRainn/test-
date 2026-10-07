@@ -1,0 +1,12 @@
+{
+  "id": "bone_bolt",
+  "name": "Bone Bolt",
+  "cost": 0,
+  "target": "enemy_any",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 1.1
+    }
+  ]
+}
