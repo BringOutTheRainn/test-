@@ -4,5 +4,6 @@
   "short": "ATK",
   "description": "Raises damage dealt and healing done.",
   "color": "#e43b44",
-  "order": 2
+  "order": 2,
+  "per_point": 1
 }

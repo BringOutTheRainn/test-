@@ -9,5 +9,8 @@
       "power": 0.8
     }
   ],
-  "description": "Hits every enemy in the back row."
+  "description": "Hits every enemy in the back row. Needs a bow.",
+  "weapons": [
+    "bow"
+  ]
 }

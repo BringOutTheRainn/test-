@@ -1,0 +1,9 @@
+{
+  "id": "quick_feet",
+  "name": "Quick Feet",
+  "passive": true,
+  "stats": {
+    "spd": 1
+  },
+  "description": "+1 SPD per rank."
+}

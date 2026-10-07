@@ -1,0 +1,19 @@
+{
+  "id": "shield_bash",
+  "name": "Shield Bash",
+  "cost": 1,
+  "target": "enemy_melee",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.8
+    },
+    {
+      "type": "status",
+      "status": "stun",
+      "turns": 1,
+      "chance": 0.4
+    }
+  ],
+  "description": "A shove that may stun."
+}

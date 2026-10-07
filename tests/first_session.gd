@@ -51,6 +51,7 @@ func _run() -> void:
 	game.set_flag("notify_build_done", false)
 	_check(not "build_done" in game.planned_notifications().map(func(n): return n.kind), "a switched-off kind is not planned")
 	print("waited for resources: %.1f hours; hero levels: %s" % [waited / 3600.0, str(game.party_levels())])
+	print("party: %s" % str(game.party.map(func(id): return "%s L%d %s" % [game.roster.hero_name(id), game.roster.level(id), game.roster.role(id).name])))
 	game.SaveService.delete(game.save_path)
 	print("first session: %s" % ("OK" if failures == 0 else "%d failed" % failures))
 	quit(1 if failures > 0 else 0)
@@ -77,16 +78,13 @@ func _do(q: Dictionary) -> void:
 					return
 				_finish_builds()
 		"heroes":
-			for h in game.recruitable():
-				if game.roster.heroes.size() >= int(goal.count):
-					break
-				if game.can_recruit(h.id) == "":
-					game.recruit(h.id)
+			while game.roster.heroes.size() < int(goal.count) and game.can_recruit() == "":
+				game.recruit()
 		"clear_dungeon":
 			# Like a player: gear up and try; after a loss, replay the dungeons
 			# already beaten for XP and loot, and come back an hour later.
 			for attempt in 8:
-				_equip_best()
+				_build_party()
 				if _play_dungeon(str(goal.dungeon)):
 					print("  cleared %s on try %d" % [goal.dungeon, attempt + 1])
 					return
@@ -108,7 +106,7 @@ func _do(q: Dictionary) -> void:
 ## Auto-battles a dungeon with the current party. Returns true on a win.
 func _play_dungeon(id: String) -> bool:
 	var run = DungeonRun.new()
-	run.setup(root.get_node("Content"), id, game.party.slice(0, game.party_size()), game.party_stats(), game.party_levels())
+	run.setup(root.get_node("Content"), id, game.party_entries())
 	while not run.finished:
 		var battle = run.start_battle()
 		var turns := 0
@@ -137,25 +135,56 @@ func _pass_time(seconds: float) -> void:
 	game.catch_up(before)
 
 
-## Puts each hero's best free item in each slot (by a simple stat score).
-func _equip_best() -> void:
-	for id in game.party:
+## What a player might build: the first hero a Guardian with a sword up
+## front, the second a Ranger with a bow, the third a Priest with a staff.
+const PLANS := [
+	{"path": "guardian", "weapons": ["sword", "mace"], "row": "front", "stats": ["hp", "def"]},
+	{"path": "ranger", "weapons": ["bow"], "row": "back", "stats": ["atk", "spd"]},
+	{"path": "priest", "weapons": ["staff", "mace"], "row": "back", "stats": ["atk", "hp"]},
+]
+
+
+## Gears up each party hero for their plan and spends their points.
+func _build_party() -> void:
+	var ids: Array = game.party.slice(0, game.party_size())
+	for i in ids.size():
+		var id: String = ids[i]
+		var plan: Dictionary = PLANS[i % PLANS.size()]
+		game.roster.set_row(id, plan.row)
 		for slot in game.roster.slots():
 			var best := ""
-			var best_score := _score(str(game.roster.hero(id).gear.get(slot.id, "")))
+			var best_score := _score(str(game.roster.hero(id).gear.get(slot.id, "")), plan)
 			for item in game.roster.free_items(str(slot.id)):
-				var score := _score(str(item.uid))
+				var score := _score(str(item.uid), plan)
 				if score > best_score:
 					best = str(item.uid)
 					best_score = score
 			if best != "":
 				game.roster.equip(id, best)
+		var n := 0
+		while game.roster.stat_points_left(id) > 0:
+			game.roster.add_stat_point(id, plan.stats[n % plan.stats.size()])
+			n += 1
+		var learned := true
+		while learned and game.roster.skill_points_left(id) > 0:
+			learned = false
+			for node in Content().entry("paths", plan.path).nodes:
+				if game.roster.learn(id, str(node.skill)):
+					learned = true
+					break
 
 
-func _score(uid: String) -> float:
+func Content():
+	return root.get_node("Content")
+
+
+func _score(uid: String, plan: Dictionary) -> float:
 	if uid == "":
 		return -1.0
-	var stats: Dictionary = game.roster.item_def(uid).get("stats", {})
+	var def: Dictionary = game.roster.item_def(uid)
+	if def.has("weapon_type") and not def.weapon_type in plan.weapons:
+		return -2.0
+	var stats: Dictionary = def.get("stats", {})
 	return float(stats.get("atk", 0)) * 2.0 + float(stats.get("def", 0)) * 2.0 + float(stats.get("hp", 0)) * 0.2 + float(stats.get("spd", 0))
 
 

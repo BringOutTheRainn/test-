@@ -7,5 +7,7 @@
     "atk": 4
   },
   "description": "Old, chipped, still sharp enough.",
-  "order": 1
+  "order": 1,
+  "weapon_type": "sword",
+  "attack": "strike"
 }

@@ -12,9 +12,11 @@ editor-made scenes to maintain, so the whole game can be changed from a text edi
   House, and Warehouse, Granary and Tavern from Town Hall 2). Builds cost resources, take real time,
   use one of 2 builders, and keep running while the app is closed. Tap a building to upgrade it or
   finish it with gems (the last 5 minutes are free). Production fills storage up to its cap.
-- **Dungeon:** the Goblin Warren, a fight and a boss. Knight, Ranger and Cleric against goblins in two
+- **Dungeon:** the Goblin Warren, a fight and a boss. Your party of up to three heroes against goblins in two
   rows, turn order by Speed, energy for skills, taunt, shields, poison and stun. Tap a skill, then a
   target. Auto and 2x toggles. Loot goes back to the city; losing keeps half.
+- **Heroes:** every hero starts as the same blank recruit; stat points, skill paths and gear decide
+  whether they become a tank, an archer or a healer, and their gear changes how they look.
 - **Saving:** progress saves automatically, and the save file is versioned so updates can migrate it.
 
 ## Running it
@@ -42,8 +44,10 @@ data/                 All game content, one JSON file per thing
   config/game.json    Starting resources, builders, grid size, skip prices, combat tuning
   resources/          Gold, wood, stone, ...
   buildings/          Each building with its levels: cost, build time, what it provides
-  heroes/ enemies/    Stats, row and skill list
-  skills/             Target rule plus a list of effects
+  heroes/             The blank recruit every hero starts as (base stats, growth, body art)
+  enemies/            Stats, row and skill list
+  paths/              Skill paths heroes spend points in (Guardian, Ranger, Priest)
+  skills/             Target rule plus a list of effects, or a passive stat bonus
   dungeons/           Rooms, enemies and loot
   items/ stats/       Gear and the stats it changes
   recipes/            What the Blacksmith crafts
@@ -72,7 +76,8 @@ them together and forwards their signals to `EventBus`, which the UI listens to.
 | Rebalance a building | its file in `data/buildings/` |
 | Add a building | a new file in `data/buildings/` (copy an existing one) |
 | Add a resource | a new file in `data/resources/`; it shows up in the top bar automatically |
-| Add a hero or enemy | a new file in `data/heroes/` or `data/enemies/` |
+| Add an enemy | a new file in `data/enemies/` |
+| Add a skill path or a skill to one | a file in `data/paths/` (its `"nodes"` list skills by tier) |
 | Add a skill | a new file in `data/skills/` built from existing effects |
 | Add a dungeon or room | `data/dungeons/` |
 | Add a new kind of effect | one `register()` call in `src/combat/effects.gd` |
@@ -103,17 +108,47 @@ other way.
 `src/ui/ui_kit.gd`. The pixel font is generated: edit the glyphs in `tools/make_font.py` and run
 `python3 tools/make_font.py`.
 
-**Heroes: stats, levels and gear.** A hero's battle stats are worked out, never stored: the
-`"stats"` in `data/heroes/<id>.json`, plus its `"growth"` for every level above 1, plus the
-`"stats"` of each item it wears. Stats are listed in `data/stats/` (adding a file there adds a stat
-to every sheet), items in `data/items/` (each has a `"slot"`, `"rarity"` and `"stats"`), and the
-slots, rarities and XP curve (`"hero_leveling"`) in `data/config/game.json`. Enemies give the
-`"xp"` in their data file when beaten, and a dungeon room can drop items with `"items": [...]`.
-The logic lives in `src/systems/heroes.gd`; the Heroes screen shows each hero's sheet and gear.
+**Heroes: blank recruits shaped by the player.** There are no hero classes. Every hero is
+recruited at the Tavern as the same blank adventurer (`data/heroes/adventurer.json`) with a name
+from config `"hero_names"`; the first two recruits are free, then they cost more (config
+`"recruit"`). What a hero becomes is up to the player:
+
+- **Stat points.** Each level gives points to put into any stat; `"per_point"` in
+  `data/stats/<id>.json` says how much one point adds.
+- **Skill points.** Each level gives one point to learn skills from the paths in `data/paths/`.
+  A path's tier 2 opens after 3 points in it and tier 3 after 6 (config
+  `"hero_build.points_per_tier"`), so a hero can focus or mix. Passive skills
+  (`"passive": true`) add `"stats"` per rank. The path with the most points names the hero's
+  role (Guardian, Ranger, Priest), shown on their sheet.
+- **Gear.** A weapon gives the basic attack (`"attack"` on the item; no weapon means Punch) and a
+  `"weapon_type"`. Skills with `"weapons": ["bow"]` only work while one is held, so gear and
+  skills together decide the role.
+- **Row and party.** Each hero's sheet picks front or back row and whether they fight or sit on
+  the bench. Points can be reset for gold that grows with level (`"respec_cost_per_level"`).
+
+A hero's battle stats are worked out, never stored: base stats, growth per level, stat points,
+passives and the `"stats"` of each worn item. Point rates, tiers and respec cost are in config
+`"hero_build"`. The logic lives in `src/systems/heroes.gd`; the Heroes screen has a Stats & Gear
+tab and a Skills tab. Saves from before blank heroes turn each old class hero into a blank hero
+at the same level, keeping their gear, with every point free to spend.
+
+**Hero looks: paper-doll gear.** Every hero shares one body (`art/heroes/adventurer.png`) and each
+worn item draws its own layer on top (`art/gear/<item id>.png`, or the item's `"worn"` path), in the
+order config `"hero_build.layer_order"` gives (armor, head, weapon). Layers are the same size as the
+body, so swapping gear swaps the look everywhere: the hero sheet, the party tabs and battle. To make
+a layer, generate the plain body on magenta, ask the image model to edit that same image so the body
+wears or holds the item (same pose and framing), and run:
+
+```sh
+python3 tools/gear_layers.py body_raw.png --body art/heroes/adventurer.png edit_raw.png:art/gear/iron_helm.png
+```
+
+It crops and shrinks both images the same way and keeps only the pixels the edit changed.
+Items with no layer simply don't show (trinkets, for example).
 
 **First session.** A new game opens with a short story (config `"intro"`), then a chain of goals
 from `data/quests/` shown above the town: build a Lumber Mill and Quarry, upgrade the Town Hall,
-build a Tavern and recruit the Knight and Cleric (heroes with a `"recruit"` block), clear the Old
+build a Tavern and recruit two more heroes, teach one a skill, clear the Old
 Cellar, and build the Warehouse from the blueprint its boss drops (buildings with `"blueprint": true`
 need one; a room drops it with `"blueprints": [...]`). Goal types are listed in
 `src/systems/quests.gd`. `tests/first_session.gd` plays the whole chain to catch balance or data
