@@ -1,8 +1,0 @@
-{
-  "id": "def",
-  "name": "Defense",
-  "short": "DEF",
-  "description": "Reduces damage taken.",
-  "color": "#8b9bb4",
-  "order": 3
-}

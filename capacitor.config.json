@@ -1,0 +1,16 @@
+{
+  "appId": "com.bringouttherainn.stardustempire",
+  "appName": "Stardust Empire",
+  "webDir": "www",
+  "backgroundColor": "#05060f",
+  "android": {
+    "backgroundColor": "#05060f"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#05060f",
+      "showSpinner": false
+    }
+  }
+}
