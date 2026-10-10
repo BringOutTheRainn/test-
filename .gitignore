@@ -1,8 +1,8 @@
 node_modules/
 www/js/
-android/
-ios/
-build/
+/android/
+/ios/
+/build/
 *.apk
 *.aab
 .DS_Store
