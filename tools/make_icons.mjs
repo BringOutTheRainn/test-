@@ -34,3 +34,12 @@ await render(splash, 1366, 'resources/android/splash.png');
 await render(icon, 512, 'www/icon-512.png', true);
 await render(icon, 1024, 'resources/icon-1024.png', true);
 await browser.close();
+
+// Google Play feature graphic.
+const feature = readFileSync('resources/feature.svg', 'utf8');
+const b2 = await playwright.chromium.launch();
+const p2 = await b2.newPage({ viewport: { width: 1024, height: 500 } });
+await p2.setContent(`<html><body style="margin:0">${feature.replace('<svg ', '<svg width="1024" height="500" ')}</body></html>`);
+await p2.screenshot({ path: 'resources/feature-graphic.png' });
+console.log('wrote resources/feature-graphic.png');
+await b2.close();

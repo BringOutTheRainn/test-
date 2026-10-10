@@ -30,7 +30,7 @@ npm run android    # writes build/stardust-empire.apk
 
 `tools/android.sh` creates the Capacitor project in `android/` (not committed), copies in the icon and
 splash from `resources/android/`, locks the app to portrait and runs Gradle. A Play Store release
-needs a real signing key kept in a GitHub secret; that is not set up yet.
+needs a signing key in the repository secrets; see [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Tests
 
