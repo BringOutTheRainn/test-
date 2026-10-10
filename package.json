@@ -1,0 +1,29 @@
+{
+  "name": "stardust-empire",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A space-themed incremental clicker for phones.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
+    "test": "npm run build && node --test tests/*.test.js",
+    "serve": "npx http-server www -p 8080 -c-1",
+    "sim": "npm run build && node tools/simulate.mjs",
+    "screens": "npm run build && node tools/screens.mjs screens",
+    "icons": "node tools/make_icons.mjs",
+    "android": "npm run build && bash tools/android.sh"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0"
+  }
+}

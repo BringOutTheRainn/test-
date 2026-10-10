@@ -1,9 +1,0 @@
-{
-  "id": "monthly_card",
-  "name": "Monthly Card",
-  "section": "offers",
-  "order": 2,
-  "price_usd": 4.99,
-  "description": "100 gems every day for 30 days. Collect them on the Daily screen.",
-  "card_days": 30
-}
