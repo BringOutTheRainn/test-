@@ -20,11 +20,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: android-actions/setup-android@v3
       - run: npm install --no-audit --no-fund
       - name: Build the web game
         run: npm run build
       - name: Build the APK
+        # The Ubuntu runner already has the Android SDK at $ANDROID_HOME.
         run: bash tools/android.sh
       - uses: actions/upload-artifact@v4
         with:
