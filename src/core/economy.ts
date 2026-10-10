@@ -8,6 +8,7 @@ import { ANOMALIES, ANOMALY_BY_ID } from '../data/anomalies.js';
 import { achievementCount, darkMatterAvailable, type GameState } from './state.js';
 
 export const BUFF_MULT = { rush: 7, supernova: 777, well: 0.5, horizon: 66 } as const;
+export const HYPER_MULT = 2;
 
 /** Everything derived from purchases; recomputed when something is bought. */
 export interface Derived {
@@ -34,6 +35,7 @@ export interface Derived {
   expeditionSlots: number;
   expSpeed: number;
   keepResearch: boolean;
+  hyper: boolean;
   /** Anomaly rules for this universe. */
   noTaps: boolean;
   noComets: boolean;
@@ -62,7 +64,7 @@ export function relicLevel(s: GameState, id: string): number {
   return s.relics[id] ?? 0;
 }
 
-export function computeDerived(s: GameState): Derived {
+export function computeDerived(s: GameState, now = Date.now()): Derived {
   const n = GENERATORS.length;
   const genMult = new Array<number>(n).fill(1);
   const synergy = new Array<number>(n).fill(0);
@@ -194,6 +196,8 @@ export function computeDerived(s: GameState): Derived {
     if (b.kind === 'rush' || b.kind === 'well' || b.kind === 'horizon') prodBuff *= BUFF_MULT[b.kind];
     if (b.kind === 'supernova') tapBuff *= BUFF_MULT[b.kind];
   }
+  const hyper = s.hyperEndsAt > now;
+  if (hyper) prodBuff *= HYPER_MULT;
   const sps = baseSps * prodBuff;
   // Taps get the flat drone bonus and a share of production, but not the
   // global multiplier directly (it reaches them through the SPS share).
@@ -202,7 +206,7 @@ export function computeDerived(s: GameState): Derived {
   return {
     genSps, baseSps, sps, tap, globalMult, prodBuff, tapBuff, cometFreq, cometStay, cometEffect, offlineRate: Math.min(offlineRate, 1.5),
     offlineCapHours, autoTap, genDiscount: Math.min(genDiscount, 0.5), upgDiscount: Math.min(upgDiscount, 0.5), blackComets, expeditions,
-    expeditionSlots, expSpeed, keepResearch, noTaps, noComets, noUpgrades, costGrowth, maxGen,
+    expeditionSlots, expSpeed, keepResearch, hyper, noTaps, noComets, noUpgrades, costGrowth, maxGen,
   };
 }
 

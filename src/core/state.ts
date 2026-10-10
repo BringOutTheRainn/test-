@@ -74,6 +74,12 @@ export interface GameState {
   /** The anomaly this universe is running under, if any. */
   anomaly: string | null;
   anomaliesDone: Record<string, true>;
+  /** Real-time ms when the ad-granted Hyperdrive (x2 production) ends. */
+  hyperEndsAt: number;
+  adsWatched: number;
+  lastInterstitialAt: number;
+  /** Set when the player buys ad removal; rewarded ads stay available. */
+  noAds: boolean;
   settings: Settings;
 }
 
@@ -114,6 +120,10 @@ export function newState(now = Date.now()): GameState {
     seenHints: {},
     anomaly: null,
     anomaliesDone: {},
+    hyperEndsAt: 0,
+    adsWatched: 0,
+    lastInterstitialAt: 0,
+    noAds: false,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true },
   };
 }

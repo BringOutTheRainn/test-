@@ -20,6 +20,12 @@ if [ -f "$RES/values/ic_launcher_background.xml" ]; then
 fi
 # Splash image in every drawable folder that has one.
 find "$RES" -name 'splash.png' -exec cp resources/android/splash.png {} \;
+# AdMob app id (Google's test id unless ADMOB_APP_ID is set).
+ADMOB_APP_ID=${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}
+MANIFEST=android/app/src/main/AndroidManifest.xml
+if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then
+  sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/>\n    </application>#" "$MANIFEST"
+fi
 # Portrait only.
 MANIFEST=android/app/src/main/AndroidManifest.xml
 if ! grep -q 'screenOrientation' "$MANIFEST"; then

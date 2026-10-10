@@ -12,6 +12,10 @@ import type { Ctx } from './ctx.js';
 import { closeModal, confirmModal, esc, openModal, toast } from './dom.js';
 import { icon } from './icons.js';
 import { copyText, haptic, setVibration } from './platform.js';
+import { rewardedAvailable, showRewarded } from './ads.js';
+import { earn } from '../core/economy.js';
+import { AD_CONFIG } from '../data/ads.js';
+import { grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
 
 export const VERSION = '1.0.0';
 
@@ -36,6 +40,7 @@ export function openStats(ctx: Ctx): void {
       ['Dark Matter', fmt(s.darkMatter)],
       ['Earned while away', fmtLong(s.offlineEarnedAll)],
       ['Expeditions completed', String(s.expeditionsDone)],
+      ['Ads watched', String(s.adsWatched)],
       ['Login streak', `${s.dailyStreak} day${s.dailyStreak === 1 ? '' : 's'}`],
       ['Time played', fmtTime(s.playSeconds)],
       ['This universe started', fmtTime((Date.now() - s.runStartedAt) / 1000) + ' ago'],
@@ -141,14 +146,57 @@ export function openSettings(ctx: Ctx): void {
   });
 }
 
-export function showOffline(seconds: number, earned: number): void {
+export function showOffline(ctx: Ctx, seconds: number, earned: number): void {
   if (earned <= 0 || seconds < 60) return;
+  const buttons: Parameters<typeof openModal>[0]['buttons'] = [{ label: 'Collect', kind: rewardedAvailable() ? 'plain' : 'primary' }];
+  if (rewardedAvailable()) {
+    buttons.push({
+      label: 'Watch ad: x2', kind: 'primary', onClick: () => {
+        void showRewarded('double your offline Stardust').then((ok) => {
+          if (!ok) return;
+          earn(ctx.s, earned);
+          ctx.s.adsWatched++;
+          ctx.save();
+          ctx.sky.floatCenter(`+${fmt(earned)}`, '#ffcf5a', 30);
+          toast(`<div class="t-ico">${icon('gift')}</div><div><b>Doubled!</b><br>+${fmt(earned)} more Stardust</div>`, 'good');
+        });
+      },
+    });
+  }
   openModal({
     title: 'Welcome back!',
     body: `<div class="offline"><div class="big-ico">${icon('drone')}</div>
       <p>While you were away for <b>${fmtTime(seconds)}</b>, your empire harvested</p>
       <p class="offline-amount"><span class="sd-dot big"></span>${fmt(earned)}</p><p class="dim">Stardust</p></div>`,
-    buttons: [{ label: 'Collect', kind: 'primary' }],
+    buttons,
+  });
+}
+
+export function openHyperdrive(ctx: Ctx): void {
+  const left = hyperRemainingMs(ctx.s);
+  const can = hyperCanStack(ctx.s);
+  openModal({
+    title: 'Hyperdrive',
+    body: `<div class="offline"><div class="big-ico">${icon('probe')}</div>
+      <p>Watch a short ad to <b>double all production for ${AD_CONFIG.hyperMinutes / 60} hours</b>. It keeps running while you are away and stacks up to ${AD_CONFIG.hyperCapMinutes / 60} hours.</p>
+      ${left > 0 ? `<p class="dim">Active: ${fmtTime(left / 1000)} left.</p>` : ''}
+      ${can ? '' : '<p class="dim">Hyperdrive is fully charged. Come back when it runs lower.</p>'}</div>`,
+    buttons: can && rewardedAvailable() ? [
+      { label: 'Not now' },
+      {
+        label: 'Watch ad', kind: 'primary', onClick: () => {
+          void showRewarded('Hyperdrive: double production').then((ok) => {
+            if (!ok) return;
+            grantHyper(ctx.s);
+            ctx.recalc();
+            ctx.save();
+            sfxAchievement();
+            haptic('medium');
+            toast(`<div class="t-ico">${icon('probe')}</div><div><b>Hyperdrive engaged</b><br>Production x2 for ${fmtTime(hyperRemainingMs(ctx.s) / 1000)}</div>`, 'good');
+          });
+        },
+      },
+    ] : [{ label: 'Close', kind: 'primary' }],
   });
 }
 
@@ -164,20 +212,32 @@ export function openDaily(ctx: Ctx, onClaim: () => void): void {
     body: `<p class="dim">Come back every day to keep your streak. Each reward is worth minutes of production.</p>
       <div class="days">${cells}</div>
       <p class="daily-amount">Today: <span class="sd-dot"></span><b>${fmt(dailyReward(s, d, day))}</b> Stardust</p>`,
-    buttons: [{
-      label: 'Claim', kind: 'primary', onClick: () => {
-        const r = claimDaily(ctx.s, ctx.d);
-        if (r) {
-          sfxAchievement();
-          haptic('medium');
-          ctx.sky.floatCenter(`+${fmt(r.amount)}`, '#ffcf5a', 30);
-          toast(`<div class="t-ico">${icon('gift')}</div><div><b>Day ${r.day} claimed</b><br>+${fmt(r.amount)} Stardust · streak ${r.streak}</div>`, 'good');
-          ctx.save();
-          onClaim();
-        }
-      },
-    }],
+    buttons: [
+      { label: 'Claim', kind: rewardedAvailable() ? 'plain' : 'primary', onClick: () => claim(1) },
+      ...(rewardedAvailable() ? [{
+        label: 'Watch ad: x2', kind: 'primary' as const, onClick: () => {
+          void showRewarded('double today\'s supply drop').then((ok) => {
+            if (!ok) return;
+            ctx.s.adsWatched++;
+            claim(2);
+          });
+        },
+      }] : []),
+    ],
   });
+
+  function claim(mult: number): void {
+    const r = claimDaily(ctx.s, ctx.d);
+    if (!r) return;
+    if (mult > 1) earn(ctx.s, r.amount * (mult - 1));
+    const total = r.amount * mult;
+    sfxAchievement();
+    haptic('medium');
+    ctx.sky.floatCenter(`+${fmt(total)}`, '#ffcf5a', 30);
+    toast(`<div class="t-ico">${icon('gift')}</div><div><b>Day ${r.day} claimed${mult > 1 ? ' x2' : ''}</b><br>+${fmt(total)} Stardust · streak ${r.streak}</div>`, 'good');
+    ctx.save();
+    onClaim();
+  }
 }
 
 export function fmtBuffPct(mult: number): string {

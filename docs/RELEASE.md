@@ -50,10 +50,10 @@ your asteroid has grown into a moon, a planet, a star and finally a black hole.
 - Send probes on expeditions to find ancient Relics
 - Your empire keeps working while you are away
 - Daily supply drops for coming back
-- No ads, no internet needed, no account
+- Play offline, no account. Optional ads give boosts; you never have to watch one
 
 **Category:** Games, Simulation (Idle)
-**Content rating:** Everyone (no violence, no user content, no purchases)
+**Content rating:** Everyone (no violence, no user content, no purchases). Declare **Contains ads**.
 **Tags:** idle, clicker, incremental, space, tycoon
 
 **Graphics:** the 512 px icon is `www/icon-512.png`. Phone screenshots can be made with
@@ -61,7 +61,28 @@ your asteroid has grown into a moon, a planet, a star and finally a black hole.
 
 ## Privacy
 
-The game collects no personal data. It stores progress only on the device, makes no network requests,
-has no ads, analytics or accounts, and needs no permissions beyond vibration. In the Play Console data
-safety form, answer that no data is collected or shared. Play still asks for a privacy policy URL; a
-short page saying the above is enough.
+The game stores progress only on the device and has no accounts or analytics. Ads are served by
+Google AdMob, which collects the device advertising ID, approximate location from IP, and app
+interaction data to show and measure ads. In the Play Console data safety form, declare:
+- Device or other IDs: collected and shared, for advertising and analytics (by AdMob)
+- App activity and approximate location: collected by AdMob for advertising
+- Data is encrypted in transit; users cannot request deletion through the app (link Google's policy)
+
+The privacy policy page must name AdMob and link https://policies.google.com/technologies/partner-sites.
+The app asks for consent in the EEA and UK through Google's consent form (configure a GDPR message in
+AdMob under Privacy & messaging).
+
+## Ads setup
+
+The build ships with Google's **test** ad IDs, so it is safe to install and try. To earn money:
+
+1. Create an AdMob account and add the app (Android, package `com.bringouttherainn.stardustempire`).
+2. Create three ad units: Rewarded (Hyperdrive and doubles), Interstitial (break ads), Banner (optional).
+3. In GitHub, Settings, Secrets and variables, Actions, **Variables**, add `ADMOB_APP_ID` with the app ID
+   (`ca-app-pub-…~…`). CI writes it into the Android manifest.
+4. Put the three unit IDs (`ca-app-pub-…/…`) in `src/data/ads.ts` and set `testing: false`.
+5. Add `app-ads.txt` to the developer website listed in Play Console.
+
+Placements: Hyperdrive (rewarded, x2 production for 2 h, stacks to 8 h, runs offline); x2 offline
+earnings; x2 daily drop; a break ad after collapsing or entering an anomaly (at most once per 8
+minutes, never in the first 20 minutes of play). The banner is off by default (`banner: false`).

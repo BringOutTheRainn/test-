@@ -334,3 +334,38 @@ test('anomalies twist the rules and reward completion', async () => {
   enterAnomaly(s, computeDerived(s), 'inflation');
   assert.equal(computeDerived(s).costGrowth, 1.22);
 });
+
+test('hyperdrive from rewarded ads doubles production, stacks to a cap, and runs offline', async () => {
+  const { grantHyper, hyperCanStack, hyperRemainingMs, interstitialAllowed } = await import('../www/js/core/ads.js');
+  const s = newState(0);
+  s.generators[1] = 10;
+  const t = 1_000_000;
+  assert.equal(computeDerived(s, t).sps, 10);
+  grantHyper(s, t);
+  assert.equal(hyperRemainingMs(s, t), 2 * 3600000);
+  assert.equal(computeDerived(s, t).sps, 20);
+  grantHyper(s, t); grantHyper(s, t); grantHyper(s, t);
+  assert.equal(hyperRemainingMs(s, t), 8 * 3600000);
+  assert.ok(!hyperCanStack(s, t));
+  grantHyper(s, t);
+  assert.equal(hyperRemainingMs(s, t), 8 * 3600000, 'capped');
+  assert.equal(computeDerived(s, t + 9 * 3600000).sps, 10, 'expired');
+
+  // Offline: 1 hour away with 30 minutes of Hyperdrive left.
+  const o = newState(0);
+  o.generators[1] = 10;
+  o.lastSeen = 0;
+  o.hyperEndsAt = 1800 * 1000;
+  const r = applyOffline(o, computeDerived(o, 0), 3600 * 1000);
+  assert.equal(r.earned, 10 * 0.25 * (3600 + 1800));
+
+  const p = newState(0);
+  assert.ok(!interstitialAllowed(p, 10 ** 12), 'not in the first minutes');
+  p.playSeconds = 3600;
+  assert.ok(interstitialAllowed(p, 10 ** 12));
+  p.lastInterstitialAt = 10 ** 12 - 60000;
+  assert.ok(!interstitialAllowed(p, 10 ** 12), 'gap between full-screen ads');
+  p.lastInterstitialAt = 0;
+  p.noAds = true;
+  assert.ok(!interstitialAllowed(p, 10 ** 12));
+});

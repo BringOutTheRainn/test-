@@ -17,7 +17,10 @@ import { BuildPanel } from './ui/build.js';
 import type { BuyAmount, Ctx, Panel } from './ui/ctx.js';
 import { $, closeModal, esc, modalOpen, setText, toast, toggleClass, topModalDismissable } from './ui/dom.js';
 import { icon, installIcons } from './ui/icons.js';
-import { applySettings, openDaily, openSettings, openStats, showOffline } from './ui/menus.js';
+import { applySettings, openDaily, openHyperdrive, openSettings, openStats, showOffline } from './ui/menus.js';
+import { initAds, setBanner } from './ui/ads.js';
+import { hyperRemainingMs } from './core/ads.js';
+import { AD_CONFIG } from './data/ads.js';
 import { CosmosPanel, cosmosUnlocked, ProbesPanel, TrophiesPanel, UpgradesPanel } from './ui/panels.js';
 import { haptic, hideSplash, onBackButton, onPause } from './ui/platform.js';
 import { Sky, STAGES, stageFor } from './ui/sky.js';
@@ -46,6 +49,7 @@ function layout(): void {
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <div class="buffs" id="buffs"></div>
       <button class="gift-btn" id="btn-daily" hidden aria-label="Daily reward">${icon('gift')}</button>
+      <button class="hyper-btn" id="btn-hyper" hidden aria-label="Hyperdrive"><span class="hyper-ico">${icon('probe')}</span><span class="hyper-text" id="hyper-text">x2</span></button>
       <div class="tap-info" id="tap-info"></div>
       <div class="hint" id="hint" hidden></div>
       <div class="ticker" aria-hidden="true"><div class="ticker-text" id="ticker"></div></div>
@@ -161,7 +165,7 @@ function start(): void {
   const off = applyOffline(ctx.s, ctx.d);
   if (off.earned > 0) {
     if (off.seconds >= 3600) grantAchievement(ctx.s, 'offline_hour');
-    showOffline(off.seconds, off.earned);
+    showOffline(ctx, off.seconds, off.earned);
   }
 
   document.querySelector('.tabs')!.addEventListener('click', (e) => {
@@ -171,6 +175,10 @@ function start(): void {
   $('#btn-stats').addEventListener('click', () => openStats(ctx));
   $('#btn-settings').addEventListener('click', () => openSettings(ctx));
   $('#btn-daily').addEventListener('click', () => openDaily(ctx, () => refreshSlow(true)));
+  $('#btn-hyper').addEventListener('click', () => openHyperdrive(ctx));
+  void initAds().then(() => {
+    if (AD_CONFIG.banner && !ctx.s.noAds) void setBanner(true);
+  });
   document.addEventListener('pointerdown', unlockAudio, { once: true });
   // Block pinch-zoom and double-tap zoom on iOS Safari.
   document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -204,7 +212,7 @@ function start(): void {
       const back = applyOffline(ctx.s, ctx.d);
       if (back.earned > 0 && back.seconds >= 60) {
         if (back.seconds >= 3600) grantAchievement(ctx.s, 'offline_hour');
-        showOffline(back.seconds, back.earned);
+        showOffline(ctx, back.seconds, back.earned);
       }
       ctx.recalc();
       last = performance.now();
@@ -219,6 +227,8 @@ function start(): void {
   const stageEl = $('#stage-label');
   const tapInfo = $('#tap-info');
   const dailyBtn = $('#btn-daily') as HTMLButtonElement;
+  const hyperBtn = $('#btn-hyper') as HTMLButtonElement;
+  const hyperText = $('#hyper-text');
   let shownAmount = state.stardust;
 
   function refreshSlow(force = false): void {
@@ -267,6 +277,13 @@ function start(): void {
     sky.aura = top ? top.kind : 'none';
 
     dailyBtn.hidden = !dailyReady(s) || s.tapsAll < 10;
+
+    // Hyperdrive (rewarded ad) button, offered once the player is hooked.
+    const hyperLeft = hyperRemainingMs(s);
+    if (d.hyper && hyperLeft <= 0) ctx.recalc();
+    hyperBtn.hidden = !AD_CONFIG.enabled || (s.generators[1] === 0 && s.collapses === 0);
+    toggleClass(hyperBtn, 'on', hyperLeft > 0);
+    setText(hyperText, hyperLeft > 0 ? fmtTime(hyperLeft / 1000) : 'x2');
 
     // Tabs: Cosmos shows a lock until unlocked, Probes only once bought.
     const probeTab = document.querySelector<HTMLElement>('[data-tab="probes"]')!;

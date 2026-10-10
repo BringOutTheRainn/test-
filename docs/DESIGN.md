@@ -109,7 +109,7 @@ rare "Relics" that give permanent small multipliers. Gives players a reason to c
 
 ## Daily and session features
 
-- Offline earnings popup on return, with a "double it" button (rewarded ad slot later).
+- Offline earnings popup on return, with a "double it" rewarded ad button.
 - Daily login reward streak (Stardust boost, Dark Matter shard on day 7).
 - News ticker with funny space headlines that change with progress.
 
@@ -133,10 +133,19 @@ rare "Relics" that give permanent small multipliers. Gives players a reason to c
 Auto-save every 10 s and when the app goes to the background, to local storage. Saves are versioned
 JSON with migrations. Export/import a save string from Settings. Hard reset with confirmation.
 
-## Monetization plan (for release, not built until asked)
+## Monetization: ads (built)
 
-No forced ads. Optional rewarded ad to double offline earnings or a comet; a one-time "Supporter Pack"
-(cosmetic body skins + permanent +10%). Kept behind a store wrapper so it can be added later.
+Ads are mostly opt-in, so the game never feels pay-to-skip:
+- **Hyperdrive** (rewarded): x2 production for 2 h, stacks to 8 h, keeps running offline. Button on the
+  sky appears once the first Asteroid Harvester is bought.
+- **x2 offline earnings** and **x2 daily drop** (rewarded).
+- **Break ad** (interstitial) after a collapse or entering an anomaly: at most every 8 minutes, never in
+  the first 20 minutes of play.
+- **Banner**: built but off by default.
+- A `noAds` flag in the save turns off interstitials and banners, ready for a future "Remove ads" purchase.
+
+AdMob through `@capacitor-community/admob`; a browser stand-in plays a countdown so every flow can be tried
+on the web. IDs and pacing live in `src/data/ads.ts`. Release steps are in RELEASE.md.
 
 ## Milestones
 

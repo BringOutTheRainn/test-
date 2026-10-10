@@ -16,6 +16,8 @@ import type { Ctx, Panel } from './ctx.js';
 import { $, confirmModal, esc, openModal, setText, toast, toggleClass } from './dom.js';
 import { icon } from './icons.js';
 import { haptic } from './platform.js';
+import { showInterstitial } from './ads.js';
+import { interstitialAllowed } from '../core/ads.js';
 import { stageFor, STAGES } from './sky.js';
 
 // ------------------------------------------------------------------ Upgrades
@@ -266,6 +268,7 @@ export class CosmosPanel implements Panel {
     setTimeout(() => document.body.classList.remove('collapsing'), 1600);
     ctx.sky.setStage(0);
     ctx.showTab('build');
+    breakAd(ctx);
   }
 
   private renderTree(ctx: Ctx): void {
@@ -350,6 +353,7 @@ export class CosmosPanel implements Panel {
         setTimeout(() => document.body.classList.remove('collapsing'), 1600);
         ctx.sky.setStage(stageFor(0));
         ctx.showTab('build');
+        breakAd(ctx);
         toast(`<div class="t-ico">${icon('darkMatter')}</div><div><b>A new universe begins</b><br>+${fmt(gained)} Dark Matter</div>`, 'good', 5000);
       },
     );
@@ -428,6 +432,13 @@ export class ProbesPanel implements Panel {
     });
     ($('#btn-collect', this.root) as HTMLButtonElement).hidden = !ready;
   }
+}
+
+/** A full-screen ad at a natural break, after the collapse animation. */
+function breakAd(ctx: Ctx): void {
+  if (!interstitialAllowed(ctx.s)) return;
+  ctx.s.lastInterstitialAt = Date.now();
+  setTimeout(() => void showInterstitial(), 1800);
 }
 
 export function stageName(earned: number): string {

@@ -1,7 +1,7 @@
 // Saving, loading, migrations and offline progress.
 
 import { GENERATORS } from '../data/generators.js';
-import { earn, type Derived } from './economy.js';
+import { earn, HYPER_MULT, type Derived } from './economy.js';
 import { newState, SAVE_VERSION, type GameState } from './state.js';
 
 export const SAVE_KEY = 'stardust-empire-save';
@@ -63,10 +63,13 @@ export interface OfflineResult {
  */
 export function applyOffline(s: GameState, d: Derived, now = Date.now()): OfflineResult {
   const seconds = Math.max(0, (now - s.lastSeen) / 1000);
+  const from = s.lastSeen;
   s.lastSeen = now;
   if (seconds < 1) return { seconds: 0, counted: 0, earned: 0 };
   const counted = Math.min(seconds, d.offlineCapHours * 3600);
-  const earned = d.baseSps * counted * d.offlineRate;
+  // Hyperdrive keeps running while away: that share earns double.
+  const hyperSecs = Math.min(counted, Math.max(0, Math.min(now, s.hyperEndsAt) - from) / 1000);
+  const earned = d.baseSps * d.offlineRate * (counted + hyperSecs * (HYPER_MULT - 1));
   earn(s, earned);
   s.offlineEarnedAll += earned;
   s.time += seconds;
