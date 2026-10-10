@@ -136,6 +136,8 @@ JSON with migrations. Export/import a save string from Settings. Hard reset with
 ## Monetization: ads (built)
 
 Ads are mostly opt-in, so the game never feels pay-to-skip:
+- **Tap Frenzy** (rewarded): 60 s of 20 auto-taps a second, taps x10, 5 minute recharge.
+- **Mission swap** (rewarded): trade an unwanted mission for a new one.
 - **Hyperdrive** (rewarded): x2 production for 2 h, stacks to 8 h, keeps running offline. Button on the
   sky appears once the first Asteroid Harvester is bought.
 - **x2 offline earnings** and **x2 daily drop** (rewarded).
@@ -159,3 +161,26 @@ on the web. IDs and pacing live in `src/data/ads.ts`. Release steps are in RELEA
    safe areas, Android back button, pause/resume saving, performance pass, first-time hints.
 5. **Widen scope**: Expeditions and Relics, daily rewards, Anomaly challenge runs, balance pass with a
    simulation that checks pacing to the first prestige (target 1.5 to 3 hours of active play).
+6. **Ads**: Hyperdrive, x2 offline and daily rewards, paced break ads (see Monetization).
+7. **Live research (twice daily, Oct 10 to 17)**: study similar games, add what fits, ship the best.
+
+## Research log
+
+**Run 1 (Oct 10, evening).** Sources: CrazyGames' clicker monetization guide, GameAnalytics and Adjust
+idle-game guides, AdVenture Capitalist and Egg, Inc. reviews.
+- Reviews of AdVenture Capitalist and Egg, Inc. keep naming the same weakness: goals feel shallow and
+  progress repetitive. Egg, Inc. answers with a rolling set of missions. **Built: Missions** (three at
+  a time, each worth minutes of production, achievements at 1/10/50/150/400, swap one with a rewarded ad).
+- Rewarded ads that boost currency or speed up time convert best; a "welcome back" double and a
+  temporary tap or auto-click boost are the top two placements. Welcome-back double is built. **Built: Tap
+  Frenzy** (rewarded: 60 s of 20 auto-taps a second at x10 per tap, 5 minute recharge), next to
+  Hyperdrive in a new Boosts window.
+- Interstitials hurt retention most; keep them at natural pauses only (already true: after collapse
+  or anomaly entry, paced).
+- Daily task lists and login streaks are standard retention; streak exists, missions now cover tasks.
+
+### Backlog from research (best first)
+1. Push notifications when offline storage is full or Hyperdrive ends (Capacitor Local Notifications).
+2. Weekly event with a themed goal and cosmetic reward (Egg, Inc. style contracts).
+3. Generator milestones: every 25/50/100 owned doubles that generator's speed, with a visible next target.
+4. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

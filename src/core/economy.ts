@@ -1,5 +1,6 @@
 // Production, prices and purchases. Pure functions over GameState.
 
+import { AD_CONFIG } from '../data/ads.js';
 import { GENERATORS, COST_GROWTH } from '../data/generators.js';
 import { UPGRADES, UPGRADE_BY_ID, type Effect, type UpgradeDef } from '../data/upgrades.js';
 import { COSMIC, COSMIC_BY_ID, type CosmicEffect } from '../data/cosmic.js';
@@ -7,7 +8,7 @@ import { RELICS } from '../data/expeditions.js';
 import { ANOMALIES, ANOMALY_BY_ID } from '../data/anomalies.js';
 import { achievementCount, darkMatterAvailable, type GameState } from './state.js';
 
-export const BUFF_MULT = { rush: 7, supernova: 777, well: 0.5, horizon: 66 } as const;
+export const BUFF_MULT = { rush: 7, supernova: 777, well: 0.5, horizon: 66, frenzy: 10 } as const;
 export const HYPER_MULT = 2;
 
 /** Everything derived from purchases; recomputed when something is bought. */
@@ -194,7 +195,8 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   let tapBuff = 1;
   for (const b of s.buffs) {
     if (b.kind === 'rush' || b.kind === 'well' || b.kind === 'horizon') prodBuff *= BUFF_MULT[b.kind];
-    if (b.kind === 'supernova') tapBuff *= BUFF_MULT[b.kind];
+    if (b.kind === 'supernova' || b.kind === 'frenzy') tapBuff *= BUFF_MULT[b.kind];
+    if (b.kind === 'frenzy') autoTap += AD_CONFIG.frenzyTapsPerSecond;
   }
   const hyper = s.hyperEndsAt > now;
   if (hyper) prodBuff *= HYPER_MULT;

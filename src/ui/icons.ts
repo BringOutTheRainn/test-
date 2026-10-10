@@ -247,6 +247,13 @@ function relic(): string {
     <path d="M32 4 l-8 52 M32 4 l8 52 M12 20 h40" stroke="#bfffee" stroke-width="1.5" opacity=".7"/>`);
 }
 
+function mission(): string {
+  return svg(`<rect x="12" y="8" width="40" height="50" rx="5" fill="#2a3d6e" stroke="#5ef0ff" stroke-width="3"/>
+    <rect x="24" y="4" width="16" height="9" rx="3" fill="#5ef0ff"/>
+    <path d="M19 26 l4 4 l7 -8 M19 42 l4 4 l7 -8" fill="none" stroke="#ffcf5a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="34" y="24" width="12" height="4" rx="2" fill="#a9c3ff"/><rect x="34" y="40" width="12" height="4" rx="2" fill="#a9c3ff"/>`);
+}
+
 function build(): string {
   return svg(`<path d="M8 56 V30 l12 -8 v8 l12 -8 v8 l12 -8 v34z" fill="currentColor"/><rect x="46" y="10" width="8" height="46" fill="currentColor"/>`);
 }
@@ -262,7 +269,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos,
+  build, upgrade, cosmos, mission,
 };
 
 let installed = false;

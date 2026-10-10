@@ -369,3 +369,60 @@ test('hyperdrive from rewarded ads doubles production, stacks to a cap, and runs
   p.noAds = true;
   assert.ok(!interstitialAllowed(p, 10 ** 12));
 });
+
+test('missions fill three slots, track progress, pay out and reset with the universe', async () => {
+  const { ensureMissions, missionDone, missionProgress, claimMission, swapMission, claimableMissions } = await import('../www/js/core/missions.js');
+  const s = newState(0);
+  s.generators[0] = 10;
+  const d = computeDerived(s, 0);
+  ensureMissions(s, d, seq(0.1, 0.5, 0.9, 0.3));
+  assert.equal(s.missions.length, 3);
+  const keys = s.missions.map((m) => `${m.kind}:${m.gen ?? ''}`);
+  assert.equal(new Set(keys).size, 3, 'no duplicate missions');
+
+  // Force a tap mission and complete it.
+  s.missions[0] = { kind: 'taps', target: 5, start: s.tapsAll, minutes: 6 };
+  assert.equal(missionDone(s, s.missions[0]), false);
+  s.tapsAll += 5;
+  assert.equal(missionProgress(s, s.missions[0]), 5);
+  assert.equal(claimableMissions(s), 1);
+  const before = s.stardust;
+  const paid = claimMission(s, d, 0, seq(0.7));
+  assert.ok(paid > 0 && s.stardust === before + paid);
+  assert.equal(s.missionsDone, 1);
+  assert.equal(s.missions.length, 3);
+  assert.equal(claimMission(s, d, 1), 0, 'unfinished missions pay nothing');
+
+  // Own missions count the absolute number owned.
+  s.missions[1] = { kind: 'own', gen: 0, target: 15, start: 10, minutes: 8 };
+  s.generators[0] = 15;
+  assert.ok(missionDone(s, s.missions[1]));
+
+  assert.ok(swapMission(s, d, 2, seq(0.2)));
+  assert.equal(s.missions.length, 3);
+
+  // Collapsing clears the board; it refills from the new universe.
+  s.earnedAll = 1e12;
+  collapse(s, computeDerived(s, 0), 0);
+  assert.equal(s.missions.length, 0);
+  assert.equal(s.missionsDone, 1);
+});
+
+test('tap frenzy multiplies taps, auto-taps, then recharges', async () => {
+  const { grantFrenzy, frenzyReady, frenzyCooldown } = await import('../www/js/core/ads.js');
+  const s = newState(0);
+  const before = computeDerived(s, 0);
+  assert.ok(frenzyReady(s));
+  grantFrenzy(s);
+  const d = computeDerived(s, 0);
+  assert.equal(d.tap, before.tap * 10);
+  assert.equal(d.autoTap, before.autoTap + 20);
+  assert.equal(frenzyReady(s), false);
+  tick(s, d, 61);
+  const after = computeDerived(s, 0);
+  assert.equal(after.tap, before.tap);
+  assert.ok(frenzyCooldown(s) > 0 && !frenzyReady(s), 'still recharging');
+  s.time += 300;
+  assert.ok(frenzyReady(s));
+  assert.equal(s.adsWatched, 1);
+});

@@ -21,6 +21,10 @@ export const AD_CONFIG = {
   /** Hyperdrive: a rewarded ad doubles production for this long, stacking up to the cap. */
   hyperMinutes: 120,
   hyperCapMinutes: 480,
+  /** Tap Frenzy: auto-taps per second and tap multiplier, for this many seconds. */
+  frenzySeconds: 60,
+  frenzyTapsPerSecond: 20,
+  frenzyCooldownMinutes: 5,
   /** Full-screen ads: at most one per this many minutes, never in the first minutes of play. */
   interstitialGapMinutes: 8,
   interstitialAfterPlayMinutes: 20,

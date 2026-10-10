@@ -50,6 +50,11 @@ function build(): AchievementDef[] {
     list.push({ id: `tapearn_${i}`, name, desc: `Harvest ${short(n)} Stardust by tapping in one universe.`, check: (s) => s.tapEarnedRun >= n });
   });
 
+  const missions: Array<[number, string]> = [[1, 'Reporting for Duty'], [10, 'Errand Runner'], [50, 'Mission Control'], [150, 'Fleet Admiral'], [400, 'Galactic Fixer']];
+  missions.forEach(([n, name], i) => {
+    list.push({ id: `missions_${i}`, name, desc: `Complete ${n} mission${n === 1 ? '' : 's'}.`, check: (s) => s.missionsDone >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

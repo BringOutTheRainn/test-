@@ -24,6 +24,24 @@ export function grantHyper(s: GameState, now = Date.now()): void {
   s.adsWatched++;
 }
 
+export function frenzyReady(s: GameState): boolean {
+  return s.time >= s.frenzyReadyAt && !s.buffs.some((b) => b.kind === 'frenzy');
+}
+
+/** Seconds of game time until Tap Frenzy can be used again. */
+export function frenzyCooldown(s: GameState): number {
+  return Math.max(0, s.frenzyReadyAt - s.time);
+}
+
+/** Reward for watching a Tap Frenzy ad. */
+export function grantFrenzy(s: GameState): void {
+  const secs = AD_CONFIG.frenzySeconds;
+  s.buffs = s.buffs.filter((b) => b.kind !== 'frenzy');
+  s.buffs.push({ kind: 'frenzy', endsAt: s.time + secs, duration: secs });
+  s.frenzyReadyAt = s.time + secs + AD_CONFIG.frenzyCooldownMinutes * 60;
+  s.adsWatched++;
+}
+
 /** Whether a full-screen ad may be shown at a natural break right now. */
 export function interstitialAllowed(s: GameState, now = Date.now()): boolean {
   if (s.noAds) return false;

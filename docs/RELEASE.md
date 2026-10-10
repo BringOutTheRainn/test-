@@ -49,7 +49,7 @@ your asteroid has grown into a moon, a planet, a star and finally a black hole.
 - Six anomalies: twisted universes with one strange rule and a permanent reward
 - Send probes on expeditions to find ancient Relics
 - Your empire keeps working while you are away
-- Daily supply drops for coming back
+- Daily supply drops and missions that always give you a next goal
 - Play offline, no account. Optional ads give boosts; you never have to watch one
 
 **Category:** Games, Simulation (Idle)

@@ -17,7 +17,8 @@ import { BuildPanel } from './ui/build.js';
 import type { BuyAmount, Ctx, Panel } from './ui/ctx.js';
 import { $, closeModal, esc, modalOpen, setText, toast, toggleClass, topModalDismissable } from './ui/dom.js';
 import { icon, installIcons } from './ui/icons.js';
-import { applySettings, openDaily, openHyperdrive, openSettings, openStats, showOffline } from './ui/menus.js';
+import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
+import { claimableMissions, ensureMissions } from './core/missions.js';
 import { initAds, setBanner } from './ui/ads.js';
 import { hyperRemainingMs } from './core/ads.js';
 import { AD_CONFIG } from './data/ads.js';
@@ -49,6 +50,7 @@ function layout(): void {
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <div class="buffs" id="buffs"></div>
       <button class="gift-btn" id="btn-daily" hidden aria-label="Daily reward">${icon('gift')}</button>
+      <button class="mission-btn" id="btn-missions" hidden aria-label="Missions">${icon('mission')}<i class="mission-count" id="mission-count" hidden></i></button>
       <button class="hyper-btn" id="btn-hyper" hidden aria-label="Hyperdrive"><span class="hyper-ico">${icon('probe')}</span><span class="hyper-text" id="hyper-text">x2</span></button>
       <div class="tap-info" id="tap-info"></div>
       <div class="hint" id="hint" hidden></div>
@@ -176,6 +178,7 @@ function start(): void {
   $('#btn-settings').addEventListener('click', () => openSettings(ctx));
   $('#btn-daily').addEventListener('click', () => openDaily(ctx, () => refreshSlow(true)));
   $('#btn-hyper').addEventListener('click', () => openHyperdrive(ctx));
+  $('#btn-missions').addEventListener('click', () => openMissions(ctx, () => refreshSlow(true)));
   void initAds().then(() => {
     if (AD_CONFIG.banner && !ctx.s.noAds) void setBanner(true);
   });
@@ -229,6 +232,8 @@ function start(): void {
   const dailyBtn = $('#btn-daily') as HTMLButtonElement;
   const hyperBtn = $('#btn-hyper') as HTMLButtonElement;
   const hyperText = $('#hyper-text');
+  const missionBtn = $('#btn-missions') as HTMLButtonElement;
+  const missionCount = $('#mission-count');
   let shownAmount = state.stardust;
 
   function refreshSlow(force = false): void {
@@ -269,14 +274,23 @@ function start(): void {
     // Buff chips.
     const buffHtml = s.buffs.map((b) => {
       const left = Math.max(0, b.endsAt - s.time);
-      const label = { rush: 'Rush x7', supernova: 'Tap x777', well: 'Well x0.5', horizon: 'Horizon x66' }[b.kind];
+      const label = { rush: 'Rush x7', supernova: 'Tap x777', well: 'Well x0.5', horizon: 'Horizon x66', frenzy: 'Frenzy x10' }[b.kind];
       return `<div class="buff buff-${b.kind}"><span>${label}</span><b>${Math.ceil(left)}s</b><i style="width:${(left / b.duration) * 100}%"></i></div>`;
     }).join('');
     if (buffsEl.innerHTML !== buffHtml) buffsEl.innerHTML = buffHtml;
-    const top = s.buffs.find((b) => b.kind === 'well') ?? s.buffs.find((b) => b.kind === 'horizon') ?? s.buffs.find((b) => b.kind === 'rush') ?? s.buffs.find((b) => b.kind === 'supernova');
-    sky.aura = top ? top.kind : 'none';
+    const top = s.buffs.find((b) => b.kind === 'well') ?? s.buffs.find((b) => b.kind === 'horizon') ?? s.buffs.find((b) => b.kind === 'rush') ?? s.buffs.find((b) => b.kind === 'supernova' || b.kind === 'frenzy');
+    sky.aura = !top ? 'none' : top.kind === 'frenzy' ? 'supernova' : top.kind;
 
     dailyBtn.hidden = !dailyReady(s) || s.tapsAll < 10;
+
+    // Missions start once the first drone is built.
+    const missionsOn = s.generators[0] > 0 || s.collapses > 0;
+    if (missionsOn) ensureMissions(s, d);
+    missionBtn.hidden = !missionsOn;
+    const ready = claimableMissions(s);
+    missionCount.hidden = ready === 0;
+    setText(missionCount, String(ready));
+    toggleClass(missionBtn, 'ready', ready > 0);
 
     // Hyperdrive (rewarded ad) button, offered once the player is hooked.
     const hyperLeft = hyperRemainingMs(s);

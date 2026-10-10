@@ -3,10 +3,11 @@
 
 import { GENERATORS } from '../data/generators.js';
 import type { NumberStyle } from './format.js';
+import type { Mission } from './missions.js';
 
 export const SAVE_VERSION = 1;
 
-export type BuffKind = 'rush' | 'supernova' | 'well' | 'horizon';
+export type BuffKind = 'rush' | 'supernova' | 'well' | 'horizon' | 'frenzy';
 
 export interface Buff {
   kind: BuffKind;
@@ -80,6 +81,10 @@ export interface GameState {
   lastInterstitialAt: number;
   /** Set when the player buys ad removal; rewarded ads stay available. */
   noAds: boolean;
+  missions: Mission[];
+  missionsDone: number;
+  /** Game-clock second the next Tap Frenzy can be started. */
+  frenzyReadyAt: number;
   settings: Settings;
 }
 
@@ -124,6 +129,9 @@ export function newState(now = Date.now()): GameState {
     adsWatched: 0,
     lastInterstitialAt: 0,
     noAds: false,
+    missions: [],
+    missionsDone: 0,
+    frenzyReadyAt: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true },
   };
 }

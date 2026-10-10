@@ -13,9 +13,10 @@ import { closeModal, confirmModal, esc, openModal, toast } from './dom.js';
 import { icon } from './icons.js';
 import { copyText, haptic, setVibration } from './platform.js';
 import { rewardedAvailable, showRewarded } from './ads.js';
-import { earn } from '../core/economy.js';
+import { BUFF_MULT, earn } from '../core/economy.js';
 import { AD_CONFIG } from '../data/ads.js';
-import { grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
+import { frenzyCooldown, frenzyReady, grantFrenzy, grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
+import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
 
@@ -173,30 +174,118 @@ export function showOffline(ctx: Ctx, seconds: number, earned: number): void {
 }
 
 export function openHyperdrive(ctx: Ctx): void {
-  const left = hyperRemainingMs(ctx.s);
-  const can = hyperCanStack(ctx.s);
-  openModal({
-    title: 'Hyperdrive',
-    body: `<div class="offline"><div class="big-ico">${icon('probe')}</div>
-      <p>Watch a short ad to <b>double all production for ${AD_CONFIG.hyperMinutes / 60} hours</b>. It keeps running while you are away and stacks up to ${AD_CONFIG.hyperCapMinutes / 60} hours.</p>
-      ${left > 0 ? `<p class="dim">Active: ${fmtTime(left / 1000)} left.</p>` : ''}
-      ${can ? '' : '<p class="dim">Hyperdrive is fully charged. Come back when it runs lower.</p>'}</div>`,
-    buttons: can && rewardedAvailable() ? [
-      { label: 'Not now' },
-      {
-        label: 'Watch ad', kind: 'primary', onClick: () => {
-          void showRewarded('Hyperdrive: double production').then((ok) => {
-            if (!ok) return;
-            grantHyper(ctx.s);
-            ctx.recalc();
-            ctx.save();
-            sfxAchievement();
-            haptic('medium');
-            toast(`<div class="t-ico">${icon('probe')}</div><div><b>Hyperdrive engaged</b><br>Production x2 for ${fmtTime(hyperRemainingMs(ctx.s) / 1000)}</div>`, 'good');
-          });
-        },
-      },
-    ] : [{ label: 'Close', kind: 'primary' }],
+  const render = (): string => {
+    const s = ctx.s;
+    const left = hyperRemainingMs(s);
+    const can = hyperCanStack(s) && rewardedAvailable();
+    const frenzyOn = s.buffs.find((b) => b.kind === 'frenzy');
+    const wait = frenzyCooldown(s);
+    const frenzyText = ctx.d.noTaps ? 'Not available while tapping is disabled.'
+      : frenzyOn ? `Active: ${Math.ceil(frenzyOn.endsAt - s.time)}s left.`
+      : wait > 0 ? `Recharging: ${fmtTime(wait)}.` : '';
+    return `<div class="boosts">
+      <div class="boost">
+        <div class="boost-ico">${icon('probe')}</div>
+        <div class="boost-main"><b>Hyperdrive</b>
+          <p>Double all production for ${AD_CONFIG.hyperMinutes / 60} hours. Keeps running while you are away and stacks up to ${AD_CONFIG.hyperCapMinutes / 60} hours.</p>
+          ${left > 0 ? `<p class="dim small">Active: ${fmtTime(left / 1000)} left.</p>` : ''}
+          ${hyperCanStack(s) ? '' : '<p class="dim small">Fully charged. Come back when it runs lower.</p>'}</div>
+        <button class="btn ${can ? 'btn-primary' : 'btn-plain'}" data-boost="hyper" ${can ? '' : 'disabled'}>Watch ad</button>
+      </div>
+      <div class="boost">
+        <div class="boost-ico">${icon('tap')}</div>
+        <div class="boost-main"><b>Tap Frenzy</b>
+          <p>For ${AD_CONFIG.frenzySeconds} seconds, probes tap ${AD_CONFIG.frenzyTapsPerSecond} times a second and every tap is worth x${BUFF_MULT.frenzy}.</p>
+          ${frenzyText ? `<p class="dim small">${frenzyText}</p>` : ''}</div>
+        <button class="btn ${frenzyUsable() ? 'btn-primary' : 'btn-plain'}" data-boost="frenzy" ${frenzyUsable() ? '' : 'disabled'}>Watch ad</button>
+      </div>
+    </div>`;
+  };
+  const frenzyUsable = (): boolean => !ctx.d.noTaps && frenzyReady(ctx.s) && rewardedAvailable();
+  const el = openModal({ title: 'Boosts', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const timer = setInterval(() => { if (!busy) body.innerHTML = render(); }, 1000);
+  body.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-boost]');
+    if (!b || b.disabled || busy) return;
+    busy = true;
+    const kind = b.dataset.boost;
+    void showRewarded(kind === 'hyper' ? 'Hyperdrive: double production' : 'Tap Frenzy').then((ok) => {
+      busy = false;
+      if (ok && kind === 'hyper') {
+        grantHyper(ctx.s);
+        toast(`<div class="t-ico">${icon('probe')}</div><div><b>Hyperdrive engaged</b><br>Production x2 for ${fmtTime(hyperRemainingMs(ctx.s) / 1000)}</div>`, 'good');
+      } else if (ok && kind === 'frenzy') {
+        grantFrenzy(ctx.s);
+        closeModal(el);
+        toast(`<div class="t-ico">${icon('tap')}</div><div><b>Tap Frenzy!</b><br>${AD_CONFIG.frenzyTapsPerSecond} taps a second, each x${BUFF_MULT.frenzy}</div>`, 'good');
+      }
+      if (ok) {
+        ctx.recalc();
+        ctx.save();
+        sfxAchievement();
+        haptic('medium');
+      }
+      if (el.isConnected) body.innerHTML = render();
+    });
+  });
+}
+
+export function openMissions(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const { s, d } = ctx;
+    const rows = s.missions.map((m, i) => {
+      const done = missionDone(s, m);
+      const prog = missionProgress(s, m);
+      const pct = Math.min(100, (prog / m.target) * 100);
+      const progText = `${fmt(prog)} / ${fmt(m.target)}`;
+      return `<div class="mission ${done ? 'done' : ''}">
+        <div class="mission-main">
+          <div class="mission-name">${esc(describeMission(m, fmt))}</div>
+          <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="mission-meta"><span>${progText}</span><span class="mission-reward"><span class="sd-dot"></span>${fmt(missionReward(d, m))}</span></div>
+        </div>
+        ${done ? `<button class="btn btn-primary" data-claim="${i}">Claim</button>`
+          : rewardedAvailable() ? `<button class="btn btn-plain mission-swap" data-swap="${i}" aria-label="Watch an ad to swap this mission">Swap<small>ad</small></button>` : ''}
+      </div>`;
+    }).join('');
+    return `<p class="dim">Finish missions for bursts of Stardust. New ones arrive as you go.</p>
+      <div class="missions">${rows}</div>
+      <p class="dim small">Missions completed: ${fmt(s.missionsDone)}</p>`;
+  };
+  const el = openModal({ title: 'Missions', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-claim],[data-swap]');
+    if (!t || busy) return;
+    if (t.dataset.claim) {
+      const amount = claimMission(ctx.s, ctx.d, Number(t.dataset.claim));
+      if (amount <= 0) return;
+      sfxAchievement();
+      haptic('medium');
+      ctx.sky.floatCenter(`+${fmt(amount)}`, '#ffcf5a', 28);
+      toast(`<div class="t-ico">${icon('mission')}</div><div><b>Mission complete</b><br>+${fmt(amount)} Stardust</div>`, 'good');
+      ctx.save();
+      redraw();
+      onChange();
+    } else if (t.dataset.swap) {
+      busy = true;
+      const i = Number(t.dataset.swap);
+      void showRewarded('swap a mission').then((ok) => {
+        busy = false;
+        if (ok) {
+          swapMission(ctx.s, ctx.d, i);
+          ctx.s.adsWatched++;
+          ctx.save();
+          onChange();
+        }
+        redraw();
+      });
+    }
   });
 }
 

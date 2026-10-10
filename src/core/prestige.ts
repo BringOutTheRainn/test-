@@ -55,6 +55,7 @@ export function resetRun(s: GameState, d: Derived, now = Date.now()): void {
   s.tapsRun = 0;
   s.cometsRun = 0;
   s.buffs = [];
+  s.missions = [];
   s.generators = starterGenerators(s);
   const kept: Record<string, true> = {};
   if (d.keepResearch) {

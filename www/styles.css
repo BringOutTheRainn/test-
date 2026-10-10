@@ -120,7 +120,7 @@ svg.ico { width: 100%; height: 100%; display: block; }
   font-size: 12px; color: rgba(233, 237, 255, .6); pointer-events: none; white-space: nowrap;
 }
 
-.buffs { position: absolute; left: 10px; bottom: 34px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.buffs { position: absolute; left: 10px; bottom: 86px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
 .buff {
   position: relative; overflow: hidden;
   display: flex; gap: 8px; align-items: center; justify-content: space-between;
@@ -157,6 +157,39 @@ svg.ico { width: 100%; height: 100%; display: block; }
   color: var(--cyan);
   font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
 }
+.mission-btn {
+  position: absolute; left: 12px; bottom: 34px;
+  width: 44px; height: 44px; padding: 5px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(10, 20, 50, .75);
+}
+.mission-btn.ready { border-color: var(--gold); box-shadow: 0 0 12px rgba(255, 207, 90, .45); animation: bob 1.6s ease-in-out infinite; }
+.mission-count {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 999px; background: var(--gold); color: #1a1200;
+  font: 800 12px/20px inherit; font-style: normal; text-align: center;
+}
+.boosts { display: flex; flex-direction: column; gap: 10px; }
+.boost { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); }
+.boost-ico { width: 40px; height: 40px; flex: none; color: var(--cyan); }
+.boost-main { flex: 1; min-width: 0; }
+.boost-main p { margin: 4px 0 0; font-size: 13px; }
+.boost .btn { flex: none; }
+.boost .btn:disabled { opacity: .45; }
+.buff-frenzy { color: var(--cyan); border-color: var(--cyan); }
+.missions { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.mission { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); }
+.mission.done { border-color: var(--gold); }
+.mission-main { flex: 1; min-width: 0; }
+.mission-name { font-weight: 700; }
+.mission .bar { margin: 6px 0 4px; }
+.mission.done .bar-fill { background: var(--gold); }
+.mission-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.mission-reward { color: var(--gold); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.mission-swap { display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 6px 10px; }
+.mission-swap small { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
 .hyper-ico { width: 28px; height: 28px; }
 .hyper-btn.on { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(255, 207, 90, .4); }
 .fake-ad { text-align: center; padding: 10px 0; }
@@ -593,5 +626,5 @@ body.collapsing #app { animation: collapse 1.6s ease-in-out; }
 
 @media (prefers-reduced-motion: reduce) {
   .ticker-text.run { animation-duration: 30s; }
-  .gift-btn, .hint, .gen.pulse { animation: none; }
+  .gift-btn, .hint, .gen.pulse, .mission-btn.ready { animation: none; }
 }
