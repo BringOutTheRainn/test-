@@ -285,6 +285,20 @@ export function installIcons(): void {
   document.body.prepend(holder);
 }
 
+const images: Record<string, HTMLImageElement> = {};
+
+/** The icon as an image, for drawing on a canvas. */
+export function iconImage(name: string): HTMLImageElement {
+  if (!images[name]) {
+    const [d, body] = (FACTORIES[name] ?? research)().split(SEP);
+    const text = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs>${d}</defs>${body}</svg>`;
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text);
+    images[name] = img;
+  }
+  return images[name];
+}
+
 export function icon(name: string): string {
   const id = name in FACTORIES ? name : 'research';
   return `<svg class="ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#ico-${id}"/></svg>`;

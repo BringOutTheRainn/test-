@@ -251,6 +251,7 @@ function start(): void {
     const stage = stageFor(s.earnedRun);
     sky.setStage(stage);
     sky.setDrones(s.generators[0]);
+    sky.setOwned(s.generators);
     setText(stageEl, s.anomaly ? `${STAGES[stage].name} · ${ANOMALY_BY_ID[s.anomaly]?.name ?? ''}` : STAGES[stage].name);
     toggleClass(stageEl, 'anomaly', !!s.anomaly);
     setText(tapInfo, d.noTaps ? 'Tapping is disabled' : `${fmt(d.tap, 1)} per tap`);
@@ -313,7 +314,7 @@ function start(): void {
       return showHint('upgrade', 'An upgrade is ready. Tap it in the strip above your generators.');
     }
     if (Object.keys(s.upgrades).length > 0) seen.upgrade = true;
-    if (!seen.cosmos && canCollapse(s)) return showHint('cosmos', 'You can collapse the universe for Dark Matter. Open Cosmos.');
+    if (!seen.cosmos && canCollapse(s)) return showHint('cosmos', 'Dark Matter is ready. Open Cosmos to collapse.');
     if (s.collapses > 0) seen.cosmos = true;
     if (hintId) {
       hintId = '';

@@ -36,7 +36,7 @@ export const ANOMALIES: AnomalyDef[] = [
     rules: [{ k: 'maxGen', index: 1 }], reward: { k: 'droneMult', mult: 3 } },
   { id: 'inflation', name: 'Runaway Inflation', rule: 'Generator prices grow 22% per copy instead of 15%.', goal: 1e11, rewardText: 'Generators cost 5% less forever.',
     rules: [{ k: 'costGrowth', value: 1.22 }], reward: { k: 'genDiscount', pct: 0.05 } },
-  { id: 'drought', name: 'Comet Drought', rule: 'No comets appear.', goal: 1e12, rewardText: 'Comets appear 20% more often forever.',
+  { id: 'drought', name: 'Comet Drought', rule: 'No comets appear.', goal: 1e11, rewardText: 'Comets appear 20% more often forever.',
     rules: [{ k: 'noComets' }], reward: { k: 'cometFreq', mult: 1.2 } },
   { id: 'primitive', name: 'Primitive Physics', rule: 'Upgrades cannot be bought.', goal: 1e9, rewardText: '+25% offline production forever.',
     rules: [{ k: 'noUpgrades' }], reward: { k: 'offline', pct: 0.25 } },

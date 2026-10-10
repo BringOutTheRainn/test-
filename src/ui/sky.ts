@@ -1,6 +1,9 @@
 // The canvas in the middle of the screen: starfield, the celestial body you
 // tap, orbiting drones, comets, particles and floating numbers.
 
+import { GENERATORS } from '../data/generators.js';
+import { iconImage } from './icons.js';
+
 export const STAGES = [
   { name: 'Asteroid', at: 0 },
   { name: 'Moon', at: 1e5 },
@@ -83,6 +86,12 @@ export class Sky {
 
   setDrones(n: number): void {
     this.drones = n;
+  }
+
+  private owned: number[] = [];
+  /** Which generator types you own; each shows as a small craft in the sky. */
+  setOwned(counts: number[]): void {
+    this.owned = counts;
   }
 
   private resize(): void {
@@ -263,6 +272,7 @@ export class Sky {
 
     const [cx, cy] = this.center;
     const r = this.radius;
+    this.drawEmpire(cx, cy);
     this.drawAura(cx, cy, r);
     const sq = Math.sin(this.squash * Math.PI) * 0.05;
     g.save();
@@ -298,6 +308,27 @@ export class Sky {
       g.fillStyle = f.color;
       g.fillText(f.text, f.x, f.y);
     }
+    g.globalAlpha = 1;
+  }
+
+  /** Your other generators drift around the edge of the sky. */
+  private drawEmpire(cx: number, cy: number): void {
+    const types: number[] = [];
+    for (let i = 1; i < GENERATORS.length; i++) if (this.owned[i] > 0) types.push(i);
+    if (!types.length) return;
+    const g = this.ctx;
+    const size = Math.max(22, Math.min(34, this.w * 0.075));
+    const rx = this.w * 0.42;
+    const ry = this.h * 0.43;
+    types.forEach((gen, k) => {
+      const img = iconImage(GENERATORS[gen].id);
+      if (!img.complete || !img.naturalWidth) return;
+      const a = (k / types.length) * Math.PI * 2 + this.t * 0.02 + 0.4;
+      const x = cx + Math.cos(a) * rx;
+      const y = cy + Math.sin(a) * ry + Math.sin(this.t * 0.8 + gen) * 3;
+      g.globalAlpha = 0.75;
+      g.drawImage(img, x - size / 2, y - size / 2, size, size);
+    });
     g.globalAlpha = 1;
   }
 
@@ -581,13 +612,13 @@ export class Sky {
   }
 
   private drawDrones(cx: number, cy: number, r: number): void {
-    const n = Math.min(this.drones, 50);
+    const n = Math.min(this.drones, 40);
     if (!n) return;
     const g = this.ctx;
     for (let i = 0; i < n; i++) {
-      const ring = i < 25 ? 0 : 1;
-      const inRing = ring === 0 ? Math.min(n, 25) : n - 25;
-      const idx = ring === 0 ? i : i - 25;
+      const ring = i < 20 ? 0 : 1;
+      const inRing = ring === 0 ? Math.min(n, 20) : n - 20;
+      const idx = ring === 0 ? i : i - 20;
       const a = (idx / inRing) * TAU + this.t * (ring === 0 ? 0.25 : -0.18);
       const rr = r * (ring === 0 ? 1.42 : 1.62);
       const x = cx + Math.cos(a) * rr;
