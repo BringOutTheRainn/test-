@@ -88,6 +88,11 @@ function build(): AchievementDef[] {
     list.push({ id: `exp_${i}`, name, desc: `Complete ${n} expedition${n === 1 ? '' : 's'}.`, check: (s) => s.expeditionsDone >= n });
   });
 
+  const anomalies: Array<[number, string]> = [[1, 'Anomalous'], [3, 'Rule Breaker'], [6, 'Reality Bender']];
+  anomalies.forEach(([n, name], i) => {
+    list.push({ id: `anomaly_${i}`, name, desc: `Complete ${n} anomal${n === 1 ? 'y' : 'ies'}.`, check: (s) => Object.keys(s.anomaliesDone).length >= n });
+  });
+
   list.push({ id: 'daily_7', name: 'Creature of Habit', desc: 'Reach a 7 day login streak.', check: (s) => s.dailyStreak >= 7 });
   list.push({ id: 'offline_hour', name: 'Patience Pays', desc: 'Earn Stardust while away for over an hour.', hidden: true, check: () => false });
   list.push({ id: 'one_drone', name: 'Lone Drone', desc: 'Earn 1 million Stardust in a universe while owning only Mining Drones.', hidden: true,

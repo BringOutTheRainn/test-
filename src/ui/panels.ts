@@ -1,6 +1,8 @@
 // The Upgrades, Trophies, Cosmos and Probes tabs.
 
 import { ACHIEVEMENTS, ACHIEVEMENT_BY_ID } from '../data/achievements.js';
+import { ANOMALIES, ANOMALY_BY_ID } from '../data/anomalies.js';
+import { abandonAnomaly, anomaliesUnlocked, enterAnomaly } from '../core/anomalies.js';
 import { COSMIC, COSMIC_BY_ID } from '../data/cosmic.js';
 import { DESTINATIONS, DESTINATION_BY_ID, RELICS } from '../data/expeditions.js';
 import { UPGRADES, UPGRADE_BY_ID } from '../data/upgrades.js';
@@ -56,8 +58,8 @@ export class UpgradesPanel implements Panel {
 
   refresh(ctx: Ctx): void {
     const { s, d } = ctx;
-    const ups = availableUpgrades(s);
-    const key = ups.map((u) => u.id).join(',') + '|' + Object.keys(s.upgrades).length;
+    const ups = d.noUpgrades ? [] : availableUpgrades(s);
+    const key = ups.map((u) => u.id).join(',') + '|' + Object.keys(s.upgrades).length + d.noUpgrades;
     if (key !== this.key) {
       this.key = key;
       this.list.innerHTML = ups.length
@@ -67,7 +69,7 @@ export class UpgradesPanel implements Panel {
             <div class="upg-text"><div class="upg-name">${esc(u.name)}</div><div class="upg-desc">${esc(u.desc)}</div></div>
             <button class="btn btn-buy" data-buy="${u.id}"><span class="sd-dot"></span>${fmt(upgradePrice(d, u))}</button>
           </div>`).join('')
-        : '<p class="empty">No upgrades right now. Buy more generators to unlock new ones.</p>';
+        : `<p class="empty">${d.noUpgrades ? 'Upgrades cannot be bought in this anomaly.' : 'No upgrades right now. Buy more generators to unlock new ones.'}</p>`;
       const bought = UPGRADES.filter((u) => s.upgrades[u.id]);
       setText(this.ownedTitle, `Bought (${bought.length} of ${UPGRADES.length})`);
       this.owned.innerHTML = bought.map((u) => `<button class="owned-chip" data-owned="${u.id}" aria-label="${esc(u.name)}">${icon(u.icon)}</button>`).join('');
@@ -137,6 +139,9 @@ export class CosmosPanel implements Panel {
       if (t.closest('#btn-collapse')) this.askCollapse();
       const node = t.closest<HTMLElement>('[data-cosmic]');
       if (node) this.showCosmic(node.dataset.cosmic!);
+      const enter = t.closest<HTMLElement>('[data-anomaly]');
+      if (enter) this.askAnomaly(enter.dataset.anomaly!);
+      if (t.closest('#btn-abandon')) this.askAbandon();
     });
   }
 
@@ -153,6 +158,7 @@ export class CosmosPanel implements Panel {
         <div class="collapse-note" id="dm-next"></div>
         <button class="btn btn-cosmic btn-wide" id="btn-collapse">Collapse the Universe</button>
       </div>
+      <div id="anomalies"></div>
       <h3 class="section-title">Cosmic upgrades</h3>
       <p class="hint-text">Bought with Dark Matter. Kept forever. Spending Dark Matter does not lower its production bonus.</p>
       <div class="tree" id="tree"></div>`;
@@ -190,12 +196,76 @@ export class CosmosPanel implements Panel {
     const btn = $('#btn-collapse', this.root) as HTMLButtonElement;
     btn.disabled = !canCollapse(s);
 
-    const key = Object.keys(s.cosmic).join(',') + '|' + darkMatterAvailable(s);
+    const key = Object.keys(s.cosmic).join(',') + '|' + darkMatterAvailable(s) + '|' + s.anomaly + Object.keys(s.anomaliesDone).join(',');
     if (key !== this.treeKey) {
       this.treeKey = key;
       this.renderTree(ctx);
+      this.renderAnomalies(ctx);
     }
+    const a = s.anomaly ? ANOMALY_BY_ID[s.anomaly] : undefined;
+    const bar = this.root.querySelector<HTMLElement>('#anomaly-bar');
+    if (a && bar) bar.style.width = `${Math.min(100, (Math.log10(Math.max(1, s.earnedRun)) / Math.log10(a.goal)) * 100).toFixed(1)}%`;
+    const prog = this.root.querySelector<HTMLElement>('#anomaly-progress');
+    if (a && prog) setText(prog, `${fmt(s.earnedRun)} / ${fmt(a.goal)} Stardust`);
     void d;
+  }
+
+  private renderAnomalies(ctx: Ctx): void {
+    const s = ctx.s;
+    const root = $('#anomalies', this.root);
+    if (!anomaliesUnlocked(s)) {
+      root.innerHTML = '';
+      return;
+    }
+    const done = Object.keys(s.anomaliesDone).length;
+    root.innerHTML = `
+      <h3 class="section-title">Anomalies · ${done} of ${ANOMALIES.length}</h3>
+      <p class="hint-text">Twisted universes with one strange rule. Reach the goal inside one for a permanent reward. Entering collapses your universe and collects any pending Dark Matter.</p>
+      <div class="anomalies">${ANOMALIES.map((a) => {
+        const isDone = !!s.anomaliesDone[a.id];
+        const active = s.anomaly === a.id;
+        return `<div class="anomaly ${isDone ? 'done' : ''} ${active ? 'active' : ''}">
+          <div class="anomaly-top"><b>${esc(a.name)}</b><span class="anomaly-goal">${isDone ? 'Complete' : `Goal ${fmt(a.goal)}`}</span></div>
+          <div class="dim">${esc(a.rule)}</div>
+          <div class="anomaly-reward">${esc(a.rewardText)}</div>
+          ${active ? `<div class="bar"><div class="bar-fill" id="anomaly-bar"></div></div><div class="anomaly-row"><span class="dim small" id="anomaly-progress"></span><button class="btn btn-plain" id="btn-abandon">Leave</button></div>`
+            : isDone ? '' : `<button class="btn btn-cosmic" data-anomaly="${a.id}" ${s.anomaly ? 'disabled' : ''}>Enter</button>`}
+        </div>`;
+      }).join('')}</div>`;
+  }
+
+  private askAnomaly(id: string): void {
+    const ctx = this.ctx;
+    const a = ANOMALY_BY_ID[id];
+    const pending = pendingDarkMatter(ctx.s);
+    confirmModal(`Enter ${a.name}?`,
+      `<b>Rule:</b> ${esc(a.rule)}<br><b>Goal:</b> earn ${fmt(a.goal)} Stardust in this universe.<br><b>Reward:</b> ${esc(a.rewardText)}<br><br>Your current universe collapses${pending >= 1 ? ` and you collect <b class="dm">+${fmt(pending)} Dark Matter</b>` : ''}. You can leave the anomaly at any time.`,
+      'Enter', () => {
+        enterAnomaly(ctx.s, ctx.d, id);
+        this.afterReset();
+        toast(`<div class="t-ico">${icon('darkMatter')}</div><div><b>${esc(a.name)}</b><br>${esc(a.rule)}</div>`, 'comet', 5000);
+      });
+  }
+
+  private askAbandon(): void {
+    const ctx = this.ctx;
+    confirmModal('Leave the anomaly?', 'Your universe collapses into a normal one. Progress towards this anomaly is lost, but pending Dark Matter is collected.', 'Leave', () => {
+      abandonAnomaly(ctx.s, ctx.d);
+      this.afterReset();
+    }, true);
+  }
+
+  private afterReset(): void {
+    const ctx = this.ctx;
+    sfxCollapse();
+    haptic('heavy');
+    ctx.recalc();
+    ctx.dirty();
+    ctx.save();
+    document.body.classList.add('collapsing');
+    setTimeout(() => document.body.classList.remove('collapsing'), 1600);
+    ctx.sky.setStage(0);
+    ctx.showTab('build');
   }
 
   private renderTree(ctx: Ctx): void {

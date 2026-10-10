@@ -3,6 +3,8 @@
 import { ACHIEVEMENT_BY_ID } from './data/achievements.js';
 import { availableNews } from './data/news.js';
 import { checkAchievements, grantAchievement } from './core/achievements.js';
+import { checkAnomaly } from './core/anomalies.js';
+import { ANOMALY_BY_ID } from './data/anomalies.js';
 import { catchComet, cometDue, cometStaySeconds, rollBlack, scheduleNextComet } from './core/comets.js';
 import { dailyReady } from './core/daily.js';
 import { availableUpgrades, computeDerived, tap, tick, upgradePrice, type Derived } from './core/economy.js';
@@ -86,7 +88,11 @@ function start(): void {
   const panels: Record<string, Panel> = {};
 
   const sky = new Sky($('#sky') as HTMLCanvasElement, {
-    onTap: (_x, _y) => {
+    onTap: (x, y) => {
+      if (ctx.d.noTaps) {
+        if (Math.random() < 0.2) sky.floatText(x, y, 'Hands tied!', '#ff5f7a', 18);
+        return null;
+      }
       const amount = tap(ctx.s, ctx.d);
       sfxTap();
       haptic('light');
@@ -169,6 +175,7 @@ function start(): void {
   // Block pinch-zoom and double-tap zoom on iOS Safari.
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('dblclick', (e) => e.preventDefault());
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   onBackButton(() => {
     if (modalOpen()) {
@@ -229,12 +236,24 @@ function start(): void {
       rebuildAll = true;
     }
 
+    // Anomaly goal.
+    const finished = checkAnomaly(s);
+    if (finished) {
+      const a = ANOMALY_BY_ID[finished];
+      ctx.recalc();
+      sfxAchievement();
+      haptic('heavy');
+      toast(`<div class="t-ico">${icon('darkMatter')}</div><div><b>Anomaly complete: ${esc(a.name)}</b><br>${esc(a.rewardText)} The rule is lifted.</div>`, 'good', 6000);
+      rebuildAll = true;
+    }
+
     // Stage of the celestial body.
     const stage = stageFor(s.earnedRun);
     sky.setStage(stage);
     sky.setDrones(s.generators[0]);
-    setText(stageEl, STAGES[stage].name);
-    setText(tapInfo, `${fmt(d.tap, 1)} per tap`);
+    setText(stageEl, s.anomaly ? `${STAGES[stage].name} · ${ANOMALY_BY_ID[s.anomaly]?.name ?? ''}` : STAGES[stage].name);
+    toggleClass(stageEl, 'anomaly', !!s.anomaly);
+    setText(tapInfo, d.noTaps ? 'Tapping is disabled' : `${fmt(d.tap, 1)} per tap`);
 
     // Buff chips.
     const buffHtml = s.buffs.map((b) => {
@@ -252,7 +271,7 @@ function start(): void {
     const probeTab = document.querySelector<HTMLElement>('[data-tab="probes"]')!;
     probeTab.hidden = !d.expeditions;
     toggleClass(document.querySelector('[data-tab="cosmos"]')!, 'locked', !cosmosUnlocked(ctx));
-    badge('upgrades', availableUpgrades(s).some((u) => upgradePrice(d, u) <= s.stardust));
+    badge('upgrades', !d.noUpgrades && availableUpgrades(s).some((u) => upgradePrice(d, u) <= s.stardust));
     badge('cosmos', canCollapse(s) && s.collapses === 0);
     badge('probes', s.expeditions.some((e) => e.returnsAt <= Date.now()) || (d.expeditions && s.expeditions.length < d.expeditionSlots));
 
@@ -336,7 +355,7 @@ function start(): void {
 
       // Comets.
       if (cometDue(s) && !sky.hasComet) {
-        cometPending = true;
+        cometPending = !ctx.d.noComets;
         scheduleNextComet(s, ctx.d);
       }
       if (cometPending && !modalOpen()) {

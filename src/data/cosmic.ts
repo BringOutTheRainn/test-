@@ -37,7 +37,7 @@ export const COSMIC: CosmicDef[] = [
   { id: 'kit', name: 'Starter Kit', desc: 'Also start with 5 Asteroid Harvesters and 2 Lunar Bases.', cost: 10, requires: ['seed'], x: 0, y: 2, effects: [{ k: 'starter', gen: 1, count: 5 }, { k: 'starter', gen: 2, count: 2 }] },
   { id: 'tails', name: 'Long Tails', desc: 'Comet effects last 10% longer.', cost: 7, requires: ['magnet'], x: 2, y: 2, effects: [{ k: 'cometEffect', mult: 1.1 }] },
   { id: 'probe', name: 'Autonomous Probe', desc: 'A probe taps the celestial body twice a second for you.', cost: 15, requires: ['fingers'], x: 4, y: 2, effects: [{ k: 'autoTap', perSecond: 2 }] },
-  { id: 'cache', name: 'Event Horizon Cache', desc: 'Offline production 75%, and up to 16 hours.', cost: 20, requires: ['glow', 'kit'], x: 1, y: 3, effects: [{ k: 'offlineRate', value: 0.75 }, { k: 'offlineCapHours', value: 16 }] },
+  { id: 'cache', name: 'Event Horizon Cache', desc: 'Offline production 75%, and up to 16 hours.', cost: 20, requires: ['kit'], x: 1, y: 3, effects: [{ k: 'offlineRate', value: 0.75 }, { k: 'offlineCapHours', value: 16 }] },
   { id: 'black', name: 'Black Comets', desc: 'Rare black comets appear: huge rewards, small risks.', cost: 25, requires: ['tails'], x: 2, y: 3, effects: [{ k: 'blackComets' }] },
   { id: 'map', name: 'Constellation Map', desc: 'Achievements give 50% more production.', cost: 30, requires: ['probe'], x: 3, y: 3, effects: [{ k: 'achBonus', pct: 0.5 }] },
   { id: 'bay', name: 'Expedition Bay', desc: 'Unlocks Expeditions: send probes to distant systems for loot and Relics.', cost: 40, requires: ['cache'], x: 0, y: 4, effects: [{ k: 'expeditions' }] },
@@ -48,7 +48,7 @@ export const COSMIC: CosmicDef[] = [
   { id: 'contracts', name: 'Bulk Contracts', desc: 'Upgrades cost 10% less.', cost: 200, requires: ['discount'], x: 2, y: 5, effects: [{ k: 'upgDiscount', pct: 0.1 }] },
   { id: 'echo', name: 'Research Echo', desc: 'Keep all Research upgrades when the universe collapses.', cost: 300, requires: ['contracts'], x: 2, y: 6, effects: [{ k: 'keepResearch' }] },
   { id: 'resonance2', name: 'Deep Resonance', desc: 'Each Dark Matter gives another +1% production.', cost: 500, requires: ['resonance'], x: 4, y: 5, effects: [{ k: 'dmBonus', pct: 0.01 }] },
-  { id: 'probe2', name: 'Probe Fleet', desc: 'Probes tap 10 times a second.', cost: 777, requires: ['probe', 'resonance2'], x: 4, y: 6, effects: [{ k: 'autoTap', perSecond: 8 }] },
+  { id: 'probe2', name: 'Probe Fleet', desc: 'Probes tap 10 times a second.', cost: 777, requires: ['resonance2'], x: 4, y: 6, effects: [{ k: 'autoTap', perSecond: 8 }] },
   { id: 'hangar3', name: 'Third Hangar', desc: 'Run three Expeditions at once.', cost: 1000, requires: ['hangar'], x: 0, y: 7, effects: [{ k: 'expeditionSlots', value: 3 }] },
 ];
 

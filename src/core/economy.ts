@@ -4,6 +4,7 @@ import { GENERATORS, COST_GROWTH } from '../data/generators.js';
 import { UPGRADES, UPGRADE_BY_ID, type Effect, type UpgradeDef } from '../data/upgrades.js';
 import { COSMIC, COSMIC_BY_ID, type CosmicEffect } from '../data/cosmic.js';
 import { RELICS } from '../data/expeditions.js';
+import { ANOMALIES, ANOMALY_BY_ID } from '../data/anomalies.js';
 import { achievementCount, darkMatterAvailable, type GameState } from './state.js';
 
 export const BUFF_MULT = { rush: 7, supernova: 777, well: 0.5, horizon: 66 } as const;
@@ -33,6 +34,13 @@ export interface Derived {
   expeditionSlots: number;
   expSpeed: number;
   keepResearch: boolean;
+  /** Anomaly rules for this universe. */
+  noTaps: boolean;
+  noComets: boolean;
+  noUpgrades: boolean;
+  costGrowth: number;
+  /** Highest generator index that can be built. */
+  maxGen: number;
 }
 
 function cosmicEffects(s: GameState): CosmicEffect[] {
@@ -131,6 +139,35 @@ export function computeDerived(s: GameState): Derived {
     }
   }
 
+  let noTaps = false;
+  let noComets = false;
+  let noUpgrades = false;
+  let costGrowth = COST_GROWTH;
+  let maxGen = n - 1;
+  const active = s.anomaly ? ANOMALY_BY_ID[s.anomaly] : undefined;
+  for (const r of active?.rules ?? []) {
+    switch (r.k) {
+      case 'prodMult': globalMult *= r.mult; break;
+      case 'noTaps': noTaps = true; break;
+      case 'noComets': noComets = true; break;
+      case 'noUpgrades': noUpgrades = true; break;
+      case 'costGrowth': costGrowth = r.value; break;
+      case 'maxGen': maxGen = r.index; break;
+    }
+  }
+  for (const a of ANOMALIES) {
+    if (!s.anomaliesDone[a.id]) continue;
+    const r = a.reward;
+    switch (r.k) {
+      case 'global': globalMult *= 1 + r.pct; break;
+      case 'tapMult': tapMult *= r.mult; break;
+      case 'genDiscount': genDiscount += r.pct; break;
+      case 'cometFreq': cometFreq *= r.mult; break;
+      case 'droneMult': genMult[0] *= r.mult; break;
+      case 'offline': offlineRate += r.pct; break;
+    }
+  }
+
   globalMult *= 1 + achPct * achievementCount(s);
   globalMult *= 1 + dmPct * s.darkMatter;
   globalMult *= astronomerMult;
@@ -160,12 +197,12 @@ export function computeDerived(s: GameState): Derived {
   const sps = baseSps * prodBuff;
   // Taps get the flat drone bonus and a share of production, but not the
   // global multiplier directly (it reaches them through the SPS share).
-  const tap = ((1 * tapMult + flat) * relicTap + sps * tapSps) * tapBuff;
+  const tap = noTaps ? 0 : ((1 * tapMult + flat) * relicTap + sps * tapSps) * tapBuff;
 
   return {
     genSps, baseSps, sps, tap, globalMult, prodBuff, tapBuff, cometFreq, cometStay, cometEffect, offlineRate: Math.min(offlineRate, 1.5),
     offlineCapHours, autoTap, genDiscount: Math.min(genDiscount, 0.5), upgDiscount: Math.min(upgDiscount, 0.5), blackComets, expeditions,
-    expeditionSlots, expSpeed, keepResearch,
+    expeditionSlots, expSpeed, keepResearch, noTaps, noComets, noUpgrades, costGrowth, maxGen,
   };
 }
 
@@ -175,13 +212,14 @@ export function generatorPrice(s: GameState, d: Derived, gen: number, amount = 1
   const base = GENERATORS[gen].baseCost * (1 - d.genDiscount);
   const owned = s.generators[gen];
   // Geometric series: base * r^owned * (r^amount - 1) / (r - 1)
-  const r = COST_GROWTH;
+  const r = d.costGrowth;
   return Math.ceil(base * Math.pow(r, owned) * (Math.pow(r, amount) - 1) / (r - 1));
 }
 
 export function maxAffordable(s: GameState, d: Derived, gen: number): number {
+  if (gen > d.maxGen) return 0;
   const base = GENERATORS[gen].baseCost * (1 - d.genDiscount);
-  const r = COST_GROWTH;
+  const r = d.costGrowth;
   const first = base * Math.pow(r, s.generators[gen]);
   if (s.stardust < first) return 0;
   let n = Math.floor(Math.log(s.stardust * (r - 1) / first + 1) / Math.log(r));
@@ -193,6 +231,7 @@ export function maxAffordable(s: GameState, d: Derived, gen: number): number {
 
 /** Buys `amount` copies (or as many as affordable when amount is 'max'). Returns how many were bought. */
 export function buyGenerator(s: GameState, d: Derived, gen: number, amount: number | 'max'): number {
+  if (gen > d.maxGen) return 0;
   const n = amount === 'max' ? maxAffordable(s, d, gen) : amount;
   if (n <= 0) return 0;
   const price = generatorPrice(s, d, gen, n);
@@ -225,7 +264,7 @@ export function availableUpgrades(s: GameState): UpgradeDef[] {
 
 export function buyUpgrade(s: GameState, d: Derived, id: string): boolean {
   const u = UPGRADE_BY_ID[id];
-  if (!u || s.upgrades[id] || !u.unlock(s)) return false;
+  if (!u || s.upgrades[id] || !u.unlock(s) || d.noUpgrades) return false;
   const price = upgradePrice(d, u);
   if (price > s.stardust) return false;
   s.stardust -= price;
@@ -259,6 +298,7 @@ export function earn(s: GameState, amount: number): void {
 
 /** One tap on the celestial body. Returns the Stardust it gave. */
 export function tap(s: GameState, d: Derived): number {
+  if (d.noTaps) return 0;
   const amount = d.tap;
   earn(s, amount);
   s.tapEarnedRun += amount;

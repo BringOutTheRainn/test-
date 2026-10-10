@@ -58,23 +58,51 @@ export class BuildPanel implements Panel {
       this.refresh(ctx);
     });
 
+    const buyRow = (el: HTMLElement): boolean => {
+      const gen = Number(el.dataset.gen);
+      if (!generatorVisible(ctx.s, gen)) return false;
+      const n = buyGenerator(ctx.s, ctx.d, gen, ctx.buyAmount);
+      if (n <= 0) return false;
+      sfxBuy();
+      haptic('light');
+      el.classList.remove('bought');
+      void el.offsetWidth;
+      el.classList.add('bought');
+      ctx.recalc();
+      this.refresh(ctx);
+      return true;
+    };
+
+    // Tap to buy; press and hold to keep buying.
+    let holdTimer = 0;
+    let repeated = false;
+    const stopHold = (): void => {
+      clearTimeout(holdTimer);
+      clearInterval(holdTimer);
+      holdTimer = 0;
+    };
+    list.addEventListener('pointerdown', (e) => {
+      const el = (e.target as HTMLElement).closest<HTMLElement>('.gen');
+      if (!el) return;
+      repeated = false;
+      stopHold();
+      holdTimer = window.setTimeout(() => {
+        holdTimer = window.setInterval(() => {
+          repeated = true;
+          if (!buyRow(el)) stopHold();
+        }, 110);
+      }, 420);
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) list.addEventListener(ev, stopHold);
+    list.addEventListener('scroll', stopHold, { passive: true });
     list.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('.gen');
       if (!el) return;
-      const gen = Number(el.dataset.gen);
-      if (!generatorVisible(ctx.s, gen)) return;
-      const n = buyGenerator(ctx.s, ctx.d, gen, ctx.buyAmount);
-      if (n > 0) {
-        sfxBuy();
-        haptic('light');
-        el.classList.remove('bought');
-        void el.offsetWidth;
-        el.classList.add('bought');
-        ctx.recalc();
-        this.refresh(ctx);
-      } else {
-        sfxDenied();
+      if (repeated) {
+        repeated = false;
+        return;
       }
+      if (!buyRow(el)) sfxDenied();
     });
 
     this.strip.addEventListener('click', (e) => {
@@ -102,11 +130,11 @@ export class BuildPanel implements Panel {
     });
 
     // Upgrade strip: every unlocked upgrade, cheapest first.
-    const ups = availableUpgrades(s).slice(0, 24);
-    const key = ups.map((u) => u.id).join(',');
+    const ups = d.noUpgrades ? [] : availableUpgrades(s).slice(0, 24);
+    const key = ups.map((u) => u.id).join(',') + d.noUpgrades;
     if (key !== this.stripKey) {
       this.stripKey = key;
-      this.strip.innerHTML = ups.length
+      this.strip.innerHTML = d.noUpgrades ? '<div class="strip-empty">No upgrades in this anomaly</div>' : ups.length
         ? ups.map((u) => `<button class="upg-chip" data-upg="${u.id}" aria-label="${esc(u.name)}">${icon(u.icon)}<span class="tier">${u.group === 'generator' ? romans(u.tier + 1) : ''}</span></button>`).join('')
         : '<div class="strip-empty">Upgrades appear here as your empire grows</div>';
     }
@@ -126,6 +154,8 @@ export class BuildPanel implements Panel {
       }
       if (teaser) shownNext = true;
       toggleClass(row.el, 'gone', false);
+      const locked = i > d.maxGen;
+      toggleClass(row.el, 'locked', locked);
       const revealed = visible && generatorRevealed(s, i);
       toggleClass(row.el, 'mystery', !revealed);
       const g = GENERATORS[i];
@@ -134,10 +164,12 @@ export class BuildPanel implements Panel {
       const price = generatorPrice(s, d, i, amount);
       setText(row.price, fmt(price));
       setText(row.qty, amount > 1 ? ` x${amount}` : '');
-      toggleClass(row.el, 'afford', visible && price <= s.stardust);
+      toggleClass(row.el, 'afford', visible && !locked && price <= s.stardust);
       const owned = s.generators[i];
       setText(row.owned, owned ? String(owned) : '');
-      if (!revealed) {
+      if (locked) {
+        setText(row.sub, 'Cannot be built in this anomaly');
+      } else if (!revealed) {
         setText(row.sub, teaser ? 'Buy the one above to discover' : 'Earn more Stardust to discover');
       } else if (owned) {
         const each = d.genSps[i] / owned;

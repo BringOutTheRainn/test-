@@ -297,3 +297,40 @@ test('expeditions need the bay and return stardust', () => {
   assert.equal(s.expeditionsDone, 1);
   assert.ok(computeDerived(s).globalMult > d.globalMult);
 });
+
+test('anomalies twist the rules and reward completion', async () => {
+  const { enterAnomaly, checkAnomaly, abandonAnomaly } = await import('../www/js/core/anomalies.js');
+  const s = newState(0);
+  s.generators[1] = 10;
+  assert.equal(enterAnomaly(s, computeDerived(s), 'nohands'), -1, 'locked before the first collapse');
+  s.collapses = 1;
+  s.earnedAll = 8e10;
+  s.darkMatter = 1;
+  assert.equal(enterAnomaly(s, computeDerived(s), 'nohands'), 1, 'collects pending Dark Matter');
+  assert.equal(s.anomaly, 'nohands');
+  assert.equal(s.generators[1], 0);
+  let d = computeDerived(s);
+  assert.equal(tap(s, d), 0);
+  s.earnedRun = 1e10;
+  assert.equal(checkAnomaly(s), 'nohands');
+  assert.equal(s.anomaly, null);
+  d = computeDerived(s);
+  assert.equal(d.tap, 3, 'taps are tripled forever');
+
+  s.anomaly = null;
+  enterAnomaly(s, d, 'lonely');
+  d = computeDerived(s);
+  s.stardust = 1e9;
+  assert.equal(buyGenerator(s, d, 2, 1), 0, 'Lunar Base locked');
+  assert.equal(buyGenerator(s, d, 1, 1), 1);
+  assert.equal(abandonAnomaly(s, d), 0);
+  assert.equal(s.anomaly, null);
+  assert.ok(!s.anomaliesDone.lonely);
+
+  enterAnomaly(s, computeDerived(s), 'primitive');
+  s.stardust = 1e9;
+  s.generators[1] = 5;
+  assert.ok(!buyUpgrade(s, computeDerived(s), 'harvester_0'));
+  enterAnomaly(s, computeDerived(s), 'inflation');
+  assert.equal(computeDerived(s).costGrowth, 1.22);
+});

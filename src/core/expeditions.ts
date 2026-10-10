@@ -20,7 +20,7 @@ export function startExpedition(s: GameState, d: Derived, destId: string, now = 
 }
 
 export function expeditionReward(d: Derived, dest: DestinationDef): number {
-  return Math.max(d.baseSps * dest.rewardMinutes * 60, 1000);
+  return Math.max(d.baseSps * dest.rewardMinutes * 60, 200 * dest.rewardMinutes);
 }
 
 export interface ExpeditionResult {

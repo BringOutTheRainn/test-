@@ -42,6 +42,13 @@ export function collapse(s: GameState, d: Derived, now = Date.now()): number {
   if (gained < 1) return 0;
   s.darkMatter += gained;
   s.collapses++;
+  resetRun(s, d, now);
+  s.anomaly = null;
+  return gained;
+}
+
+/** Starts a fresh universe: keeps permanent progress, clears the rest. */
+export function resetRun(s: GameState, d: Derived, now = Date.now()): void {
   s.stardust = 0;
   s.earnedRun = 0;
   s.tapEarnedRun = 0;
@@ -57,5 +64,4 @@ export function collapse(s: GameState, d: Derived, now = Date.now()): number {
   s.runStartedAt = now;
   s.runStartClock = s.time;
   s.nextCometAt = s.time + 90;
-  return gained;
 }

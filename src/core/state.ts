@@ -71,6 +71,9 @@ export interface GameState {
   /** Day number (days since epoch, local) of the last daily claim. */
   dailyLastDay: number;
   seenHints: Record<string, true>;
+  /** The anomaly this universe is running under, if any. */
+  anomaly: string | null;
+  anomaliesDone: Record<string, true>;
   settings: Settings;
 }
 
@@ -109,6 +112,8 @@ export function newState(now = Date.now()): GameState {
     dailyStreak: 0,
     dailyLastDay: -1,
     seenHints: {},
+    anomaly: null,
+    anomaliesDone: {},
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true },
   };
 }
