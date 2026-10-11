@@ -19,6 +19,8 @@ import { $, closeModal, esc, modalOpen, setText, toast, toggleClass, topModalDis
 import { icon, installIcons } from './ui/icons.js';
 import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
 import { claimableMissions, ensureMissions } from './core/missions.js';
+import { planReminders } from './core/notify.js';
+import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
 import { hyperRemainingMs } from './core/ads.js';
 import { AD_CONFIG } from './data/ads.js';
@@ -207,11 +209,13 @@ function start(): void {
       paused = true;
       ctx.save();
       suspendAudio();
+      if (ctx.s.settings.notifications) void scheduleReminders(planReminders(ctx.s, ctx.d));
     },
     () => {
       if (!paused) return;
       paused = false;
       resumeAudio();
+      void clearReminders();
       const back = applyOffline(ctx.s, ctx.d);
       if (back.earned > 0 && back.seconds >= 60) {
         if (back.seconds >= 3600) grantAchievement(ctx.s, 'offline_hour');

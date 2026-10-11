@@ -179,8 +179,18 @@ idle-game guides, AdVenture Capitalist and Egg, Inc. reviews.
   or anomaly entry, paced).
 - Daily task lists and login streaks are standard retention; streak exists, missions now cover tasks.
 
+**Run 2 (Oct 11, morning).** Sources: AdVenture Capitalist wiki and Steam threads, GameAnalytics,
+Countly and Kwalee notes on push notifications, a PocketGamer.biz chart on opt-in rates.
+- AdVenture Capitalist's speed boosts at 25/50/100 owned are its main pacing hook. **Skipped:** our
+  tier upgrades already unlock at 1/5/25/50/100/150/200/250 owned, so adding automatic doubles would
+  stack on top and wreck the Dark Matter pacing.
+- Players who allow notifications keep playing far more often (vendor figures: 55% vs 29% retained in
+  month one). The advice is to notify only on real events, rarely, and to ask at a good moment.
+  **Built: Reminders**: storage full (offline cap reached), Hyperdrive ended, probe returned, daily drop
+  waiting at 6 pm. At most one of each, never under 10 minutes away, cleared when the app opens. One
+  soft ask after the first long absence, and a Settings toggle. Phone only.
+- An offline storage cap creates the "come back" pull; ours is 8 hours, raised by Cosmic upgrades.
+
 ### Backlog from research (best first)
-1. Push notifications when offline storage is full or Hyperdrive ends (Capacitor Local Notifications).
-2. Weekly event with a themed goal and cosmetic reward (Egg, Inc. style contracts).
-3. Generator milestones: every 25/50/100 owned doubles that generator's speed, with a visible next target.
-4. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+1. Weekly event with a themed goal and cosmetic reward (Egg, Inc. style contracts).
+2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

@@ -426,3 +426,22 @@ test('tap frenzy multiplies taps, auto-taps, then recharges', async () => {
   assert.ok(frenzyReady(s));
   assert.equal(s.adsWatched, 1);
 });
+
+test('reminders cover storage, hyperdrive, probes and the daily drop, never too soon', async () => {
+  const { planReminders } = await import('../www/js/core/notify.js');
+  const now = new Date(2026, 9, 11, 9, 0, 0).getTime();
+  const s = newState(now);
+  assert.deepEqual(planReminders(s, computeDerived(s, now), now).map((r) => r.id), [4], 'nothing produced yet: only the daily drop');
+  s.generators[0] = 5;
+  s.hyperEndsAt = now + 2 * 3600000;
+  s.expeditions = [{ id: 'x', startedAt: now, returnsAt: now + 3600000 }, { id: 'y', startedAt: now, returnsAt: now + 7200000 }];
+  const list = planReminders(s, computeDerived(s, now), now);
+  const byId = Object.fromEntries(list.map((r) => [r.id, r]));
+  assert.equal(byId[1].at, now + 8 * 3600000, 'storage full after the offline cap');
+  assert.equal(byId[2].at, s.hyperEndsAt);
+  assert.equal(byId[3].at, now + 3600000, 'earliest probe');
+  assert.equal(new Date(byId[4].at).getHours(), 18);
+  assert.ok(list.every((r, i) => i === 0 || r.at >= list[i - 1].at), 'sorted by time');
+  s.hyperEndsAt = now + 60000;
+  assert.ok(!planReminders(s, computeDerived(s, now), now).some((r) => r.id === 2), 'skips events under 10 minutes away');
+});

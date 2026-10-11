@@ -23,6 +23,10 @@ find "$RES" -name 'splash.png' -exec cp resources/android/splash.png {} \;
 # AdMob app id (Google's test id unless ADMOB_APP_ID is set).
 ADMOB_APP_ID=${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}
 MANIFEST=android/app/src/main/AndroidManifest.xml
+# Android 13+ asks before showing notifications (reminders are opt-in in game).
+if ! grep -q 'android.permission.POST_NOTIFICATIONS' "$MANIFEST"; then
+  sed -i 's#</manifest>#    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>#' "$MANIFEST"
+fi
 if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then
   sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/>\n    </application>#" "$MANIFEST"
 fi

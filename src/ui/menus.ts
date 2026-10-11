@@ -12,6 +12,7 @@ import type { Ctx } from './ctx.js';
 import { closeModal, confirmModal, esc, openModal, toast } from './dom.js';
 import { icon } from './icons.js';
 import { copyText, haptic, setVibration } from './platform.js';
+import { notificationsSupported, requestNotifications } from './notify.js';
 import { rewardedAvailable, showRewarded } from './ads.js';
 import { BUFF_MULT, earn } from '../core/economy.js';
 import { AD_CONFIG } from '../data/ads.js';
@@ -81,6 +82,7 @@ export function openSettings(ctx: Ctx): void {
       ${toggleRow('set-vibration', 'Vibration', st.vibration)}
       ${toggleRow('set-particles', 'Particles', st.particles)}
       ${toggleRow('set-sci', 'Scientific notation', st.numberStyle === 'scientific')}
+      ${notificationsSupported() ? toggleRow('set-notify', 'Reminders (storage full, probes back, daily drop)', st.notifications) : ''}
       <h3 class="section-title">Save</h3>
       <p class="dim">Progress saves automatically on this device. Copy your save code to keep a backup or move to another device.</p>
       <div class="btn-row"><button class="btn btn-plain" id="btn-export">Copy save code</button><button class="btn btn-plain" id="btn-import">Load save code</button></div>
@@ -104,6 +106,20 @@ export function openSettings(ctx: Ctx): void {
   });
   bind('set-particles', (on) => (st.particles = on));
   bind('set-sci', (on) => (st.numberStyle = on ? 'scientific' : 'short'));
+  el.querySelector<HTMLInputElement>('#set-notify')?.addEventListener('change', (e) => {
+    const box = e.target as HTMLInputElement;
+    if (!box.checked) {
+      st.notifications = false;
+      ctx.save();
+      return;
+    }
+    void requestNotifications().then((ok) => {
+      st.notifications = ok;
+      box.checked = ok;
+      if (!ok) toast('Notifications are blocked. You can allow them in your phone settings.', 'info');
+      ctx.save();
+    });
+  });
 
   el.querySelector('#btn-export')!.addEventListener('click', async () => {
     ctx.save();
@@ -170,6 +186,32 @@ export function showOffline(ctx: Ctx, seconds: number, earned: number): void {
       <p>While you were away for <b>${fmtTime(seconds)}</b>, your empire harvested</p>
       <p class="offline-amount"><span class="sd-dot big"></span>${fmt(earned)}</p><p class="dim">Stardust</p></div>`,
     buttons,
+    onClose: () => { if (seconds >= 1800) askReminders(ctx); },
+  });
+}
+
+/** One polite ask, the first time a player comes back after a while. */
+function askReminders(ctx: Ctx): void {
+  const s = ctx.s;
+  if (!notificationsSupported() || s.settings.notifications || s.seenHints.notifyAsk) return;
+  s.seenHints.notifyAsk = true;
+  ctx.save();
+  openModal({
+    title: 'Want a heads-up?',
+    body: `<div class="offline"><div class="big-ico">${icon('drone')}</div>
+      <p>Get a ping when your storage is full, a probe is back, or your daily drop is waiting. Nothing else.</p></div>`,
+    buttons: [
+      { label: 'No thanks' },
+      {
+        label: 'Yes, remind me', kind: 'primary', onClick: () => {
+          void requestNotifications().then((ok) => {
+            s.settings.notifications = ok;
+            ctx.save();
+            if (ok) toast('Reminders on. Change this any time in Settings.', 'good');
+          });
+        },
+      },
+    ],
   });
 }
 

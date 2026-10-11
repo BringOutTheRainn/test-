@@ -68,6 +68,9 @@ interaction data to show and measure ads. In the Play Console data safety form, 
 - App activity and approximate location: collected by AdMob for advertising
 - Data is encrypted in transit; users cannot request deletion through the app (link Google's policy)
 
+Reminder notifications are opt-in, scheduled on the device only, and need the Android 13 notification
+permission (the build adds it). No push server is involved.
+
 The privacy policy page must name AdMob and link https://policies.google.com/technologies/partner-sites.
 The app asks for consent in the EEA and UK through Google's consent form (configure a GDPR message in
 AdMob under Privacy & messaging).

@@ -22,6 +22,8 @@ export interface Settings {
   vibration: boolean;
   numberStyle: NumberStyle;
   particles: boolean;
+  /** Reminder notifications, on the phone only. Off until the player opts in. */
+  notifications: boolean;
 }
 
 export interface Expedition {
@@ -132,7 +134,7 @@ export function newState(now = Date.now()): GameState {
     missions: [],
     missionsDone: 0,
     frenzyReadyAt: 0,
-    settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true },
+    settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }
 
