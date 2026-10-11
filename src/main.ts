@@ -19,6 +19,7 @@ import { $, closeModal, esc, modalOpen, setText, toast, toggleClass, topModalDis
 import { icon, installIcons } from './ui/icons.js';
 import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
 import { claimableMissions, ensureMissions } from './core/missions.js';
+import { contractClaimable } from './core/contracts.js';
 import { planReminders } from './core/notify.js';
 import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
@@ -291,7 +292,9 @@ function start(): void {
     const missionsOn = s.generators[0] > 0 || s.collapses > 0;
     if (missionsOn) ensureMissions(s, d);
     missionBtn.hidden = !missionsOn;
-    const ready = claimableMissions(s);
+    // Checking the contract also starts a new week's one as soon as the week turns.
+    const contractReady = contractClaimable(s);
+    const ready = claimableMissions(s) + (missionsOn ? contractReady : 0);
     missionCount.hidden = ready === 0;
     setText(missionCount, String(ready));
     toggleClass(missionBtn, 'ready', ready > 0);

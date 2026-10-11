@@ -17,6 +17,7 @@ import { rewardedAvailable, showRewarded } from './ads.js';
 import { BUFF_MULT, earn } from '../core/economy.js';
 import { AD_CONFIG } from '../data/ads.js';
 import { frenzyCooldown, frenzyReady, grantFrenzy, grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
+import { claimContract, contractClaimable, contractProgress, contractTimeLeft, currentContract, MEDAL_PCT, tierReward } from '../core/contracts.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -42,6 +43,8 @@ export function openStats(ctx: Ctx): void {
       ['Dark Matter', fmt(s.darkMatter)],
       ['Earned while away', fmtLong(s.offlineEarnedAll)],
       ['Expeditions completed', String(s.expeditionsDone)],
+      ['Missions completed', fmt(s.missionsDone)],
+      ['Contract Medals', `${s.contractMedals} (+${fmtPercent(s.contractMedals * MEDAL_PCT)})`],
       ['Ads watched', String(s.adsWatched)],
       ['Login streak', `${s.dailyStreak} day${s.dailyStreak === 1 ? '' : 's'}`],
       ['Time played', fmtTime(s.playSeconds)],
@@ -274,6 +277,27 @@ export function openHyperdrive(ctx: Ctx): void {
   });
 }
 
+function contractCard(ctx: Ctx): string {
+  const { s, d } = ctx;
+  const { def, state } = currentContract(s);
+  const p = contractProgress(s);
+  const top = def.goals[2];
+  const ready = contractClaimable(s) > 0;
+  const marks = def.goals.map((g, i) => `<i class="tier-mark ${state.claimed > i ? 'got' : p >= g ? 'ready' : ''}" style="left:${(g / top) * 100}%"></i>`).join('');
+  const tiers = def.goals.map((g, i) => `<div class="tier ${state.claimed > i ? 'got' : ''}">
+      <b>${fmt(g)}</b><span><span class="sd-dot"></span>${fmt(tierReward(d, i))}${i === 2 ? ` + Medal` : ''}</span></div>`).join('');
+  const days = contractTimeLeft() / 86400000;
+  const left = days >= 1 ? `${Math.floor(days)}d ${Math.floor((days % 1) * 24)}h left` : `${fmtTime(contractTimeLeft() / 1000)} left`;
+  return `<div class="contract">
+    <div class="contract-head"><div><div class="contract-kicker">Weekly contract</div><div class="contract-name">${esc(def.name)}</div></div><div class="dim small">${left}</div></div>
+    <p class="contract-goal">${esc(def.goalText.replace('{n}', fmt(top)))} this week. Medal: +${fmtPercent(MEDAL_PCT)} production forever.</p>
+    <div class="bar contract-bar"><div class="bar-fill" style="width:${Math.min(100, (p / top) * 100)}%"></div>${marks}</div>
+    <div class="contract-tiers">${tiers}</div>
+    ${ready ? `<button class="btn btn-primary contract-claim" data-contract="1">Claim tier ${state.claimed + 1}</button>`
+      : state.claimed >= 3 ? '<p class="dim small">Contract complete. A new one starts Monday.</p>' : `<p class="dim small">Progress: ${fmt(p)} / ${fmt(def.goals[state.claimed])}</p>`}
+  </div>`;
+}
+
 export function openMissions(ctx: Ctx, onChange: () => void): void {
   const render = (): string => {
     const { s, d } = ctx;
@@ -292,7 +316,8 @@ export function openMissions(ctx: Ctx, onChange: () => void): void {
           : rewardedAvailable() ? `<button class="btn btn-plain mission-swap" data-swap="${i}" aria-label="Watch an ad to swap this mission">Swap<small>ad</small></button>` : ''}
       </div>`;
     }).join('');
-    return `<p class="dim">Finish missions for bursts of Stardust. New ones arrive as you go.</p>
+    return `${contractCard(ctx)}
+      <h3 class="section-title">Missions</h3>
       <div class="missions">${rows}</div>
       <p class="dim small">Missions completed: ${fmt(s.missionsDone)}</p>`;
   };
@@ -302,8 +327,21 @@ export function openMissions(ctx: Ctx, onChange: () => void): void {
   const redraw = (): void => { body.innerHTML = render(); };
   const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
   body.addEventListener('click', (e) => {
-    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-claim],[data-swap]');
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-claim],[data-swap],[data-contract]');
     if (!t || busy) return;
+    if (t.dataset.contract) {
+      const r = claimContract(ctx.s, ctx.d);
+      if (!r) return;
+      sfxAchievement();
+      haptic(r.medal ? 'heavy' : 'medium');
+      ctx.sky.floatCenter(`+${fmt(r.amount)}`, '#ffcf5a', 30);
+      if (r.medal) ctx.recalc();
+      toast(`<div class="t-ico">${icon('trophy')}</div><div><b>${r.medal ? 'Contract Medal won!' : `Contract tier ${r.tier + 1} reached`}</b><br>+${fmt(r.amount)} Stardust${r.medal ? ` · +${fmtPercent(MEDAL_PCT)} production forever` : ''}</div>`, 'trophy', 4500);
+      ctx.save();
+      redraw();
+      onChange();
+      return;
+    }
     if (t.dataset.claim) {
       const amount = claimMission(ctx.s, ctx.d, Number(t.dataset.claim));
       if (amount <= 0) return;

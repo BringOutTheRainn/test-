@@ -191,6 +191,16 @@ Countly and Kwalee notes on push notifications, a PocketGamer.biz chart on opt-i
   soft ask after the first long absence, and a Settings toggle. Phone only.
 - An offline storage cap creates the "come back" pull; ours is 8 hours, raised by Cosmic upgrades.
 
+**Run 3 (Oct 11, evening).** Sources: Egg, Inc. wiki (Contracts), Antimatter Dimensions Steam
+threads and review summaries.
+- Egg, Inc. contracts are time-limited goals with up to three reward tiers, the last one the most
+  valuable. **Built: Weekly contracts.** One themed goal a week (Comet Season, Tap Marathon, Busy Fleet,
+  rotating), three tiers worth 30 min, 90 min and 4 h of production, and the top tier awards a Contract
+  Medal: +5% production forever, kept through collapses. Achievements at 1, 4 and 10 medals. Lives at
+  the top of the Missions window; the missions badge counts claimable tiers.
+- Antimatter Dimensions players complain most about waiting without automation, and value autobuyers
+  more when they arrive late. **Next:** a late Cosmic upgrade that auto-buys generators.
+
 ### Backlog from research (best first)
-1. Weekly event with a themed goal and cosmetic reward (Egg, Inc. style contracts).
+1. Auto-Fabricators: a late Cosmic upgrade that buys the best-value generator every few seconds, with an on/off switch.
 2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

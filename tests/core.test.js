@@ -445,3 +445,38 @@ test('reminders cover storage, hyperdrive, probes and the daily drop, never too 
   s.hyperEndsAt = now + 60000;
   assert.ok(!planReminders(s, computeDerived(s, now), now).some((r) => r.id === 2), 'skips events under 10 minutes away');
 });
+
+test('weekly contracts rotate by week, pay three tiers and award a permanent medal', async () => {
+  const { weekNumber, currentContract, contractProgress, contractClaimable, claimContract, contractTimeLeft, CONTRACTS } = await import('../www/js/core/contracts.js');
+  const monday = new Date(2026, 9, 12, 0, 0, 1).getTime();
+  const sunday = new Date(2026, 9, 11, 23, 59, 0).getTime();
+  assert.equal(weekNumber(monday), weekNumber(sunday) + 1, 'weeks turn over on Monday');
+  assert.ok(contractTimeLeft(sunday) <= 60000 + 1000 && contractTimeLeft(sunday) > 0);
+  assert.equal(new Set([0, 1, 2].map((i) => currentContract(newState(0), monday + i * 7 * 86400000).def.id)).size, CONTRACTS.length);
+
+  const s = newState(monday);
+  s.generators[0] = 10;
+  const { def } = currentContract(s, monday);
+  const bump = (n) => { if (def.counter === 'comets') s.cometsAll += n; else if (def.counter === 'taps') s.tapsAll += n; else s.missionsDone += n; };
+  bump(def.goals[0]);
+  assert.equal(contractProgress(s, monday), def.goals[0]);
+  assert.equal(contractClaimable(s, monday), 1);
+  const d = computeDerived(s, monday);
+  const r1 = claimContract(s, d, monday);
+  assert.ok(r1 && r1.tier === 0 && !r1.medal && r1.amount > 0);
+  assert.equal(claimContract(s, d, monday), null, 'nothing more until tier 2');
+  bump(def.goals[2]);
+  assert.equal(contractClaimable(s, monday), 2);
+  claimContract(s, d, monday);
+  const r3 = claimContract(s, d, monday);
+  assert.ok(r3.medal);
+  assert.equal(s.contractMedals, 1);
+  assert.ok(computeDerived(s, monday).sps > d.sps * 1.04, 'medal adds production');
+
+  // A new week starts fresh from the current counters.
+  const next = monday + 7 * 86400000;
+  currentContract(s, next);
+  assert.equal(contractProgress(s, next), 0);
+  assert.equal(s.contract.claimed, 0);
+  assert.equal(s.contractMedals, 1, 'medals are kept');
+});

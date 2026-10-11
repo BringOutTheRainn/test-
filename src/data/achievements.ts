@@ -55,6 +55,11 @@ function build(): AchievementDef[] {
     list.push({ id: `missions_${i}`, name, desc: `Complete ${n} mission${n === 1 ? '' : 's'}.`, check: (s) => s.missionsDone >= n });
   });
 
+  const medals: Array<[number, string]> = [[1, 'Contractor'], [4, 'Decorated'], [10, 'Hall of Fame']];
+  medals.forEach(([n, name], i) => {
+    list.push({ id: `medals_${i}`, name, desc: `Win ${n} Contract Medal${n === 1 ? '' : 's'} by finishing a weekly contract.`, check: (s) => s.contractMedals >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

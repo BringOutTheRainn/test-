@@ -4,6 +4,7 @@
 import { GENERATORS } from '../data/generators.js';
 import type { NumberStyle } from './format.js';
 import type { Mission } from './missions.js';
+import type { ContractState } from './contracts.js';
 
 export const SAVE_VERSION = 1;
 
@@ -87,6 +88,9 @@ export interface GameState {
   missionsDone: number;
   /** Game-clock second the next Tap Frenzy can be started. */
   frenzyReadyAt: number;
+  contract: ContractState | null;
+  /** Each one is a permanent +5% production. */
+  contractMedals: number;
   settings: Settings;
 }
 
@@ -134,6 +138,8 @@ export function newState(now = Date.now()): GameState {
     missions: [],
     missionsDone: 0,
     frenzyReadyAt: 0,
+    contract: null,
+    contractMedals: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

@@ -179,6 +179,21 @@ svg.ico { width: 100%; height: 100%; display: block; }
 .boost .btn { flex: none; }
 .boost .btn:disabled { opacity: .45; }
 .buff-frenzy { color: var(--cyan); border-color: var(--cyan); }
+.contract { padding: 12px; border-radius: 16px; border: 1px solid var(--violet); background: linear-gradient(160deg, rgba(138, 77, 255, .22), rgba(20, 25, 55, .9)); }
+.contract-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.contract-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); }
+.contract-name { font-size: 18px; font-weight: 800; }
+.contract-goal { margin: 6px 0 0; font-size: 13px; }
+.contract-bar { position: relative; overflow: visible; }
+.contract-bar .bar-fill { border-radius: 999px; }
+.tier-mark { position: absolute; top: -3px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--line); }
+.tier-mark.ready { background: var(--gold); }
+.tier-mark.got { background: var(--cyan); }
+.contract-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tier { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 10px; background: rgba(0, 0, 0, .25); }
+.tier span { display: inline-flex; align-items: center; gap: 4px; color: var(--gold); }
+.tier.got { opacity: .55; }
+.contract-claim { width: 100%; }
 .missions { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
 .mission { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); }
 .mission.done { border-color: var(--gold); }

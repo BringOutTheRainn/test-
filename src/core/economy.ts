@@ -174,6 +174,8 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   globalMult *= 1 + achPct * achievementCount(s);
   globalMult *= 1 + dmPct * s.darkMatter;
   globalMult *= astronomerMult;
+  // Contract Medals: +5% each (MEDAL_PCT in contracts.ts).
+  globalMult *= 1 + 0.05 * s.contractMedals;
 
   let nonDrone = 0;
   for (let i = 1; i < n; i++) nonDrone += s.generators[i];
