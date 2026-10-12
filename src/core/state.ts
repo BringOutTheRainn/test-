@@ -93,6 +93,12 @@ export interface GameState {
   contractMedals: number;
   /** Player switch for Auto-Fabricators (the Cosmic upgrade). */
   autoBuyOn: boolean;
+  crystals: number;
+  /** Real-time ms the next Quasar Crystal finishes; 0 until unlocked. */
+  crystalNextAt: number;
+  crystalAdUsed: boolean;
+  /** Permanent generator levels bought with crystals. */
+  genLevels: number[];
   settings: Settings;
 }
 
@@ -143,6 +149,10 @@ export function newState(now = Date.now()): GameState {
     contract: null,
     contractMedals: 0,
     autoBuyOn: true,
+    crystals: 0,
+    crystalNextAt: 0,
+    crystalAdUsed: false,
+    genLevels: GENERATORS.map(() => 0),
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

@@ -60,6 +60,11 @@ function build(): AchievementDef[] {
     list.push({ id: `medals_${i}`, name, desc: `Win ${n} Contract Medal${n === 1 ? '' : 's'} by finishing a weekly contract.`, check: (s) => s.contractMedals >= n });
   });
 
+  const levels: Array<[number, string]> = [[1, 'Crystal Clear'], [10, 'Refined'], [40, 'Lattice Lord']];
+  levels.forEach(([n, name], i) => {
+    list.push({ id: `levels_${i}`, name, desc: `Reach ${n} total generator level${n === 1 ? '' : 's'} with Quasar Crystals.`, check: (s) => s.genLevels.reduce((a, b) => a + b, 0) >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

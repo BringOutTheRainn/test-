@@ -189,7 +189,8 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   for (let i = 0; i < n; i++) {
     const owned = s.generators[i];
     if (!owned) continue;
-    let per = GENERATORS[i].baseSps * genMult[i];
+    // Quasar Crystal levels: +5% each (LEVEL_PCT in crystals.ts).
+    let per = GENERATORS[i].baseSps * genMult[i] * (1 + 0.05 * (s.genLevels[i] ?? 0));
     if (i === 0) per += flat;
     per *= 1 + synergy[i];
     genSps[i] = per * owned * globalMult;

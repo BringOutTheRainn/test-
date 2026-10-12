@@ -30,6 +30,8 @@ export function deserialize(text: string, now = Date.now()): GameState {
   // New generators added after this save was made start at zero.
   const gens = Array.isArray(raw.generators) ? (raw.generators as number[]) : [];
   s.generators = GENERATORS.map((_, i) => (typeof gens[i] === 'number' && gens[i] >= 0 ? Math.floor(gens[i]) : 0));
+  const levels = Array.isArray(raw.genLevels) ? (raw.genLevels as number[]) : [];
+  s.genLevels = GENERATORS.map((_, i) => (typeof levels[i] === 'number' && levels[i] >= 0 ? Math.floor(levels[i]) : 0));
   for (const key of ['stardust', 'earnedRun', 'earnedAll'] as const) {
     if (!isFinite(s[key]) || s[key] < 0) s[key] = 0;
   }

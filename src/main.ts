@@ -21,6 +21,7 @@ import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, o
 import { claimableMissions, ensureMissions } from './core/missions.js';
 import { contractClaimable } from './core/contracts.js';
 import { autoBuyStep } from './core/autobuy.js';
+import { growCrystals } from './core/crystals.js';
 import { planReminders } from './core/notify.js';
 import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
@@ -288,6 +289,13 @@ function start(): void {
     sky.aura = !top ? 'none' : top.kind === 'frenzy' ? 'supernova' : top.kind;
 
     dailyBtn.hidden = !dailyReady(s) || s.tapsAll < 10;
+
+    // Quasar Crystals grow in real time, including time away.
+    const grown = growCrystals(s);
+    if (grown > 0) {
+      toast(`<div class="t-ico">${icon('crystal')}</div><div><b>${grown > 1 ? `${grown} Quasar Crystals formed` : 'A Quasar Crystal formed'}</b><br>Spend it on the Build tab to level up a generator.</div>`, 'good', 5000);
+      rebuildAll = true;
+    }
 
     // Missions start once the first drone is built.
     const missionsOn = s.generators[0] > 0 || s.collapses > 0;

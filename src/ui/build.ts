@@ -9,6 +9,8 @@ import type { BuyAmount, Ctx, Panel } from './ctx.js';
 import { $, esc, setText, toast, toggleClass } from './dom.js';
 import { icon } from './icons.js';
 import { haptic } from './platform.js';
+import { crystalsUnlocked } from '../core/crystals.js';
+import { openCrystals } from './menus.js';
 
 interface Row {
   el: HTMLElement;
@@ -28,6 +30,7 @@ export class BuildPanel implements Panel {
     root.innerHTML = `
       <div class="buy-row" role="group" aria-label="Buy amount">
         <span class="buy-label">Buy</span>
+        <button class="crystal-chip" data-crystals="1" hidden aria-label="Quasar Crystals">${icon('crystal')}<b class="crystal-n">0</b></button>
         ${(['1', '10', '100', 'max'] as const).map((a) => `<button class="chip" data-amt="${a}">${a === 'max' ? 'Max' : 'x' + a}</button>`).join('')}
         <button class="chip chip-auto" data-auto="1" hidden aria-pressed="false" title="Auto-Fabricators">Auto</button>
       </div>
@@ -52,6 +55,10 @@ export class BuildPanel implements Panel {
     });
 
     root.querySelector('.buy-row')!.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-crystals]')) {
+        openCrystals(ctx, () => this.refresh(ctx));
+        return;
+      }
       if ((e.target as HTMLElement).closest('[data-auto]')) {
         ctx.s.autoBuyOn = !ctx.s.autoBuyOn;
         haptic('light');
@@ -137,6 +144,10 @@ export class BuildPanel implements Panel {
     this.root.querySelectorAll<HTMLElement>('[data-amt]').forEach((b) => {
       toggleClass(b, 'on', String(ctx.buyAmount) === b.dataset.amt);
     });
+    const chip = this.root.querySelector<HTMLElement>('[data-crystals]')!;
+    chip.hidden = !crystalsUnlocked(s);
+    setText(chip.querySelector<HTMLElement>('.crystal-n')!, String(s.crystals));
+    toggleClass(chip, 'ready', s.crystals > 0);
     const auto = this.root.querySelector<HTMLElement>('[data-auto]')!;
     auto.hidden = !d.autoBuy;
     toggleClass(auto, 'on', s.autoBuyOn);

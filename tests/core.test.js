@@ -504,3 +504,35 @@ test('auto-fabricators buy the best-value generator only when unlocked and switc
   s.autoBuyOn = true; s.stardust = 0;
   assert.equal(autoBuyStep(s, computeDerived(s, 0)), 0, 'nothing affordable');
 });
+
+test('quasar crystals grow in real time, level generators for good, and an ad speeds one up', async () => {
+  const c = await import('../www/js/core/crystals.js');
+  const H = 3600000;
+  const s = newState(0);
+  assert.equal(c.growCrystals(s, 0), 0);
+  assert.equal(s.crystalNextAt, 0, 'locked before a billion Stardust');
+  s.earnedAll = 2e9;
+  c.growCrystals(s, 0);
+  assert.equal(s.crystalNextAt, 20 * H);
+  assert.equal(c.growCrystals(s, 19 * H), 0);
+  assert.ok(Math.abs(c.crystalProgress(s, 10 * H) - 0.5) < 1e-9);
+  assert.ok(c.speedUpCrystal(s, 10 * H));
+  assert.equal(s.crystalNextAt, 18 * H);
+  assert.equal(c.speedUpCrystal(s, 10 * H), false, 'once per crystal');
+  assert.equal(c.growCrystals(s, 18 * H + 41 * H), 3, 'time away counts');
+  assert.equal(s.crystals, 3);
+  assert.equal(s.crystalAdUsed, false);
+
+  s.generators[0] = 10;
+  const before = computeDerived(s, 0).genSps[0];
+  assert.ok(c.levelUp(s, 0));
+  assert.ok(c.levelUp(s, 0), 'second level costs 2');
+  assert.equal(s.crystals, 0);
+  assert.equal(c.levelUp(s, 0), false);
+  assert.ok(Math.abs(computeDerived(s, 0).genSps[0] / before - 1.1) < 1e-9, '+5% per level');
+  s.earnedAll = 1e12;
+  collapse(s, computeDerived(s, 0), 0);
+  assert.equal(s.genLevels[0], 2, 'levels survive a collapse');
+  const back = deserialize(serialize(s));
+  assert.equal(back.genLevels[0], 2);
+});

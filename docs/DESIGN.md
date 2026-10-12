@@ -210,5 +210,18 @@ Dimensions notes.
   affordable; upgrades stay manual. An Auto switch sits on the Build tab's buy row.
 - Fixed a drawing crash on large planets (a continent at the planet's edge got a negative width).
 
+**Run 5 (Oct 12, evening).** Sources: Idle Planet Miner review summaries and its subreddit, the
+Cookie Clicker wiki (minigames, sugar lumps).
+- Space idle games are praised for the core loop but criticised for a grindy late game and intrusive
+  ads. Our ads stay opt-in apart from paced break ads; late-game goals now come from anomalies,
+  contracts and the new crystals.
+- Cookie Clicker's sugar lumps are a slow real-time resource (about one a day) that levels buildings
+  for good, giving a reason to open the game daily long after the main loop is solved. **Built: Quasar
+  Crystals.** Unlock at 1 billion lifetime Stardust; one forms every 20 hours, even while away; each
+  generator level costs level + 1 crystals and adds +5% to that generator, kept through collapses. A
+  rewarded ad grows the current crystal 2 hours sooner (once per crystal). Achievements at 1, 10 and 40
+  total levels. Opened from the crystal counter on the Build tab.
+
 ### Backlog from research (best first)
-1. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+1. Minigame per late generator (Cookie Clicker style), opened by crystal levels.
+2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

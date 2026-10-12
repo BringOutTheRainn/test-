@@ -18,6 +18,9 @@ import { BUFF_MULT, earn } from '../core/economy.js';
 import { AD_CONFIG } from '../data/ads.js';
 import { frenzyCooldown, frenzyReady, grantFrenzy, grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
 import { claimContract, contractClaimable, contractProgress, contractTimeLeft, currentContract, MEDAL_PCT, tierReward } from '../core/contracts.js';
+import { AD_SPEEDUP_HOURS, CRYSTAL_HOURS, LEVEL_PCT, crystalProgress, levelCost, levelUp, speedUpCrystal } from '../core/crystals.js';
+import { GENERATORS as GENS } from '../data/generators.js';
+import { generatorVisible } from '../core/economy.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -296,6 +299,60 @@ function contractCard(ctx: Ctx): string {
     ${ready ? `<button class="btn btn-primary contract-claim" data-contract="1">Claim tier ${state.claimed + 1}</button>`
       : state.claimed >= 3 ? '<p class="dim small">Contract complete. A new one starts Monday.</p>' : `<p class="dim small">Progress: ${fmt(p)} / ${fmt(def.goals[state.claimed])}</p>`}
   </div>`;
+}
+
+export function openCrystals(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const s = ctx.s;
+    const left = Math.max(0, s.crystalNextAt - Date.now());
+    const canAd = !s.crystalAdUsed && rewardedAvailable() && left > 0;
+    const rows = GENS.map((g, i) => {
+      if (!generatorVisible(s, i) && !s.genLevels[i]) return '';
+      const lvl = s.genLevels[i] ?? 0;
+      const cost = levelCost(s, i);
+      return `<div class="lvl-row">
+        <div class="lvl-ico">${icon(g.id)}</div>
+        <div class="lvl-main"><b>${esc(g.name)}</b><span class="dim small">${lvl ? `Level ${lvl} · +${fmtPercent(lvl * LEVEL_PCT)} production` : 'Not levelled yet'}</span></div>
+        <button class="btn ${s.crystals >= cost ? 'btn-primary' : 'btn-plain'}" data-level="${i}" ${s.crystals >= cost ? '' : 'disabled'}>${icon('crystal')}${cost}</button>
+      </div>`;
+    }).join('');
+    return `<div class="crystal-head">
+        <div class="crystal-big">${icon('crystal')}<b>${s.crystals}</b></div>
+        <div class="crystal-grow"><div class="dim small">Next crystal in ${fmtTime(left / 1000)}</div>
+          <div class="bar"><div class="bar-fill crystal-fill" style="width:${crystalProgress(s) * 100}%"></div></div>
+          ${canAd ? `<button class="btn btn-plain btn-small" data-speed="1">Watch ad: ${AD_SPEEDUP_HOURS} hours sooner</button>` : ''}</div>
+      </div>
+      <p class="dim small">A crystal forms every ${CRYSTAL_HOURS} hours, even while you are away. Each level makes that generator ${fmtPercent(LEVEL_PCT)} stronger, forever.</p>
+      <div class="lvl-list">${rows}</div>`;
+  };
+  const el = openModal({ title: 'Quasar Crystals', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-level],[data-speed]');
+    if (!t || t.disabled || busy) return;
+    if (t.dataset.level) {
+      if (!levelUp(ctx.s, Number(t.dataset.level))) return;
+      sfxAchievement();
+      haptic('medium');
+      ctx.recalc();
+      ctx.save();
+      redraw();
+      onChange();
+      return;
+    }
+    busy = true;
+    void showRewarded('grow a crystal sooner').then((ok) => {
+      busy = false;
+      if (ok && speedUpCrystal(ctx.s)) {
+        ctx.save();
+        toast(`<div class="t-ico">${icon('crystal')}</div><div><b>Crystal growth sped up</b><br>${AD_SPEEDUP_HOURS} hours sooner</div>`, 'good');
+      }
+      redraw();
+    });
+  });
 }
 
 export function openMissions(ctx: Ctx, onChange: () => void): void {
