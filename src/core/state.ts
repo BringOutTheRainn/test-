@@ -91,6 +91,8 @@ export interface GameState {
   contract: ContractState | null;
   /** Each one is a permanent +5% production. */
   contractMedals: number;
+  /** Player switch for Auto-Fabricators (the Cosmic upgrade). */
+  autoBuyOn: boolean;
   settings: Settings;
 }
 
@@ -140,6 +142,7 @@ export function newState(now = Date.now()): GameState {
     frenzyReadyAt: 0,
     contract: null,
     contractMedals: 0,
+    autoBuyOn: true,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

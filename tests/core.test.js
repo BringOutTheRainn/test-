@@ -480,3 +480,27 @@ test('weekly contracts rotate by week, pay three tiers and award a permanent med
   assert.equal(s.contract.claimed, 0);
   assert.equal(s.contractMedals, 1, 'medals are kept');
 });
+
+test('auto-fabricators buy the best-value generator only when unlocked and switched on', async () => {
+  const { bestGenerator, autoBuyStep } = await import('../www/js/core/autobuy.js');
+  const s = newState(0);
+  s.stardust = 1e6;
+  s.generators[0] = 10; s.generators[1] = 5;
+  let d = computeDerived(s, 0);
+  assert.equal(d.autoBuy, false);
+  assert.equal(autoBuyStep(s, d), 0, 'locked without the Cosmic upgrade');
+  s.cosmic.fabricators = true;
+  d = computeDerived(s, 0);
+  assert.ok(d.autoBuy);
+  const best = bestGenerator(s, d);
+  assert.ok(best >= 0 && best <= 2, 'only visible generators');
+  const before = s.generators.reduce((a, b) => a + b, 0);
+  const n = autoBuyStep(s, d, 5);
+  assert.equal(n, 5);
+  assert.equal(s.generators.reduce((a, b) => a + b, 0), before + 5);
+  assert.ok(s.stardust < 1e6);
+  s.autoBuyOn = false;
+  assert.equal(autoBuyStep(s, computeDerived(s, 0)), 0, 'switched off');
+  s.autoBuyOn = true; s.stardust = 0;
+  assert.equal(autoBuyStep(s, computeDerived(s, 0)), 0, 'nothing affordable');
+});

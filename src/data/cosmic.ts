@@ -15,7 +15,8 @@ export type CosmicEffect =
   | { k: 'blackComets' }
   | { k: 'expeditions' }
   | { k: 'expeditionSlots'; value: number }
-  | { k: 'keepResearch' };
+  | { k: 'keepResearch' }
+  | { k: 'autoBuy' };
 
 export interface CosmicDef {
   id: string;
@@ -43,6 +44,7 @@ export const COSMIC: CosmicDef[] = [
   { id: 'bay', name: 'Expedition Bay', desc: 'Unlocks Expeditions: send probes to distant systems for loot and Relics.', cost: 40, requires: ['cache'], x: 0, y: 4, effects: [{ k: 'expeditions' }] },
   { id: 'discount', name: 'Cosmic Discount', desc: 'Generators cost 5% less.', cost: 50, requires: ['black'], x: 2, y: 4, effects: [{ k: 'genDiscount', pct: 0.05 }] },
   { id: 'resonance', name: 'Dark Resonance', desc: 'Each Dark Matter gives +3% production instead of +2%.', cost: 75, requires: ['map'], x: 4, y: 4, effects: [{ k: 'dmBonus', pct: 0.01 }] },
+  { id: 'fabricators', name: 'Auto-Fabricators', desc: 'Self-building factories buy the best-value generator for you. Switch them on or off on the Build tab.', cost: 60, requires: ['map'], x: 3, y: 4, effects: [{ k: 'autoBuy' }] },
   { id: 'timeless', name: 'Timeless Engines', desc: 'Offline production 100%, and up to 24 hours.', cost: 120, requires: ['cache'], x: 1, y: 5, effects: [{ k: 'offlineRate', value: 1 }, { k: 'offlineCapHours', value: 24 }] },
   { id: 'hangar', name: 'Second Hangar', desc: 'Run two Expeditions at once.', cost: 150, requires: ['bay'], x: 0, y: 6, effects: [{ k: 'expeditionSlots', value: 2 }] },
   { id: 'contracts', name: 'Bulk Contracts', desc: 'Upgrades cost 10% less.', cost: 200, requires: ['discount'], x: 2, y: 5, effects: [{ k: 'upgDiscount', pct: 0.1 }] },

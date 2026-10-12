@@ -201,6 +201,14 @@ threads and review summaries.
 - Antimatter Dimensions players complain most about waiting without automation, and value autobuyers
   more when they arrive late. **Next:** a late Cosmic upgrade that auto-buys generators.
 
+**Run 4 (Oct 12, morning).** Sources: Idle Miner Tycoon guides on managers, run 3's Antimatter
+Dimensions notes.
+- Idle Miner Tycoon's managers (automation) are the feature players credit most: income keeps coming
+  without constant tapping, leaving time for decisions. Automation feels best when it arrives after the
+  player has done the work by hand. **Built: Auto-Fabricators**, a 60 Dark Matter Cosmic upgrade below
+  Constellation Map. Once a second it buys the generator with the shortest payback, as long as it is
+  affordable; upgrades stay manual. An Auto switch sits on the Build tab's buy row.
+- Fixed a drawing crash on large planets (a continent at the planet's edge got a negative width).
+
 ### Backlog from research (best first)
-1. Auto-Fabricators: a late Cosmic upgrade that buys the best-value generator every few seconds, with an on/off switch.
-2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+1. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

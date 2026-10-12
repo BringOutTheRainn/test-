@@ -20,6 +20,7 @@ import { icon, installIcons } from './ui/icons.js';
 import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
 import { claimableMissions, ensureMissions } from './core/missions.js';
 import { contractClaimable } from './core/contracts.js';
+import { autoBuyStep } from './core/autobuy.js';
 import { planReminders } from './core/notify.js';
 import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
@@ -383,6 +384,7 @@ function start(): void {
   let slowTimer = 0;
   let saveTimer = 0;
   let autoTapAcc = 0;
+  let autoBuyAcc = 0;
   let cometPending = false;
 
   function frame(now: number): void {
@@ -403,6 +405,18 @@ function start(): void {
       }
 
       // Probes tapping for you.
+      // Auto-Fabricators buying generators.
+      if (ctx.d.autoBuy && ctx.s.autoBuyOn) {
+        autoBuyAcc += dt;
+        if (autoBuyAcc >= 1) {
+          autoBuyAcc = 0;
+          if (autoBuyStep(ctx.s, ctx.d) > 0) {
+            ctx.recalc();
+            ctx.dirty();
+          }
+        }
+      }
+
       if (ctx.d.autoTap > 0) {
         autoTapAcc += ctx.d.autoTap * dt;
         while (autoTapAcc >= 1) {

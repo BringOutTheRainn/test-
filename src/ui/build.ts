@@ -29,6 +29,7 @@ export class BuildPanel implements Panel {
       <div class="buy-row" role="group" aria-label="Buy amount">
         <span class="buy-label">Buy</span>
         ${(['1', '10', '100', 'max'] as const).map((a) => `<button class="chip" data-amt="${a}">${a === 'max' ? 'Max' : 'x' + a}</button>`).join('')}
+        <button class="chip chip-auto" data-auto="1" hidden aria-pressed="false" title="Auto-Fabricators">Auto</button>
       </div>
       <div class="upg-strip" id="upg-strip" aria-label="Ready upgrades"></div>
       <div class="gen-list" id="gen-list"></div>`;
@@ -51,6 +52,14 @@ export class BuildPanel implements Panel {
     });
 
     root.querySelector('.buy-row')!.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-auto]')) {
+        ctx.s.autoBuyOn = !ctx.s.autoBuyOn;
+        haptic('light');
+        toast(ctx.s.autoBuyOn ? 'Auto-Fabricators on: they buy the best-value generator.' : 'Auto-Fabricators off.', 'info');
+        ctx.save();
+        this.refresh(ctx);
+        return;
+      }
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-amt]');
       if (!b) return;
       const v = b.dataset.amt!;
@@ -128,6 +137,10 @@ export class BuildPanel implements Panel {
     this.root.querySelectorAll<HTMLElement>('[data-amt]').forEach((b) => {
       toggleClass(b, 'on', String(ctx.buyAmount) === b.dataset.amt);
     });
+    const auto = this.root.querySelector<HTMLElement>('[data-auto]')!;
+    auto.hidden = !d.autoBuy;
+    toggleClass(auto, 'on', s.autoBuyOn);
+    auto.setAttribute('aria-pressed', String(s.autoBuyOn));
 
     // Upgrade strip: every unlocked upgrade, cheapest first.
     const ups = d.noUpgrades ? [] : availableUpgrades(s).slice(0, 24);

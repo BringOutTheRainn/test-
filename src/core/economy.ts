@@ -36,6 +36,7 @@ export interface Derived {
   expeditionSlots: number;
   expSpeed: number;
   keepResearch: boolean;
+  autoBuy: boolean;
   hyper: boolean;
   /** Anomaly rules for this universe. */
   noTaps: boolean;
@@ -106,6 +107,7 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   let expeditions = false;
   let expeditionSlots = 1;
   let keepResearch = false;
+  let autoBuy = false;
   for (const e of cosmicEffects(s)) {
     switch (e.k) {
       case 'offlineRate': offlineRate = Math.max(offlineRate, e.value); break;
@@ -122,6 +124,7 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
       case 'expeditions': expeditions = true; break;
       case 'expeditionSlots': expeditionSlots = Math.max(expeditionSlots, e.value); break;
       case 'keepResearch': keepResearch = true; break;
+      case 'autoBuy': autoBuy = true; break;
       case 'starter': break;
     }
   }
@@ -210,7 +213,7 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   return {
     genSps, baseSps, sps, tap, globalMult, prodBuff, tapBuff, cometFreq, cometStay, cometEffect, offlineRate: Math.min(offlineRate, 1.5),
     offlineCapHours, autoTap, genDiscount: Math.min(genDiscount, 0.5), upgDiscount: Math.min(upgDiscount, 0.5), blackComets, expeditions,
-    expeditionSlots, expSpeed, keepResearch, hyper, noTaps, noComets, noUpgrades, costGrowth, maxGen,
+    expeditionSlots, expSpeed, keepResearch, autoBuy, hyper, noTaps, noComets, noUpgrades, costGrowth, maxGen,
   };
 }
 

@@ -305,6 +305,8 @@ body.has-banner #app { padding-bottom: 60px; }
   font-size: 13px; font-weight: 700;
 }
 .chip.on { background: var(--gold); border-color: var(--gold); color: #241800; }
+.chip-auto { border-color: var(--cyan); color: var(--cyan); }
+.chip-auto.on { background: var(--cyan); color: #04202a; }
 
 .upg-strip {
   display: flex; gap: 6px;

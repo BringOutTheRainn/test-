@@ -441,7 +441,7 @@ export class Sky {
           const x = Math.sin(a) * r * 0.9;
           if (Math.cos(a) < -0.1) continue;
           g.beginPath();
-          g.ellipse(x, (i % 3 - 1) * r * 0.45, r * 0.28 * Math.cos(a) + 2, r * 0.2, 0, 0, TAU);
+          g.ellipse(x, (i % 3 - 1) * r * 0.45, Math.max(0.5, r * 0.28 * Math.cos(a) + 2), r * 0.2, 0, 0, TAU);
           g.fill();
         }
         g.fillStyle = 'rgba(255,255,255,0.7)';
@@ -449,7 +449,7 @@ export class Sky {
           const a = i * 1.4 + spin * 1.6;
           if (Math.cos(a) < 0) continue;
           g.beginPath();
-          g.ellipse(Math.sin(a) * r * 0.85, (i - 2) * r * 0.32, r * 0.3 * Math.cos(a) + 2, r * 0.05, 0, 0, TAU);
+          g.ellipse(Math.sin(a) * r * 0.85, (i - 2) * r * 0.32, Math.max(0.5, r * 0.3 * Math.cos(a) + 2), r * 0.05, 0, 0, TAU);
           g.fill();
         }
         g.restore();
