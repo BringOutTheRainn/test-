@@ -5,6 +5,7 @@ import { GENERATORS } from '../data/generators.js';
 import type { NumberStyle } from './format.js';
 import type { Mission } from './missions.js';
 import type { ContractState } from './contracts.js';
+import type { Plot } from './garden.js';
 
 export const SAVE_VERSION = 1;
 
@@ -99,6 +100,11 @@ export interface GameState {
   crystalAdUsed: boolean;
   /** Permanent generator levels bought with crystals. */
   genLevels: number[];
+  /** Nebula Garden plots; null is an empty plot. */
+  garden: Array<Plot | null>;
+  gardenHarvests: number;
+  /** Real-time ms when the fertilize ad is available again. */
+  gardenFertilizeAt: number;
   settings: Settings;
 }
 
@@ -153,6 +159,9 @@ export function newState(now = Date.now()): GameState {
     crystalNextAt: 0,
     crystalAdUsed: false,
     genLevels: GENERATORS.map(() => 0),
+    garden: [],
+    gardenHarvests: 0,
+    gardenFertilizeAt: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

@@ -536,3 +536,47 @@ test('quasar crystals grow in real time, level generators for good, and an ad sp
   const back = deserialize(serialize(s));
   assert.equal(back.genLevels[0], 2);
 });
+
+test('nebula garden opens at refinery level 1, grows in real time and pays on harvest', async () => {
+  const g = await import('../www/js/core/garden.js');
+  const M = 60000;
+  const s = newState(0);
+  assert.equal(g.plotCount(s), 0);
+  assert.equal(g.plant(s, 0, 'moss', 0), false, 'locked');
+  s.genLevels[g.GARDEN_GEN] = 1;
+  assert.equal(g.plotCount(s), 4);
+  s.genLevels[g.GARDEN_GEN] = 10;
+  assert.equal(g.plotCount(s), 9, 'capped at 3 by 3');
+  s.genLevels[g.GARDEN_GEN] = 1;
+  s.generators[0] = 100;
+  const d = computeDerived(s, 0);
+  assert.ok(g.plant(s, 0, 'moss', 0));
+  assert.equal(g.plant(s, 0, 'bloom', 0), false, 'plot taken');
+  assert.ok(g.plant(s, 3, 'orchid', 0));
+  assert.equal(g.plant(s, 4, 'moss', 0), false, 'beyond plot count');
+  assert.equal(g.harvest(s, d, 0, 4 * M), 0, 'not ripe');
+  assert.equal(g.readyPlots(s, 5 * M), 1);
+  const before = s.stardust;
+  const paid = g.harvest(s, d, 0, 5 * M);
+  const want = Math.max(d.baseSps * 90, 75) * 1.05;
+  assert.ok(Math.abs(paid - want) < 1e-6);
+  assert.ok(Math.abs(s.stardust - before - paid) < 1e-6);
+  assert.equal(s.garden[0], null);
+  assert.equal(s.gardenHarvests, 1);
+  // Fertilizer: 2 hours of growth, then a 4 hour cooldown.
+  assert.ok(g.fertilizeReady(s, 10 * M));
+  assert.ok(g.fertilize(s, 10 * M));
+  assert.ok(Math.abs(g.plotProgress(s.garden[3], 10 * M) - 130 / 480) < 1e-9);
+  assert.equal(g.fertilize(s, 20 * M), false, 'cooldown');
+  // Harvest all replants the same spore.
+  const total = g.harvestAll(s, d, 480 * M);
+  assert.ok(total > 0);
+  assert.equal(s.garden[3].seed, 'orchid');
+  assert.equal(s.garden[3].plantedAt, 480 * M);
+  // Plots survive a save round trip; bad entries are dropped.
+  const raw = JSON.parse(serialize(s));
+  raw.garden.push({ seed: 'weeds', plantedAt: 1 });
+  const back = deserialize(JSON.stringify(raw), 0);
+  assert.equal(back.garden[3].seed, 'orchid');
+  assert.equal(back.garden[4], null);
+});

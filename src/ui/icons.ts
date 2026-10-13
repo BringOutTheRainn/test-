@@ -260,6 +260,31 @@ function crystal(): string {
     <path d="M14 22 h36 M32 4 l-8 18 l8 38 l8 -38z" fill="none" stroke="#e8fbff" stroke-width="1.5" opacity=".7"/>`);
 }
 
+function sprout(): string {
+  return svg(`<path d="M10 50 h44 l-5 10 h-34z" fill="#6b4fd8" stroke="#c9b8ff" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M32 50 V28" stroke="#7dffb0" stroke-width="4" stroke-linecap="round"/>
+    <path d="M32 34 C20 34 14 26 14 16 C26 16 32 24 32 34z" fill="#3fd08a" stroke="#c8ffe0" stroke-width="2"/>
+    <path d="M32 28 C42 28 50 20 50 10 C38 10 32 18 32 28z" fill="#5ef0c0" stroke="#c8ffe0" stroke-width="2"/>
+    <circle cx="44" cy="40" r="2.5" fill="#ffe27a"/><circle cx="20" cy="42" r="2" fill="#bff6ff"/>`);
+}
+
+function moss(): string {
+  return svg(`<ellipse cx="32" cy="44" rx="22" ry="12" fill="#3fd08a"/><circle cx="22" cy="38" r="8" fill="#5ef0a0"/><circle cx="38" cy="34" r="10" fill="#7dffb0"/>
+    <circle cx="26" cy="32" r="2.5" fill="#fff6c2"/><circle cx="42" cy="28" r="2" fill="#fff6c2"/><circle cx="34" cy="44" r="2" fill="#fff6c2"/>`);
+}
+
+function bloom(): string {
+  return svg(`<path d="M32 58 V34" stroke="#3fd08a" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#5ec8ff" stroke="#dff4ff" stroke-width="1.5"><ellipse cx="32" cy="16" rx="7" ry="11"/><ellipse cx="20" cy="26" rx="11" ry="7"/><ellipse cx="44" cy="26" rx="11" ry="7"/><ellipse cx="25" cy="38" rx="7" ry="6" transform="rotate(-30 25 38)"/><ellipse cx="39" cy="38" rx="7" ry="6" transform="rotate(30 39 38)"/></g>
+    <circle cx="32" cy="28" r="6" fill="#ffe27a"/>`);
+}
+
+function orchid(): string {
+  return svg(`<path d="M32 60 V36" stroke="#3fd08a" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#2a1a5e" stroke="#c18cff" stroke-width="2"><path d="M32 30 C18 30 8 18 12 8 C22 10 30 18 32 30z"/><path d="M32 30 C46 30 56 18 52 8 C42 10 34 18 32 30z"/><path d="M32 30 C24 40 24 50 32 54 C40 50 40 40 32 30z"/></g>
+    <circle cx="32" cy="30" r="4" fill="#ff8cf0"/>`);
+}
+
 function build(): string {
   return svg(`<path d="M8 56 V30 l12 -8 v8 l12 -8 v8 l12 -8 v34z" fill="currentColor"/><rect x="46" y="10" width="8" height="46" fill="currentColor"/>`);
 }
@@ -275,7 +300,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos, mission, crystal,
+  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid,
 };
 
 let installed = false;

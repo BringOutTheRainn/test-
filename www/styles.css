@@ -661,3 +661,28 @@ body.collapsing #app { animation: collapse 1.6s ease-in-out; }
   .ticker-text.run { animation-duration: 30s; }
   .gift-btn, .hint, .gen.pulse, .mission-btn.ready { animation: none; }
 }
+
+/* Nebula Garden */
+.garden-chip .ico { width: 22px; height: 22px; }
+.garden-chip.ready { border-color: #7dffb0; box-shadow: 0 0 10px rgba(125, 255, 176, .4); }
+.garden-n:empty { display: none; }
+.seeds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.seed { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: inherit; font: inherit; text-align: center; min-width: 0; }
+.seed .ico { width: 34px; height: 34px; }
+.seed b { font-size: 13px; }
+.seed.on { border-color: #7dffb0; box-shadow: 0 0 0 1px #7dffb0 inset, 0 0 12px rgba(125, 255, 176, .25); }
+.garden-bed { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; border-radius: 16px; background: radial-gradient(circle at 50% 30%, #2b1d5c, #140d30); border: 1px solid #4a3a8a; }
+.plot { position: relative; aspect-ratio: 1; max-width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 12px; border: 1px solid #5a48a0; background: rgba(90, 60, 170, .35); color: #e9edff; font: inherit; padding: 4px; min-width: 0; }
+.plot.empty { border-style: dashed; background: rgba(40, 28, 90, .5); }
+.plot-plus { font-size: 26px; opacity: .6; }
+.plot-ico { display: block; transition: transform .4s; }
+.plot-ico .ico { width: 44px; height: 44px; }
+.plot-time { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.plot.ready { border-color: #7dffb0; box-shadow: 0 0 14px rgba(125, 255, 176, .45); animation: plot-glow 1.6s ease-in-out infinite; }
+.plot.ready .plot-time { color: #7dffb0; }
+.plot-bar { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.plot-bar span { display: block; height: 100%; background: linear-gradient(90deg, #3fd08a, #7dffb0); }
+.garden-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+@keyframes plot-glow { 50% { box-shadow: 0 0 22px rgba(125, 255, 176, .7); } }
+.buy-row:has(.garden-chip:not([hidden])) .buy-label { display: none; }
+.buy-row:has(.garden-chip:not([hidden])) .chip { min-width: 0; flex: 1 1 0; padding: 6px 4px; }

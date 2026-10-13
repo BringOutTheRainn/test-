@@ -65,6 +65,11 @@ function build(): AchievementDef[] {
     list.push({ id: `levels_${i}`, name, desc: `Reach ${n} total generator level${n === 1 ? '' : 's'} with Quasar Crystals.`, check: (s) => s.genLevels.reduce((a, b) => a + b, 0) >= n });
   });
 
+  const harvests: Array<[number, string]> = [[1, 'Green Thumb'], [50, 'Space Gardener'], [500, 'Nebula Botanist']];
+  harvests.forEach(([n, name], i) => {
+    list.push({ id: `harvests_${i}`, name, desc: `Harvest ${n} plant${n === 1 ? '' : 's'} in the Nebula Garden.`, check: (s) => s.gardenHarvests >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

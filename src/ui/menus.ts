@@ -21,6 +21,7 @@ import { claimContract, contractClaimable, contractProgress, contractTimeLeft, c
 import { AD_SPEEDUP_HOURS, CRYSTAL_HOURS, LEVEL_PCT, crystalProgress, levelCost, levelUp, speedUpCrystal } from '../core/crystals.js';
 import { GENERATORS as GENS } from '../data/generators.js';
 import { generatorVisible } from '../core/economy.js';
+import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize, fertilizeReady, harvest, harvestAll, harvestValue, plant, plotCount, plotProgress, plotReady, readyPlots, seedById } from '../core/garden.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -312,7 +313,7 @@ export function openCrystals(ctx: Ctx, onChange: () => void): void {
       const cost = levelCost(s, i);
       return `<div class="lvl-row">
         <div class="lvl-ico">${icon(g.id)}</div>
-        <div class="lvl-main"><b>${esc(g.name)}</b><span class="dim small">${lvl ? `Level ${lvl} · +${fmtPercent(lvl * LEVEL_PCT)} production` : 'Not levelled yet'}</span></div>
+        <div class="lvl-main"><b>${esc(g.name)}</b><span class="dim small">${lvl ? `Level ${lvl} · +${fmtPercent(lvl * LEVEL_PCT)} production` : 'Not levelled yet'}${i === GARDEN_GEN ? (lvl ? ' · Garden open' : ' · Level 1 opens the Nebula Garden') : ''}</span></div>
         <button class="btn ${s.crystals >= cost ? 'btn-primary' : 'btn-plain'}" data-level="${i}" ${s.crystals >= cost ? '' : 'disabled'}>${icon('crystal')}${cost}</button>
       </div>`;
     }).join('');
@@ -334,7 +335,11 @@ export function openCrystals(ctx: Ctx, onChange: () => void): void {
     const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-level],[data-speed]');
     if (!t || t.disabled || busy) return;
     if (t.dataset.level) {
-      if (!levelUp(ctx.s, Number(t.dataset.level))) return;
+      const gen = Number(t.dataset.level);
+      if (!levelUp(ctx.s, gen)) return;
+      if (gen === GARDEN_GEN && ctx.s.genLevels[gen] === 1) {
+        toast(`<div class="t-ico">${icon('sprout')}</div><div><b>Nebula Garden open</b><br>Tap the sprout on the Build tab to plant spores.</div>`, 'good', 5000);
+      }
       sfxAchievement();
       haptic('medium');
       ctx.recalc();
@@ -352,6 +357,92 @@ export function openCrystals(ctx: Ctx, onChange: () => void): void {
       }
       redraw();
     });
+  });
+}
+
+let gardenSeed = 'moss';
+
+export function openGarden(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const { s, d } = ctx;
+    const now = Date.now();
+    const n = plotCount(s);
+    const seeds = SEEDS.map((x) => `<button class="seed${x.id === gardenSeed ? ' on' : ''}" data-seed="${x.id}" aria-pressed="${x.id === gardenSeed}">
+        ${icon(x.id)}<b>${esc(x.name)}</b><span class="dim small">${fmtTime(x.growMinutes * 60)} · ${fmt(harvestValue(s, d, x))}</span></button>`).join('');
+    const plots = Array.from({ length: n }, (_, i) => {
+      const p = s.garden[i] ?? null;
+      if (!p) return `<button class="plot empty" data-plot="${i}" aria-label="Plant ${esc(seedById(gardenSeed)!.name)}"><span class="plot-plus">+</span></button>`;
+      const seed = seedById(p.seed)!;
+      const pr = plotProgress(p, now);
+      const ready = pr >= 1;
+      const left = (1 - pr) * seed.growMinutes * 60;
+      return `<button class="plot${ready ? ' ready' : ''}" data-plot="${i}" aria-label="${esc(seed.name)}${ready ? ', ready to harvest' : ''}">
+        <span class="plot-ico" style="transform:scale(${0.45 + 0.55 * pr})">${icon(seed.id)}</span>
+        <span class="plot-time">${ready ? 'Harvest' : fmtTime(left)}</span>
+        ${ready ? '' : `<span class="plot-bar"><span style="width:${pr * 100}%"></span></span>`}</button>`;
+    }).join('');
+    const ready = readyPlots(s, now);
+    const canAd = fertilizeReady(s, now) && rewardedAvailable();
+    const cool = Math.max(0, s.gardenFertilizeAt - now);
+    const lvl = s.genLevels[GARDEN_GEN] ?? 0;
+    return `<p class="dim small">Pick a spore, then tap an empty plot. Plants grow in real time, even while you are away. Nebula Refinery level ${lvl}: ${n} plots${n < 9 ? ', two more next level' : ''}.</p>
+      <div class="seeds">${seeds}</div>
+      <div class="garden-bed">${plots}</div>
+      <div class="garden-actions">
+        <button class="btn ${ready ? 'btn-primary' : 'btn-plain'}" data-harvest-all="1" ${ready ? '' : 'disabled'}>Harvest ${ready || ''} and replant</button>
+        ${canAd ? `<button class="btn btn-plain" data-fertilize="1">Watch ad: grow ${FERTILIZE_HOURS} hours</button>` : cool > 0 ? `<span class="dim small">Fertilizer again in ${fmtTime(cool / 1000)}</span>` : ''}
+      </div>
+      <p class="dim small">Harvests: ${fmt(s.gardenHarvests)}. Fertilizer can be used every ${FERTILIZE_COOLDOWN_HOURS} hours.</p>`;
+  };
+  const el = openModal({ title: 'Nebula Garden', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  const paid = (amount: number, what: string): void => {
+    sfxAchievement();
+    haptic('medium');
+    toast(`<div class="t-ico">${icon('sprout')}</div><div><b>${what}</b><br>+${fmt(amount)} Stardust</div>`, 'good');
+    ctx.recalc();
+    ctx.save();
+    onChange();
+  };
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-seed],[data-plot],[data-harvest-all],[data-fertilize]');
+    if (!t || t.disabled || busy) return;
+    const { s, d } = ctx;
+    if (t.dataset.seed) {
+      gardenSeed = t.dataset.seed;
+      haptic('light');
+    } else if (t.dataset.plot) {
+      const i = Number(t.dataset.plot);
+      const p = s.garden[i];
+      if (!p) {
+        if (plant(s, i, gardenSeed)) { haptic('light'); ctx.save(); }
+      } else if (plotReady(p)) {
+        const name = seedById(p.seed)!.name;
+        const amount = harvest(s, d, i);
+        if (amount) paid(amount, `${name} harvested`);
+      } else {
+        toast(`${esc(seedById(p.seed)!.name)} is still growing.`, 'info');
+      }
+    } else if (t.dataset.harvestAll) {
+      const n = readyPlots(s);
+      const amount = harvestAll(s, d);
+      if (amount) paid(amount, `${n} plant${n === 1 ? '' : 's'} harvested`);
+    } else {
+      busy = true;
+      void showRewarded('fertilize the garden').then((ok) => {
+        busy = false;
+        if (ok && fertilize(ctx.s)) {
+          ctx.save();
+          toast(`<div class="t-ico">${icon('sprout')}</div><div><b>Garden fertilized</b><br>Every plant grew ${FERTILIZE_HOURS} hours</div>`, 'good');
+        }
+        redraw();
+      });
+      return;
+    }
+    redraw();
   });
 }
 

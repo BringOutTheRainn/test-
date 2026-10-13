@@ -222,6 +222,22 @@ Cookie Clicker wiki (minigames, sugar lumps).
   rewarded ad grows the current crystal 2 hours sooner (once per crystal). Achievements at 1, 10 and 40
   total levels. Opened from the crystal counter on the Build tab.
 
+**Run 6 (Oct 13, morning).** Sources: Cookie Clicker wiki (Garden, Minigames), AdVenture Capitalist
+Wikipedia page and Steam discussions on events.
+- Cookie Clicker's garden opens when the Farm reaches level 1 with a sugar lump and grows from a 2 by 2 to
+  a 6 by 6 bed with more levels; crops grow in real time and unlocked seeds survive ascension. It gives
+  crystal levels a purpose beyond a flat bonus. **Built: Nebula Garden.** Levelling the Nebula Refinery to
+  1 with a Quasar Crystal opens it: 4 plots, two more per level up to a 3 by 3 bed. Three spores trade
+  time for reward (Star Moss 5 min for 1.5 min of production, Comet Bloom 1 h for 12 min, Void Orchid
+  8 h for 90 min), all scaled by the Refinery's level bonus. Plants grow while away and survive
+  collapses. Harvest and replant in one tap; a rewarded ad (Fertilizer) grows every plant 2 hours, once
+  every 4 hours. Achievements at 1, 50 and 500 harvests. Opened from the sprout chip on the Build tab.
+- AdVenture Capitalist runs weekly limited-time events as temporary planets with their own currency and
+  leaderboard rewards; players spend premium currency to finish them in time, while permanent planets
+  wait. Our weekly contracts cover the goal side. **Next:** a weekend "event sector", a short separate
+  economy with its own generators whose reward is Contract Medals or crystals.
+
 ### Backlog from research (best first)
-1. Minigame per late generator (Cookie Clicker style), opened by crystal levels.
-2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+1. Weekend event sector (AdVenture Capitalist style): a 48 hour mini economy paying medals or crystals.
+2. More generator minigames on crystal levels (Star Forge: a timed smelting game; Warp Gate: trade routes).
+3. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).

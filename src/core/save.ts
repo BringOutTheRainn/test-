@@ -2,6 +2,7 @@
 
 import { GENERATORS } from '../data/generators.js';
 import { earn, HYPER_MULT, type Derived } from './economy.js';
+import { seedById, type Plot } from './garden.js';
 import { newState, SAVE_VERSION, type GameState } from './state.js';
 
 export const SAVE_KEY = 'stardust-empire-save';
@@ -32,6 +33,11 @@ export function deserialize(text: string, now = Date.now()): GameState {
   s.generators = GENERATORS.map((_, i) => (typeof gens[i] === 'number' && gens[i] >= 0 ? Math.floor(gens[i]) : 0));
   const levels = Array.isArray(raw.genLevels) ? (raw.genLevels as number[]) : [];
   s.genLevels = GENERATORS.map((_, i) => (typeof levels[i] === 'number' && levels[i] >= 0 ? Math.floor(levels[i]) : 0));
+  const plots = Array.isArray(raw.garden) ? (raw.garden as unknown[]) : [];
+  s.garden = plots.slice(0, 9).map((p) => {
+    const q = p as Plot | null;
+    return q && typeof q.seed === 'string' && typeof q.plantedAt === 'number' && seedById(q.seed) ? { seed: q.seed, plantedAt: q.plantedAt } : null;
+  });
   for (const key of ['stardust', 'earnedRun', 'earnedAll'] as const) {
     if (!isFinite(s[key]) || s[key] < 0) s[key] = 0;
   }
