@@ -7,7 +7,7 @@ import { claimDaily, dailyReward, nextStreakDay, rewardMinutes } from '../core/d
 import { fmt, fmtLong, fmtPercent, fmtRate, fmtTime, setNumberStyle } from '../core/format.js';
 import { exportSave, importSave } from '../core/save.js';
 import { achievementCount, newState, totalGenerators, upgradeCount } from '../core/state.js';
-import { setMusic, setSound, sfxAchievement } from './audio.js';
+import { setMusic, setSound, sfxAchievement, sfxBuy, sfxDenied, sfxTap } from './audio.js';
 import type { Ctx } from './ctx.js';
 import { closeModal, confirmModal, esc, openModal, toast } from './dom.js';
 import { icon } from './icons.js';
@@ -22,6 +22,7 @@ import { AD_SPEEDUP_HOURS, CRYSTAL_HOURS, LEVEL_PCT, crystalProgress, levelCost,
 import { GENERATORS as GENS } from '../data/generators.js';
 import { generatorVisible } from '../core/economy.js';
 import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize, fertilizeReady, harvest, harvestAll, harvestValue, plant, plotCount, plotProgress, plotReady, readyPlots, seedById } from '../core/garden.js';
+import { BADGE_GOALS, BADGE_MINUTES, BADGE_NAMES, EVENT_AD_MINUTES, EVENT_GENS, badgeReady, badgeReward, buyEventGen, claimBadge, currentEvent, eventAdBoost, eventAdReady, eventPrice, eventRate, eventTap, eventTapOnce, eventDay, eventTheme, eventTimeLeft } from '../core/event.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -48,6 +49,7 @@ export function openStats(ctx: Ctx): void {
       ['Earned while away', fmtLong(s.offlineEarnedAll)],
       ['Expeditions completed', String(s.expeditionsDone)],
       ['Missions completed', fmt(s.missionsDone)],
+      ['Event Gold badges', String(s.eventGolds)],
       ['Contract Medals', `${s.contractMedals} (+${fmtPercent(s.contractMedals * MEDAL_PCT)})`],
       ['Ads watched', String(s.adsWatched)],
       ['Login streak', `${s.dailyStreak} day${s.dailyStreak === 1 ? '' : 's'}`],
@@ -437,6 +439,90 @@ export function openGarden(ctx: Ctx, onChange: () => void): void {
         if (ok && fertilize(ctx.s)) {
           ctx.save();
           toast(`<div class="t-ico">${icon('sprout')}</div><div><b>Garden fertilized</b><br>Every plant grew ${FERTILIZE_HOURS} hours</div>`, 'good');
+        }
+        redraw();
+      });
+      return;
+    }
+    redraw();
+  });
+}
+
+const EVENT_ICONS = ['siphon', 'nebula', 'forge', 'wormhole'];
+
+export function openEvent(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const { s, d } = ctx;
+    const now = Date.now();
+    const e = currentEvent(s, now);
+    if (!e) return '<p>This weekend\'s event has ended. The next one opens on Friday.</p>';
+    const theme = eventTheme(e.week);
+    const top = BADGE_GOALS[BADGE_GOALS.length - 1];
+    // The bar is on a log scale so the early badges are not squashed into the first pixel.
+    const pos = (v: number): number => Math.min(100, Math.max(0, (Math.log10(Math.max(1, v)) / Math.log10(top)) * 100));
+    const marks = BADGE_GOALS.map((g, i) => `<span class="ev-mark${e.claimed > i ? ' got' : ''}" style="left:${pos(g)}%"><i>${BADGE_NAMES[i]}</i></span>`).join('');
+    const ready = badgeReady(e);
+    const next = e.claimed < BADGE_GOALS.length ? e.claimed : -1;
+    const gens = EVENT_GENS.map((g, i) => {
+      const price = eventPrice(e, i);
+      const ok = e.flux >= price;
+      return `<button class="ev-gen${ok ? ' ok' : ''}" data-egen="${i}" ${ok ? '' : 'aria-disabled="true"'}>
+        <span class="ev-gen-ico">${icon(EVENT_ICONS[i])}</span>
+        <span class="ev-gen-main"><b>${esc(g.name)}</b><span class="dim small">${fmt(g.rate)} Flux/s each</span></span>
+        <span class="ev-gen-side"><span class="ev-price">${fmt(price)}</span><span class="ev-owned">${e.gens[i] ?? 0}</span></span></button>`;
+    }).join('');
+    const adOk = eventAdReady(e, now) && rewardedAvailable();
+    return `<div class="ev-head"><div><div class="contract-kicker">Day ${eventDay(now)} of 3 · ends in ${fmtTime(eventTimeLeft(now) / 1000)}</div>
+        <div class="ev-name">${esc(theme.name)}</div><div class="dim small">${esc(theme.flavor)}</div></div></div>
+      <div class="ev-core">
+        <button class="ev-rift" data-etap="1" aria-label="Tap the rift">${icon('rift')}</button>
+        <div class="ev-flux"><div class="ev-flux-n">${fmt(e.flux)}</div><div class="dim small">Flux · ${fmt(eventRate(e))}/s · ${fmt(eventTap(e), 1)} per tap</div>
+          ${adOk ? `<button class="btn btn-plain btn-small" data-ead="1">Watch ad: +${EVENT_AD_MINUTES} min of Flux</button>` : ''}</div>
+      </div>
+      <div class="bar ev-bar"><div class="bar-fill ev-fill" style="width:${pos(e.earned)}%"></div>${marks}</div>
+      ${ready ? `<button class="btn btn-primary btn-wide" data-ebadge="1">Claim ${BADGE_NAMES[e.claimed]} badge: +${fmt(badgeReward(d, e.claimed))} Stardust${e.claimed === 2 ? ' and a Contract Medal' : ''}</button>`
+        : next >= 0 ? `<p class="dim small">${BADGE_NAMES[next]} badge at ${fmt(BADGE_GOALS[next])} Flux earned (${fmt(e.earned)} so far). Pays ${BADGE_MINUTES[next] >= 60 ? `${BADGE_MINUTES[next] / 60} hours` : `${BADGE_MINUTES[next]} minutes`} of production${next === 2 ? ' and a Contract Medal' : ''}.</p>`
+        : '<p class="dim small">Every badge won. See you next weekend.</p>'}
+      <div class="ev-gens">${gens}</div>
+      <p class="dim small">Flux keeps flowing while you are away and is wiped when the weekend ends. Badges are paid in Stardust.</p>`;
+  };
+  const el = openModal({ title: 'Weekend Event', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  body.addEventListener('click', (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-etap],[data-egen],[data-ebadge],[data-ead]');
+    if (!t || busy) return;
+    const { s, d } = ctx;
+    const e = currentEvent(s);
+    if (!e) { redraw(); return; }
+    if (t.dataset.etap) {
+      eventTapOnce(e);
+      sfxTap();
+      haptic('light');
+    } else if (t.dataset.egen) {
+      if (buyEventGen(e, Number(t.dataset.egen))) { sfxBuy(); haptic('light'); }
+      else sfxDenied();
+    } else if (t.dataset.ebadge) {
+      const tier = e.claimed;
+      const amount = claimBadge(s, d, e);
+      if (!amount) return;
+      sfxAchievement();
+      haptic('heavy');
+      toast(`<div class="t-ico">${icon('rift')}</div><div><b>${BADGE_NAMES[tier]} badge</b><br>+${fmt(amount)} Stardust${tier === 2 ? ' and a Contract Medal' : ''}</div>`, 'good', 5000);
+      ctx.recalc();
+      ctx.save();
+      onChange();
+    } else {
+      busy = true;
+      void showRewarded('boost the event').then((ok) => {
+        busy = false;
+        const live = currentEvent(ctx.s);
+        if (ok && live) {
+          const n = eventAdBoost(live);
+          if (n) toast(`<div class="t-ico">${icon('rift')}</div><div><b>Rift surge</b><br>+${fmt(n)} Flux</div>`, 'good');
+          ctx.save();
         }
         redraw();
       });

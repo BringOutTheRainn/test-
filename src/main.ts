@@ -17,11 +17,12 @@ import { BuildPanel } from './ui/build.js';
 import type { BuyAmount, Ctx, Panel } from './ui/ctx.js';
 import { $, closeModal, esc, modalOpen, setText, toast, toggleClass, topModalDismissable } from './ui/dom.js';
 import { icon, installIcons } from './ui/icons.js';
-import { applySettings, openDaily, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
+import { applySettings, openDaily, openEvent, openHyperdrive, openMissions, openSettings, openStats, showOffline } from './ui/menus.js';
 import { claimableMissions, ensureMissions } from './core/missions.js';
 import { contractClaimable } from './core/contracts.js';
 import { autoBuyStep } from './core/autobuy.js';
 import { growCrystals } from './core/crystals.js';
+import { badgeReady, currentEvent, eventTimeLeft } from './core/event.js';
 import { planReminders } from './core/notify.js';
 import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
@@ -55,6 +56,7 @@ function layout(): void {
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <div class="buffs" id="buffs"></div>
       <button class="gift-btn" id="btn-daily" hidden aria-label="Daily reward">${icon('gift')}</button>
+      <button class="event-btn" id="btn-event" hidden aria-label="Weekend event">${icon('rift')}<span class="event-text" id="event-text">Event</span></button>
       <button class="mission-btn" id="btn-missions" hidden aria-label="Missions">${icon('mission')}<i class="mission-count" id="mission-count" hidden></i></button>
       <button class="hyper-btn" id="btn-hyper" hidden aria-label="Hyperdrive"><span class="hyper-ico">${icon('probe')}</span><span class="hyper-text" id="hyper-text">x2</span></button>
       <div class="tap-info" id="tap-info"></div>
@@ -183,6 +185,7 @@ function start(): void {
   $('#btn-settings').addEventListener('click', () => openSettings(ctx));
   $('#btn-daily').addEventListener('click', () => openDaily(ctx, () => refreshSlow(true)));
   $('#btn-hyper').addEventListener('click', () => openHyperdrive(ctx));
+  $('#btn-event').addEventListener('click', () => openEvent(ctx, () => refreshSlow(true)));
   $('#btn-missions').addEventListener('click', () => openMissions(ctx, () => refreshSlow(true)));
   void initAds().then(() => {
     if (AD_CONFIG.banner && !ctx.s.noAds) void setBanner(true);
@@ -241,6 +244,8 @@ function start(): void {
   const hyperText = $('#hyper-text');
   const missionBtn = $('#btn-missions') as HTMLButtonElement;
   const missionCount = $('#mission-count');
+  const eventBtn = $('#btn-event') as HTMLButtonElement;
+  const eventText = $('#event-text');
   let shownAmount = state.stardust;
 
   function refreshSlow(force = false): void {
@@ -307,6 +312,15 @@ function start(): void {
     missionCount.hidden = ready === 0;
     setText(missionCount, String(ready));
     toggleClass(missionBtn, 'ready', ready > 0);
+
+    // Weekend event: Friday to Sunday, once the player has a real economy.
+    const ev = currentEvent(s);
+    eventBtn.hidden = !ev;
+    if (ev) {
+      const badge = badgeReady(ev);
+      toggleClass(eventBtn, 'ready', badge);
+      setText(eventText, badge ? 'Badge!' : fmtTime(eventTimeLeft() / 1000));
+    }
 
     // Hyperdrive (rewarded ad) button, offered once the player is hooked.
     const hyperLeft = hyperRemainingMs(s);

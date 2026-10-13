@@ -70,6 +70,11 @@ function build(): AchievementDef[] {
     list.push({ id: `harvests_${i}`, name, desc: `Harvest ${n} plant${n === 1 ? '' : 's'} in the Nebula Garden.`, check: (s) => s.gardenHarvests >= n });
   });
 
+  const golds: Array<[number, string]> = [[1, 'Weekend Warrior'], [3, 'Rift Regular'], [8, 'Event Horizon Champion']];
+  golds.forEach(([n, name], i) => {
+    list.push({ id: `golds_${i}`, name, desc: `Win ${n} Gold badge${n === 1 ? '' : 's'} in weekend events.`, check: (s) => s.eventGolds >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

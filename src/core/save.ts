@@ -2,6 +2,7 @@
 
 import { GENERATORS } from '../data/generators.js';
 import { earn, HYPER_MULT, type Derived } from './economy.js';
+import { EVENT_GENS } from './event.js';
 import { seedById, type Plot } from './garden.js';
 import { newState, SAVE_VERSION, type GameState } from './state.js';
 
@@ -33,6 +34,11 @@ export function deserialize(text: string, now = Date.now()): GameState {
   s.generators = GENERATORS.map((_, i) => (typeof gens[i] === 'number' && gens[i] >= 0 ? Math.floor(gens[i]) : 0));
   const levels = Array.isArray(raw.genLevels) ? (raw.genLevels as number[]) : [];
   s.genLevels = GENERATORS.map((_, i) => (typeof levels[i] === 'number' && levels[i] >= 0 ? Math.floor(levels[i]) : 0));
+  const ev = raw.event as Record<string, unknown> | null | undefined;
+  s.event = ev && typeof ev.week === 'number' && Array.isArray(ev.gens) && typeof ev.flux === 'number'
+    ? { week: ev.week, flux: ev.flux, earned: Number(ev.earned) || 0, gens: EVENT_GENS.map((_, i) => Math.max(0, Math.floor(Number((ev.gens as unknown[])[i]) || 0))),
+      last: Number(ev.last) || now, claimed: Math.min(3, Math.max(0, Math.floor(Number(ev.claimed) || 0))), adReadyAt: Number(ev.adReadyAt) || 0 }
+    : null;
   const plots = Array.isArray(raw.garden) ? (raw.garden as unknown[]) : [];
   s.garden = plots.slice(0, 9).map((p) => {
     const q = p as Plot | null;

@@ -285,6 +285,13 @@ function orchid(): string {
     <circle cx="32" cy="30" r="4" fill="#ff8cf0"/>`);
 }
 
+function rift(): string {
+  return svg(`<defs><radialGradient id="riftg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2b0"/><stop offset=".35" stop-color="#ff7ad9"/><stop offset=".75" stop-color="#6b3cff"/><stop offset="1" stop-color="#1a0b4a" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="32" cy="32" r="30" fill="url(#riftg)"/>
+    <path d="M32 6 C26 20 38 26 30 34 C24 40 34 48 32 58" fill="none" stroke="#fff6d8" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="14" cy="20" r="2" fill="#fff"/><circle cx="50" cy="44" r="2.5" fill="#fff"/><circle cx="48" cy="16" r="1.5" fill="#fff"/>`);
+}
+
 function build(): string {
   return svg(`<path d="M8 56 V30 l12 -8 v8 l12 -8 v8 l12 -8 v34z" fill="currentColor"/><rect x="46" y="10" width="8" height="46" fill="currentColor"/>`);
 }
@@ -300,7 +307,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid,
+  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift,
 };
 
 let installed = false;

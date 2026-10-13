@@ -580,3 +580,49 @@ test('nebula garden opens at refinery level 1, grows in real time and pays on ha
   assert.equal(back.garden[3].seed, 'orchid');
   assert.equal(back.garden[4], null);
 });
+
+test('weekend events run Friday to Sunday, keep flowing while away and pay badges', async () => {
+  const ev = await import('../www/js/core/event.js');
+  const fri = new Date(2026, 9, 16, 10).getTime();
+  const wed = new Date(2026, 9, 14, 10).getTime();
+  const sun = new Date(2026, 9, 18, 23).getTime();
+  assert.ok(ev.eventActive(fri) && ev.eventActive(sun));
+  assert.equal(ev.eventActive(wed), false);
+  assert.equal(ev.eventTimeLeft(wed), new Date(2026, 9, 16).getTime() - wed, 'counts down to Friday');
+  assert.equal(ev.eventTimeLeft(sun), 3600000, 'ends Monday midnight');
+  const s = newState(0);
+  assert.equal(ev.currentEvent(s, fri), null, 'locked for brand new players');
+  s.earnedAll = 2e6;
+  assert.equal(ev.currentEvent(s, wed), null, 'nothing midweek');
+  const e = ev.currentEvent(s, fri);
+  assert.ok(e && e.flux === 0);
+  for (let i = 0; i < 10; i++) ev.eventTapOnce(e);
+  assert.equal(e.flux, 10);
+  assert.ok(ev.buyEventGen(e, 0));
+  assert.equal(e.flux, 0);
+  assert.equal(ev.buyEventGen(e, 1), false, 'too expensive');
+  // An hour away at 1 Flux/s.
+  const later = ev.currentEvent(s, fri + 3600000);
+  assert.equal(later, e);
+  assert.ok(Math.abs(e.flux - 3600) < 1e-6);
+  // Badges.
+  const d = computeDerived(s, 0);
+  e.earned = ev.BADGE_GOALS[2];
+  for (let tier = 0; tier < 3; tier++) assert.ok(ev.claimBadge(s, d, e) > 0);
+  assert.equal(ev.claimBadge(s, d, e), 0);
+  assert.equal(s.contractMedals, 1, 'gold gives a medal');
+  assert.equal(s.eventGolds, 1);
+  // Rewarded ad: 10 minutes of Flux, then a 2 hour cooldown.
+  const now = fri + 3600000;
+  const before = e.flux;
+  assert.equal(ev.eventAdBoost(e, now), 600);
+  assert.equal(e.flux, before + 600);
+  assert.equal(ev.eventAdBoost(e, now + 60000), 0);
+  // Save round trip, then a new weekend wipes the economy but keeps the golds.
+  const back = deserialize(serialize(s), 0);
+  assert.equal(back.event.gens[0], 1);
+  const next = ev.currentEvent(back, fri + 7 * 86400000);
+  assert.equal(next.gens[0], 0);
+  assert.equal(next.claimed, 0);
+  assert.equal(back.eventGolds, 1);
+});

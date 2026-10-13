@@ -6,6 +6,7 @@ import type { NumberStyle } from './format.js';
 import type { Mission } from './missions.js';
 import type { ContractState } from './contracts.js';
 import type { Plot } from './garden.js';
+import type { EventState } from './event.js';
 
 export const SAVE_VERSION = 1;
 
@@ -105,6 +106,10 @@ export interface GameState {
   gardenHarvests: number;
   /** Real-time ms when the fertilize ad is available again. */
   gardenFertilizeAt: number;
+  /** This weekend's event economy; replaced when a new weekend starts. */
+  event: EventState | null;
+  /** Gold badges won across all weekend events. */
+  eventGolds: number;
   settings: Settings;
 }
 
@@ -162,6 +167,8 @@ export function newState(now = Date.now()): GameState {
     garden: [],
     gardenHarvests: 0,
     gardenFertilizeAt: 0,
+    event: null,
+    eventGolds: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

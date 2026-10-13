@@ -237,7 +237,21 @@ Wikipedia page and Steam discussions on events.
   wait. Our weekly contracts cover the goal side. **Next:** a weekend "event sector", a short separate
   economy with its own generators whose reward is Contract Medals or crystals.
 
+**Run 7 (Oct 13, evening).** Sources: an AppGamer guide to Idle Miner Tycoon events, the Egg, Inc.
+wiki (version history: time-limited global boosts and sales), run 6's AdVenture Capitalist notes.
+- Idle Miner Tycoon events last 3 to 4 days, are themed, and pay tiered badges (participation, bronze,
+  silver, gold) with better rewards at higher tiers. **Built: Weekend events.** Friday to Sunday (local
+  time), once the player has earned a million Stardust. A rotating theme (Solar Flare Weekend, Ion
+  Storm, Meteor Bazaar) with its own currency, Flux: tap the rift, buy four event generators (cost
+  growth x1.25), and Flux keeps flowing while away. Badges by Flux earned: Bronze 50K, Silver 100M,
+  Gold 5B, paying 30 min, 2 h and 6 h of production; Gold also gives a Contract Medal. A rewarded ad
+  adds 10 minutes of Flux, every 2 hours. Pacing simulated: checking in hourly wins Gold on day 2,
+  every 6 hours on day 3, twice a day reaches Silver. Everything is wiped when the weekend ends.
+  Achievements at 1, 3 and 8 Golds. Opened from a rift button at the top left of the sky.
+- Egg, Inc. added time-limited global boosts and sales. **Next:** a "double weekend" variant where a
+  rewarded boost lasts twice as long during events.
+
 ### Backlog from research (best first)
-1. Weekend event sector (AdVenture Capitalist style): a 48 hour mini economy paying medals or crystals.
-2. More generator minigames on crystal levels (Star Forge: a timed smelting game; Warp Gate: trade routes).
-3. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+1. More generator minigames on crystal levels (Star Forge: a timed smelting game; Warp Gate: trade routes).
+2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
+3. Event double weekends: rewarded boosts last twice as long while an event runs (Egg, Inc. style global boosts).
