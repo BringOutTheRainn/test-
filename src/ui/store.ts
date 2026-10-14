@@ -6,6 +6,7 @@
 import { PRODUCTS, PRODUCT_BY_ID, SKINS, type Product } from '../data/store.js';
 import { crystalsUnlocked } from '../core/crystals.js';
 import { currentEvent, eventActive, eventTimeLeft } from '../core/event.js';
+import { currentPass, seasonTimeLeft } from '../core/pass.js';
 import { fmt, fmtTime } from '../core/format.js';
 import {
   STARTER_PCT, SUPPORTER_MULT, VAULT_CAP_HOURS, VAULT_HOURS_PER_CRYSTAL, VAULT_RATE,
@@ -223,6 +224,11 @@ export function openShop(ctx: Ctx, onChange: () => void): void {
       <div class="shop-row shop-sub"><span class="dim small">${s.vaultHours.toFixed(1)} of ${VAULT_CAP_HOURS} hours saved · worth ${fmt(v.stardust)} Stardust${v.crystals ? ` and ${v.crystals} crystal${v.crystals === 1 ? '' : 's'}` : ''}</span>
       ${buyButton(ctx, 'vault_open', s.vaultHours >= 1 ? `Open ${productPrice('vault_open')}` : 'Filling')}</div></div>`);
 
+    const pass = currentPass(s, now);
+    parts.push(`<div class="shop-card">
+      <div class="shop-row">${icon('trophy')}<div class="shop-main"><b>Star Pass Premium</b><span>This season (ends in ${fmtTime(seasonTimeLeft(now) / 1000)}): a second reward track with double Stardust, 20 crystals, 2 Contract Medals and the Aurora skin. Rewards for tiers you already reached are paid at once.</span></div>
+      ${pass.premium ? '<span class="shop-owned">Active</span>' : buyButton(ctx, 'star_pass')}</div></div>`);
+
     const e = currentEvent(s, now);
     parts.push(`<div class="shop-card">
       <div class="shop-row">${icon('rift')}<div class="shop-main"><b>Event Pass</b><span>${e ? 'This weekend: double Flux and a Platinum badge worth 12 hours of production and 10 crystals.' : `Opens with the next weekend event${eventActive(now) ? '' : `, in ${fmtTime(eventTimeLeft(now) / 1000)}`}.`}</span></div>
@@ -239,7 +245,7 @@ export function openShop(ctx: Ctx, onChange: () => void): void {
       const have = k.id === 'default' || owns(s, `skin_${k.id}`);
       const using = s.skin === k.id;
       return `<div class="shop-skin${using ? ' using' : ''}"><span class="skin-swatch" style="background:radial-gradient(circle at 35% 30%, ${k.swatch[0]}, ${k.swatch[1]})"></span>
-        <b>${esc(k.name)}</b>${using ? '<span class="shop-owned">In use</span>' : have ? `<button class="btn btn-plain shop-buy" data-skin="${k.id}">Use</button>` : buyButton(ctx, `skin_${k.id}`)}</div>`;
+        <b>${esc(k.name)}</b>${using ? '<span class="shop-owned">In use</span>' : have ? `<button class="btn btn-plain shop-buy" data-skin="${k.id}">Use</button>` : 'exclusive' in k && k.exclusive ? '<span class="dim small shop-owned-note">Star Pass reward</span>' : buyButton(ctx, `skin_${k.id}`)}</div>`;
     }).join('');
     parts.push(`<div class="shop-card"><div class="shop-head"><b>Planet skins</b><span class="dim small">Looks only</span></div><div class="shop-skins">${skins}</div></div>`);
 

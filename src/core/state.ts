@@ -7,6 +7,7 @@ import type { Mission } from './missions.js';
 import type { ContractState } from './contracts.js';
 import type { Plot } from './garden.js';
 import type { EventState } from './event.js';
+import type { PassState } from './pass.js';
 
 export const SAVE_VERSION = 1;
 
@@ -127,6 +128,12 @@ export interface GameState {
   vaultsOpened: number;
   /** The starter offer pops up once on its own. */
   starterOffered: boolean;
+  /** Star Pass for the current season. */
+  pass: PassState | null;
+  /** Cumulative counters the Star Pass reads. */
+  dailyClaims: number;
+  contractTiers: number;
+  badgesWon: number;
   settings: Settings;
 }
 
@@ -196,6 +203,10 @@ export function newState(now = Date.now()): GameState {
     vaultAt: 0,
     vaultsOpened: 0,
     starterOffered: false,
+    pass: null,
+    dailyClaims: 0,
+    contractTiers: 0,
+    badgesWon: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

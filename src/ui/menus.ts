@@ -16,7 +16,7 @@ import { notificationsSupported, requestNotifications } from './notify.js';
 import { rewardedAvailable, showRewarded } from './ads.js';
 import { BUFF_MULT, earn } from '../core/economy.js';
 import { AD_CONFIG } from '../data/ads.js';
-import { frenzyCooldown, frenzyReady, grantFrenzy, grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
+import { boostMult, frenzyCooldown, frenzyReady, grantFrenzy, grantHyper, hyperCanStack, hyperRemainingMs } from '../core/ads.js';
 import { claimContract, contractClaimable, contractProgress, contractTimeLeft, currentContract, MEDAL_PCT, tierReward } from '../core/contracts.js';
 import { AD_SPEEDUP_HOURS, CRYSTAL_HOURS, LEVEL_PCT, crystalProgress, levelCost, levelUp, speedUpCrystal } from '../core/crystals.js';
 import { GENERATORS as GENS } from '../data/generators.js';
@@ -25,6 +25,7 @@ import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize
 import { BADGE_GOALS, BADGE_MINUTES, BADGE_NAMES, GOLD_TIER, PLATINUM_CRYSTALS, badgeCount, EVENT_AD_MINUTES, EVENT_GENS, badgeReady, badgeReward, buyEventGen, claimBadge, currentEvent, eventAdBoost, eventAdReady, eventPrice, eventRate, eventTap, eventTapOnce, eventDay, eventTheme, eventTimeLeft } from '../core/event.js';
 import { FORGE_GEN, REFILL_MINUTES, SPELLS, STOKE_COOLDOWN_HOURS, cast, heatFullIn, maxHeat, spellById, stoke, stokeReady, syncHeat } from '../core/forge.js';
 import { buyProduct, productPrice } from './store.js';
+import { PASS_TIERS, XP_PER_TIER, XP_RATES, claimPass, currentPass, passClaimable, passTier, passXp, seasonNumber, seasonTimeLeft, tierReward as passReward, type PassReward } from '../core/pass.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -234,14 +235,16 @@ export function openHyperdrive(ctx: Ctx): void {
     const can = hyperCanStack(s) && rewardedAvailable();
     const frenzyOn = s.buffs.find((b) => b.kind === 'frenzy');
     const wait = frenzyCooldown(s);
+    const mult = boostMult();
     const frenzyText = ctx.d.noTaps ? 'Not available while tapping is disabled.'
       : frenzyOn ? `Active: ${Math.ceil(frenzyOn.endsAt - s.time)}s left.`
       : wait > 0 ? `Recharging: ${fmtTime(wait)}.` : '';
     return `<div class="boosts">
+      ${mult > 1 ? '<p class="ev-pass-on">Double weekend: boosts last twice as long while the weekend event runs.</p>' : ''}
       <div class="boost">
         <div class="boost-ico">${icon('probe')}</div>
         <div class="boost-main"><b>Hyperdrive</b>
-          <p>Double all production for ${AD_CONFIG.hyperMinutes / 60} hours. Keeps running while you are away and stacks up to ${AD_CONFIG.hyperCapMinutes / 60} hours.</p>
+          <p>Double all production for ${(AD_CONFIG.hyperMinutes * mult) / 60} hours. Keeps running while you are away and stacks up to ${AD_CONFIG.hyperCapMinutes / 60} hours.</p>
           ${left > 0 ? `<p class="dim small">Active: ${fmtTime(left / 1000)} left.</p>` : ''}
           ${hyperCanStack(s) ? '' : '<p class="dim small">Fully charged. Come back when it runs lower.</p>'}</div>
         <button class="btn ${can ? 'btn-primary' : 'btn-plain'}" data-boost="hyper" ${can ? '' : 'disabled'}>Watch ad</button>
@@ -249,7 +252,7 @@ export function openHyperdrive(ctx: Ctx): void {
       <div class="boost">
         <div class="boost-ico">${icon('tap')}</div>
         <div class="boost-main"><b>Tap Frenzy</b>
-          <p>For ${AD_CONFIG.frenzySeconds} seconds, probes tap ${AD_CONFIG.frenzyTapsPerSecond} times a second and every tap is worth x${BUFF_MULT.frenzy}.</p>
+          <p>For ${AD_CONFIG.frenzySeconds * mult} seconds, probes tap ${AD_CONFIG.frenzyTapsPerSecond} times a second and every tap is worth x${BUFF_MULT.frenzy}.</p>
           ${frenzyText ? `<p class="dim small">${frenzyText}</p>` : ''}</div>
         <button class="btn ${frenzyUsable() ? 'btn-primary' : 'btn-plain'}" data-boost="frenzy" ${frenzyUsable() ? '' : 'disabled'}>Watch ad</button>
       </div>
@@ -617,6 +620,93 @@ export function openForge(ctx: Ctx, onChange: () => void): void {
   });
 }
 
+function passCard(ctx: Ctx): string {
+  const s = ctx.s;
+  const p = currentPass(s);
+  const xp = passXp(s, p);
+  const tier = passTier(s, p);
+  const into = tier >= PASS_TIERS ? XP_PER_TIER : xp - tier * XP_PER_TIER;
+  const ready = passClaimable(s);
+  return `<button class="pass-card" data-pass="1">
+    <div class="pass-card-head"><span class="contract-kicker">Star Pass · Season ${seasonNumber() % 100}${p.premium ? ' · Premium' : ''}</span><span class="dim small">${fmtTime(seasonTimeLeft() / 1000)} left</span></div>
+    <div class="pass-card-main"><b>Tier ${tier} of ${PASS_TIERS}</b>${ready ? `<span class="pass-ready">${ready} reward${ready === 1 ? '' : 's'} ready</span>` : '<span class="dim small">Open</span>'}</div>
+    <div class="bar"><div class="bar-fill pass-fill" style="width:${(into / XP_PER_TIER) * 100}%"></div></div>
+  </button>`;
+}
+
+function rewardText(r: PassReward): string {
+  const bits = [`${r.minutes} min`];
+  if (r.crystals) bits.push(`${icon('crystal')}${r.crystals}`);
+  if (r.medal) bits.push('Medal');
+  if (r.skin) bits.push('Aurora skin');
+  return bits.join(' · ');
+}
+
+export function openPass(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const s = ctx.s;
+    const p = currentPass(s);
+    const xp = passXp(s, p);
+    const tier = passTier(s, p);
+    const ready = passClaimable(s);
+    const rows = Array.from({ length: PASS_TIERS }, (_, i) => {
+      const t = i + 1;
+      const reached = tier >= t;
+      const cell = (premium: boolean): string => {
+        const claimed = premium ? p.prem >= t : p.free >= t;
+        const locked = premium && !p.premium;
+        const cls = claimed ? 'got' : reached && !locked ? 'ready' : locked ? 'locked' : '';
+        return `<div class="pass-cell ${cls}">${locked ? icon('lock') : ''}<span>${rewardText(passReward(t, premium))}</span></div>`;
+      };
+      return `<div class="pass-row${reached ? ' reached' : ''}"><div class="pass-tier">${t}</div>${cell(false)}${cell(true)}</div>`;
+    }).join('');
+    const ways = ([
+      ['Mission', XP_RATES.missions], ['Daily drop', XP_RATES.dailies], ['Contract tier', XP_RATES.contractTiers],
+      ['Event badge', XP_RATES.badges], ['Collapse', XP_RATES.collapses], ['Comet', XP_RATES.comets],
+      ['Forging', XP_RATES.casts], ['Harvest', XP_RATES.harvests],
+    ] as Array<[string, number]>).map(([n, x]) => `<span>${n} <b>+${x}</b></span>`).join('');
+    return `<div class="pass-top"><div><div class="contract-kicker">Season ends in ${fmtTime(seasonTimeLeft() / 1000)}</div>
+        <div class="ev-name">Tier ${tier} of ${PASS_TIERS}</div><div class="dim small">${fmt(xp)} XP · ${XP_PER_TIER} XP per tier</div></div></div>
+      <div class="pass-ways">${ways}</div>
+      ${ready ? `<button class="btn btn-primary btn-wide" data-pclaim="1">Claim ${ready} reward${ready === 1 ? '' : 's'}</button>` : ''}
+      ${p.premium ? '' : `<button class="ev-pass" data-pbuy="1"><b>Unlock Premium · ${esc(productPrice('star_pass'))}</b><span>A second track: double Stardust, 20 crystals, 2 Contract Medals and the Aurora skin. Tiers you already reached pay out at once.</span></button>`}
+      <div class="pass-grid"><div class="pass-row pass-headrow"><div class="pass-tier">Tier</div><div>Free</div><div>Premium</div></div>${rows}</div>`;
+  };
+  const el = openModal({ title: 'Star Pass', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => {
+    const top = body.scrollTop;
+    body.innerHTML = render();
+    body.scrollTop = top;
+  };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 2000);
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-pclaim],[data-pbuy]');
+    if (!t || busy) return;
+    if (t.dataset.pbuy) {
+      busy = true;
+      void buyProduct(ctx, 'star_pass').then(() => { busy = false; redraw(); onChange(); });
+      return;
+    }
+    const r = claimPass(ctx.s, ctx.d);
+    if (!r.tiers) return;
+    if (r.skin) ctx.sky.setSkin(ctx.s.skin);
+    sfxAchievement();
+    haptic('heavy');
+    const bits = [`+${fmt(r.stardust)} Stardust`];
+    if (r.crystals) bits.push(`+${r.crystals} crystals`);
+    if (r.medals) bits.push(`+${r.medals} Contract Medal${r.medals === 1 ? '' : 's'}`);
+    if (r.skin) bits.push('Aurora skin unlocked');
+    toast(`<div class="t-ico">${icon('trophy')}</div><div><b>${r.tiers} pass reward${r.tiers === 1 ? '' : 's'}</b><br>${bits.join(' · ')}</div>`, 'good', 6000);
+    ctx.recalc();
+    ctx.dirty();
+    ctx.save();
+    onChange();
+    redraw();
+  });
+}
+
 export function openMissions(ctx: Ctx, onChange: () => void): void {
   const render = (): string => {
     const { s, d } = ctx;
@@ -635,19 +725,23 @@ export function openMissions(ctx: Ctx, onChange: () => void): void {
           : rewardedAvailable() ? `<button class="btn btn-plain mission-swap" data-swap="${i}" aria-label="Watch an ad to swap this mission">Swap<small>ad</small></button>` : ''}
       </div>`;
     }).join('');
-    return `${contractCard(ctx)}
+    return `${passCard(ctx)}${contractCard(ctx)}
       <h3 class="section-title">Missions</h3>
       <div class="missions">${rows}</div>
       <p class="dim small">Missions completed: ${fmt(s.missionsDone)}</p>`;
   };
-  const el = openModal({ title: 'Missions', body: render(), onClose: () => clearInterval(timer) });
+  const el = openModal({ title: 'Goals', body: render(), onClose: () => clearInterval(timer) });
   const body = el.querySelector<HTMLElement>('.modal-body')!;
   let busy = false;
   const redraw = (): void => { body.innerHTML = render(); };
   const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
   body.addEventListener('click', (e) => {
-    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-claim],[data-swap],[data-contract]');
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-claim],[data-swap],[data-contract],[data-pass]');
     if (!t || busy) return;
+    if (t.dataset.pass) {
+      openPass(ctx, () => { redraw(); onChange(); });
+      return;
+    }
     if (t.dataset.contract) {
       const r = claimContract(ctx.s, ctx.d);
       if (!r) return;

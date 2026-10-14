@@ -5,6 +5,7 @@ import { PRODUCT_BY_ID, SKINS } from '../data/store.js';
 import { crystalsUnlocked } from './crystals.js';
 import { earn, type Derived } from './economy.js';
 import { currentEvent } from './event.js';
+import { currentPass } from './pass.js';
 import type { GameState } from './state.js';
 
 export const SUPPORTER_MULT = 2;
@@ -61,6 +62,7 @@ export function canBuy(s: GameState, id: string, now = Date.now()): boolean {
     return !!e && !e.pass;
   }
   if (id === 'vault_open') return s.vaultHours >= 1;
+  if (id === 'star_pass') return !currentPass(s, now).premium;
   if (id.startsWith('crystals_')) return crystalsUnlocked(s);
   return true;
 }
@@ -99,6 +101,9 @@ export function grant(s: GameState, d: Derived, id: string, now = Date.now()): G
       else s.crystals += 10; // The weekend ended mid-purchase: pay the crystals instead.
       return { text: e ? 'Event Pass active: double Flux and the Platinum badge.' : 'The event had ended, so you got 10 crystals instead.' };
     }
+    case 'star_pass':
+      currentPass(s, now).premium = true;
+      return { text: 'Star Pass Premium unlocked for this season. Claim your premium rewards in Goals.' };
     case 'vault_open': {
       fillVault(s, now);
       const v = vaultValue(s, d);

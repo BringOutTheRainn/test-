@@ -781,3 +781,26 @@ body.collapsing #app { animation: collapse 1.6s ease-in-out; }
 .ev-pass-on { font-size: 13px; font-weight: 700; color: var(--gold); }
 .shop-offer .ico { display: block; margin: 0 auto; }
 .shop-pack .shop-buy, .shop-skin .shop-buy, .shop-skin .shop-owned { margin-top: auto; }
+
+/* Star Pass */
+.pass-card { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 16px; border: 1px solid #7a5cff; background: linear-gradient(160deg, rgba(122, 92, 255, .2), var(--panel-2) 70%); color: inherit; font: inherit; text-align: left; }
+.pass-card-head, .pass-card-main { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pass-card-main b { font-size: 17px; }
+.pass-ready { font-size: 12px; font-weight: 800; color: var(--gold); }
+.pass-fill { background: linear-gradient(90deg, #7a5cff, #7fe9ff); }
+.pass-top { margin-bottom: 8px; }
+.pass-ways { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.pass-ways span { padding: 3px 8px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 11px; color: var(--dim); }
+.pass-ways b { color: #7fe9ff; }
+.pass-grid { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.pass-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr); gap: 6px; align-items: stretch; }
+.pass-headrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+.pass-tier { display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--dim); font-variant-numeric: tabular-nums; }
+.pass-row.reached .pass-tier { color: #7fe9ff; }
+.pass-cell { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 6px 8px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+.pass-cell span { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; min-width: 0; }
+.pass-cell .ico { width: 14px; height: 14px; flex: none; }
+.pass-cell.ready { border-color: var(--gold); box-shadow: 0 0 8px rgba(255, 207, 90, .3); }
+.pass-cell.got { opacity: .45; text-decoration: line-through; }
+.pass-cell.locked { opacity: .6; }
+.pass-headrow > div { padding: 0 8px; }

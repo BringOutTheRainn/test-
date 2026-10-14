@@ -155,6 +155,7 @@ export function claimBadge(s: GameState, d: Derived, e: EventState): number {
   const amount = badgeReward(d, tier);
   earn(s, amount);
   e.claimed++;
+  s.badgesWon++;
   if (tier === GOLD_TIER) {
     s.contractMedals++;
     s.eventGolds++;

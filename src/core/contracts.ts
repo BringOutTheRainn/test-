@@ -88,6 +88,7 @@ export function claimContract(s: GameState, d: Derived, now = Date.now()): { amo
   const amount = tierReward(d, tier);
   earn(s, amount);
   st.claimed++;
+  s.contractTiers++;
   const medal = tier === 2;
   if (medal) s.contractMedals++;
   return { amount, tier, medal };

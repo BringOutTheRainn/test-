@@ -28,6 +28,7 @@ import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
 import { initStore, maybeOfferStarter, openShop } from './ui/store.js';
 import { fillVault } from './core/shop.js';
+import { passClaimable } from './core/pass.js';
 import { hyperRemainingMs } from './core/ads.js';
 import { AD_CONFIG } from './data/ads.js';
 import { CosmosPanel, cosmosUnlocked, ProbesPanel, TrophiesPanel, UpgradesPanel } from './ui/panels.js';
@@ -315,7 +316,7 @@ function start(): void {
     missionBtn.hidden = !missionsOn;
     // Checking the contract also starts a new week's one as soon as the week turns.
     const contractReady = contractClaimable(s);
-    const ready = claimableMissions(s) + (missionsOn ? contractReady : 0);
+    const ready = claimableMissions(s) + (missionsOn ? contractReady + passClaimable(s) : 0);
     missionCount.hidden = ready === 0;
     setText(missionCount, String(ready));
     toggleClass(missionBtn, 'ready', ready > 0);

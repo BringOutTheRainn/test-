@@ -729,3 +729,61 @@ test('shop purchases grant once, the vault fills in real time, and the event pas
   assert.equal(back.purchases.supporter_pack, 1);
   assert.equal(back.event.pass, true);
 });
+
+test('star pass counts XP from existing counters and pays both tracks', async () => {
+  const pass = await import('../www/js/core/pass.js');
+  const shop = await import('../www/js/core/shop.js');
+  const T = new Date(2026, 9, 14, 12).getTime();
+  const s = newState(T);
+  s.generators[0] = 100;
+  s.missionsDone = 5; s.cometsAll = 40;
+  const d = computeDerived(s, 0);
+  const p = pass.currentPass(s, T);
+  assert.equal(pass.passXp(s, p), 0, 'counts from the season start');
+  s.missionsDone += 10; s.cometsAll += 20; s.dailyClaims += 2;
+  assert.equal(pass.passXp(s, p), 10 * 20 + 20 * 3 + 2 * 25);
+  assert.equal(pass.passTier(s, p), 1);
+  assert.equal(pass.passClaimable(s, T), 1);
+  let r = pass.claimPass(s, d, T);
+  assert.equal(r.tiers, 1);
+  assert.ok(r.stardust > 0);
+  assert.equal(pass.passClaimable(s, T), 0);
+  // Premium pays every reached tier on its track at once.
+  s.missionsDone += 200; // 4000 XP more: tier 17
+  assert.equal(pass.passTier(s, p), 17);
+  assert.ok(shop.canBuy(s, 'star_pass', T));
+  shop.grant(s, d, 'star_pass', T);
+  assert.equal(shop.canBuy(s, 'star_pass', T), false);
+  assert.equal(pass.passClaimable(s, T), 16 + 17);
+  const medals = s.contractMedals;
+  r = pass.claimPass(s, d, T);
+  assert.equal(r.tiers, 33);
+  assert.equal(s.contractMedals, medals + 1, 'premium medal at tier 10');
+  assert.equal(r.crystals, 3 + 2 * 5, 'free every 5th tier, premium 2 every 3rd');
+  // The top premium tier gives the Aurora skin.
+  s.missionsDone += 1000;
+  r = pass.claimPass(s, d, T);
+  assert.equal(r.skin, 'aurora');
+  assert.equal(s.skin, 'aurora');
+  assert.equal(pass.passTier(s, p), 30);
+  // A new season starts fresh.
+  const next = pass.currentPass(s, T + 29 * 86400000);
+  assert.notEqual(next.season, p.season);
+  assert.equal(pass.passXp(s, next), 0);
+  assert.equal(next.premium, false);
+  assert.ok(pass.seasonTimeLeft(T) > 0 && pass.seasonTimeLeft(T) <= 28 * 86400000);
+});
+
+test('rewarded boosts last twice as long during weekend events', async () => {
+  const ads = await import('../www/js/core/ads.js');
+  const fri = new Date(2026, 9, 16, 10).getTime();
+  const wed = new Date(2026, 9, 14, 10).getTime();
+  assert.equal(ads.boostMult(fri), 2);
+  assert.equal(ads.boostMult(wed), 1);
+  const s = newState(0);
+  ads.grantHyper(s, wed);
+  const normal = s.hyperEndsAt - wed;
+  s.hyperEndsAt = 0;
+  ads.grantHyper(s, fri);
+  assert.equal(s.hyperEndsAt - fri, normal * 2);
+});

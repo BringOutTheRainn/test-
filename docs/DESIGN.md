@@ -169,7 +169,7 @@ on the web. IDs and pacing live in `src/data/ads.ts`. Release steps are in RELEA
    Event Pass ($2.99 per weekend: double Flux and a Platinum badge), Stardust Vault (saves 15 min of
    production per real hour up to 12 h, $2.99 to open), four planet skins ($0.99 each), a one-time
    starter pop-up after 20 minutes of play, Restore purchases. AdMob mediation adapters can be added
-   from a CI variable. Setup steps are in docs/RELEASE.md.
+   from a CI variable. Setup steps are in docs/RELEASE.md. Star Pass ($4.99 per 4-week season, run 9).
 
 ## Research log
 
@@ -270,6 +270,18 @@ wiki (version history: time-limited global boosts and sales), run 6's AdVenture 
 - Minigames moved to their own row at the top of the Build tab (Nebula Garden and Star Forge cards
   with live status), and the buy row now shares its width when crystals and Auto are both shown.
 
+**Run 9 (Oct 14, evening).** Sources: playio and GameAnalytics notes on battle passes, PocketGamer.biz
+on season passes in idle games, Idle Miner Tycoon's monthly pass.
+- Season passes earn 10 to 40% of revenue in top free-to-play games, and idle games run them monthly.
+  They pay off because free players progress too, so the premium track is a visible upgrade, not a
+  paywall. **Built: Star Pass.** A 4-week season with 30 tiers of 250 XP. XP comes from what players
+  already do: missions (20), daily drops (25), contract tiers (40), event badges (40), collapses (60),
+  comets (3), forgings (3) and harvests (2). Free track: minutes of production each tier, a crystal
+  every 5th tier, a Contract Medal at 30. Premium ($4.99 per season): double production rewards, 2
+  crystals every 3rd tier, medals at 10 and 20, and the Aurora planet skin at 30, which is not sold
+  anywhere else. Lives at the top of the Goals window (renamed from Missions) and in the Shop.
+- Egg, Inc.'s global boost events. **Built: Double weekends.** Hyperdrive and Tap Frenzy last twice as
+  long while a weekend event runs; the Boosts window says so.
+
 ### Backlog from research (best first)
 1. Warp Gate minigame: trade routes that send cargo for a few hours and return Stardust or crystals.
-2. Event double weekends: rewarded boosts last twice as long while an event runs (Egg, Inc. style global boosts).

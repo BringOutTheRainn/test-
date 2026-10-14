@@ -41,6 +41,7 @@ export function claimDaily(s: GameState, d: Derived, now = Date.now()): DailyCla
   const today = dayNumber(now);
   s.dailyStreak = s.dailyLastDay === today - 1 ? s.dailyStreak + 1 : 1;
   s.dailyLastDay = today;
+  s.dailyClaims++;
   const day = ((s.dailyStreak - 1) % 7) + 1;
   const amount = dailyReward(s, d, day);
   earn(s, amount);
