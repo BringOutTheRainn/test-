@@ -36,11 +36,13 @@ export const EVENT_THEMES: EventTheme[] = [
   { name: 'Meteor Bazaar', flavor: 'A swarm of glittering rocks, and everyone wants a piece.' },
 ];
 
-/** Badges by Flux earned this event: Bronze, Silver, Gold. */
-export const BADGE_GOALS = [5e4, 1e8, 5e9];
-export const BADGE_NAMES = ['Bronze', 'Silver', 'Gold'];
-/** Badge rewards in minutes of base production. Gold also gives a Medal. */
-export const BADGE_MINUTES = [30, 120, 360];
+/** Badges by Flux earned this event: Bronze, Silver, Gold, and Platinum with the Event Pass. */
+export const BADGE_GOALS = [5e4, 1e8, 5e9, 5e10];
+export const BADGE_NAMES = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+/** Badge rewards in minutes of base production. Gold also gives a Medal, Platinum 10 crystals. */
+export const BADGE_MINUTES = [30, 120, 360, 720];
+export const GOLD_TIER = 2;
+export const PLATINUM_CRYSTALS = 10;
 export const EVENT_AD_MINUTES = 10;
 export const EVENT_AD_COOLDOWN_MINUTES = 120;
 
@@ -54,6 +56,13 @@ export interface EventState {
   /** Badges already claimed, 0 to 3. */
   claimed: number;
   adReadyAt: number;
+  /** Event Pass bought for this weekend: double Flux and the Platinum badge. */
+  pass?: boolean;
+}
+
+/** Badges this player can win this weekend. */
+export function badgeCount(e: EventState): number {
+  return e.pass ? BADGE_GOALS.length : GOLD_TIER + 1;
 }
 
 /** Friday, Saturday and Sunday, local time. */
@@ -81,11 +90,11 @@ export function eventUnlocked(s: GameState): boolean {
 }
 
 export function eventRate(e: EventState): number {
-  return EVENT_GENS.reduce((sum, g, i) => sum + g.rate * (e.gens[i] ?? 0), 0);
+  return EVENT_GENS.reduce((sum, g, i) => sum + g.rate * (e.gens[i] ?? 0), 0) * (e.pass ? 2 : 1);
 }
 
 export function eventTap(e: EventState): number {
-  return 1 + eventRate(e) * 0.05;
+  return (e.pass ? 2 : 1) + eventRate(e) * 0.05;
 }
 
 export function eventPrice(e: EventState, i: number): number {
@@ -132,7 +141,7 @@ export function buyEventGen(e: EventState, i: number): boolean {
 }
 
 export function badgeReady(e: EventState): boolean {
-  return e.claimed < BADGE_GOALS.length && e.earned >= BADGE_GOALS[e.claimed];
+  return e.claimed < badgeCount(e) && e.earned >= BADGE_GOALS[e.claimed];
 }
 
 export function badgeReward(d: Derived, tier: number): number {
@@ -146,10 +155,11 @@ export function claimBadge(s: GameState, d: Derived, e: EventState): number {
   const amount = badgeReward(d, tier);
   earn(s, amount);
   e.claimed++;
-  if (tier === BADGE_GOALS.length - 1) {
+  if (tier === GOLD_TIER) {
     s.contractMedals++;
     s.eventGolds++;
   }
+  if (tier === GOLD_TIER + 1) s.crystals += PLATINUM_CRYSTALS;
   return amount;
 }
 

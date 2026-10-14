@@ -75,6 +75,9 @@ The privacy policy page must name AdMob and link https://policies.google.com/tec
 The app asks for consent in the EEA and UK through Google's consent form (configure a GDPR message in
 AdMob under Privacy & messaging).
 
+Purchases go through Google Play Billing; the game stores only which products were bought, on the
+phone. Mention in-app purchases in the store listing and the Data safety form (purchase history).
+
 ## Ads setup
 
 The build ships with Google's **test** ad IDs, so it is safe to install and try. To earn money:
@@ -89,3 +92,43 @@ The build ships with Google's **test** ad IDs, so it is safe to install and try.
 Placements: Hyperdrive (rewarded, x2 production for 2 h, stacks to 8 h, runs offline); x2 offline
 earnings; x2 daily drop; a break ad after collapsing or entering an anomaly (at most once per 8
 minutes, never in the first 20 minutes of play). The banner is off by default (`banner: false`).
+
+## Ad mediation (more money per ad)
+
+Mediation lets other ad networks bid against AdMob for every placement, which usually raises
+earnings per ad. No code changes are needed:
+
+1. In the AdMob console, open Mediation and create a mediation group for each ad format (Rewarded,
+   Interstitial, Banner) on Android. Add networks such as AppLovin, Unity Ads, Liftoff and Meta
+   Audience Network, and turn on bidding where offered. Each network needs its own (free) account.
+2. In GitHub, Settings, Secrets and variables, Actions, **Variables**, add `ADMOB_MEDIATION_ADAPTERS`
+   with the adapter libraries for those networks, comma separated, for example
+   `com.google.ads.mediation:applovin:13.0.1.0,com.google.ads.mediation:unity:4.13.0.0`.
+   Use the versions from Google's mediation docs for each network. CI adds them to the app build.
+3. Add each network's lines to `app-ads.txt` and list the networks in the privacy policy.
+
+## In-app purchases
+
+The Shop (cart button, top right) sells these products. Create them in Play Console, Monetize,
+Products, **In-app products**, with exactly these ids, then activate them:
+
+| Product id | Type | Suggested price | What it does |
+| --- | --- | --- | --- |
+| `supporter_pack` | One-time | $3.99 | No break ads or banners, production x2 forever |
+| `starter_pack` | One-time | $1.99 | 10 crystals, 4 h of production, +10% production; offered for the first 3 days |
+| `crystals_5` | Consumable | $0.99 | 5 Quasar Crystals |
+| `crystals_30` | Consumable | $4.99 | 30 Quasar Crystals |
+| `crystals_80` | Consumable | $9.99 | 80 Quasar Crystals |
+| `event_pass` | Consumable | $2.99 | This weekend: double Flux and a Platinum badge |
+| `vault_open` | Consumable | $2.99 | Pays out the Stardust Vault (up to 12 h of production) |
+| `skin_lava`, `skin_ice`, `skin_neon`, `skin_gold` | One-time | $0.99 each | Planet skins |
+
+Play Console only lets you create products after an APK or bundle with the billing permission has
+been uploaded to a testing track; the build includes it through `cordova-plugin-purchase`. Add your
+Google account as a licence tester (Settings, License testing) to buy without being charged.
+
+The game grants a purchase as soon as Google Play approves it and then acknowledges it, so a crash
+in between replays the purchase on next launch rather than losing it. Purchases are checked on the
+phone only; if fraud becomes a problem, add server-side receipt validation (for example with
+RevenueCat or a Firebase function). A "Restore purchases" button sits at the bottom of the Shop.
+In a browser the Shop runs a test checkout and nothing is charged.

@@ -660,3 +660,72 @@ test('star forge heat refills in real time and pays for forgings', async () => {
   assert.equal(f.stoke(s, T + 61 * M), false);
   assert.equal(s.forgeCasts, 4);
 });
+
+test('shop purchases grant once, the vault fills in real time, and the event pass adds a tier', async () => {
+  const shop = await import('../www/js/core/shop.js');
+  const ev = await import('../www/js/core/event.js');
+  const H = 3600000;
+  const T = new Date(2026, 9, 17, 12).getTime(); // a Saturday
+  const s = newState(T);
+  s.generators[0] = 100;
+  let d = computeDerived(s, 0);
+  const base = d.baseSps;
+  // Supporter: no ads, x2 forever, only once.
+  assert.ok(shop.canBuy(s, 'supporter_pack', T));
+  assert.ok(shop.grant(s, d, 'supporter_pack', T));
+  assert.equal(s.noAds, true);
+  assert.equal(shop.grant(s, d, 'supporter_pack', T), null, 'restores do not double up');
+  assert.equal(shop.canBuy(s, 'supporter_pack', T), false);
+  d = computeDerived(s, 0);
+  assert.ok(Math.abs(d.baseSps - base * 2) < 1e-9);
+  // Starter: limited to the first 3 days.
+  assert.ok(shop.canBuy(s, 'starter_pack', T + 71 * H));
+  assert.equal(shop.canBuy(s, 'starter_pack', T + 73 * H), false);
+  const g = shop.grant(s, d, 'starter_pack', T);
+  assert.equal(g.crystals, 10);
+  assert.ok(Math.abs(computeDerived(s, 0).baseSps - base * 2.2) < 1e-9);
+  // Crystal packs need crystals unlocked; consumables stack.
+  assert.equal(shop.canBuy(s, 'crystals_5', T), false);
+  s.earnedAll = 2e9;
+  assert.ok(shop.canBuy(s, 'crystals_5', T));
+  shop.grant(s, d, 'crystals_5', T); shop.grant(s, d, 'crystals_5', T);
+  assert.equal(s.crystals, 20);
+  assert.equal(s.purchases.crystals_5, 2);
+  // Vault: 15 minutes per hour, capped at 12 hours.
+  shop.fillVault(s, T);
+  assert.equal(shop.canBuy(s, 'vault_open', T), false, 'empty');
+  shop.fillVault(s, T + 8 * H);
+  assert.ok(Math.abs(s.vaultHours - 2) < 1e-9);
+  shop.fillVault(s, T + 100 * H);
+  assert.equal(s.vaultHours, 12);
+  d = computeDerived(s, 0);
+  const before = s.stardust;
+  const v = shop.grant(s, d, 'vault_open', T + 100 * H);
+  assert.ok(Math.abs(v.stardust - d.baseSps * 12 * 3600) < 1e-6);
+  assert.equal(v.crystals, 3);
+  assert.ok(s.stardust > before);
+  assert.equal(s.vaultHours, 0);
+  // Event pass: double Flux and a fourth badge.
+  const e = ev.currentEvent(s, T);
+  assert.equal(ev.badgeCount(e), 3);
+  ev.buyEventGen(e, 0) || (e.flux = 10, ev.buyEventGen(e, 0));
+  const rate = ev.eventRate(e);
+  shop.grant(s, d, 'event_pass', T);
+  assert.ok(e.pass);
+  assert.equal(ev.eventRate(e), rate * 2);
+  assert.equal(ev.badgeCount(e), 4);
+  assert.equal(shop.canBuy(s, 'event_pass', T), false, 'one pass per weekend');
+  e.earned = ev.BADGE_GOALS[3];
+  const crystals = s.crystals;
+  for (let i = 0; i < 4; i++) assert.ok(ev.claimBadge(s, d, e) > 0);
+  assert.equal(s.crystals, crystals + 10, 'platinum pays crystals');
+  // Skins.
+  assert.equal(shop.setSkin(s, 'lava'), false);
+  shop.grant(s, d, 'skin_lava', T);
+  assert.equal(s.skin, 'lava');
+  assert.ok(shop.setSkin(s, 'default'));
+  // Saves keep purchases.
+  const back = deserialize(serialize(s), 0);
+  assert.equal(back.purchases.supporter_pack, 1);
+  assert.equal(back.event.pass, true);
+});

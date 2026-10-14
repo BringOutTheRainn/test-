@@ -163,6 +163,13 @@ on the web. IDs and pacing live in `src/data/ads.ts`. Release steps are in RELEA
    simulation that checks pacing to the first prestige (target 1.5 to 3 hours of active play).
 6. **Ads**: Hyperdrive, x2 offline and daily rewards, paced break ads (see Monetization).
 7. **Live research (twice daily, Oct 10 to 17)**: study similar games, add what fits, ship the best.
+8. **Purchases (Oct 14, asked for by cj)**: a Shop with Google Play Billing (cordova-plugin-purchase)
+   and a test checkout in browsers. Supporter Pack ($3.99: no break ads or banners, production x2),
+   Starter Pack ($1.99, first 3 days: 10 crystals, 4 h of production, +10%), crystal packs (5/30/80),
+   Event Pass ($2.99 per weekend: double Flux and a Platinum badge), Stardust Vault (saves 15 min of
+   production per real hour up to 12 h, $2.99 to open), four planet skins ($0.99 each), a one-time
+   starter pop-up after 20 minutes of play, Restore purchases. AdMob mediation adapters can be added
+   from a CI variable. Setup steps are in docs/RELEASE.md.
 
 ## Research log
 
@@ -265,5 +272,4 @@ wiki (version history: time-limited global boosts and sales), run 6's AdVenture 
 
 ### Backlog from research (best first)
 1. Warp Gate minigame: trade routes that send cargo for a few hours and return Stardust or crystals.
-2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
-3. Event double weekends: rewarded boosts last twice as long while an event runs (Egg, Inc. style global boosts).
+2. Event double weekends: rewarded boosts last twice as long while an event runs (Egg, Inc. style global boosts).

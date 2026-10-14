@@ -35,6 +35,7 @@ jobs:
         env:
           VERSION_CODE: ${{ github.run_number }}
           ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+          ADMOB_MEDIATION_ADAPTERS: ${{ vars.ADMOB_MEDIATION_ADAPTERS }}
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/upload.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}

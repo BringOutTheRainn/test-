@@ -30,6 +30,20 @@ fi
 if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then
   sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$ADMOB_APP_ID\"/>\n    </application>#" "$MANIFEST"
 fi
+# Ad mediation: extra ad networks bid for each AdMob placement. Set
+# ADMOB_MEDIATION_ADAPTERS to a comma-separated list of Gradle coordinates,
+# e.g. "com.google.ads.mediation:applovin:13.0.1.0,com.google.ads.mediation:unity:4.13.0.0",
+# and set up the matching mediation group in the AdMob console.
+if [ -n "${ADMOB_MEDIATION_ADAPTERS:-}" ]; then
+  IFS=',' read -ra ADAPTERS <<< "$ADMOB_MEDIATION_ADAPTERS"
+  for dep in "${ADAPTERS[@]}"; do
+    dep=$(echo "$dep" | xargs)
+    if [ -n "$dep" ] && ! grep -q "$dep" android/app/build.gradle; then
+      sed -i "0,/^dependencies {/s##dependencies {\n    implementation \"$dep\"#" android/app/build.gradle
+      echo "Added mediation adapter $dep"
+    fi
+  done
+fi
 # Portrait only.
 MANIFEST=android/app/src/main/AndroidManifest.xml
 if ! grep -q 'screenOrientation' "$MANIFEST"; then

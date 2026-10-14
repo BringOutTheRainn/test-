@@ -116,6 +116,17 @@ export interface GameState {
   forgeCasts: number;
   /** Real-time ms when the stoke ad is available again. */
   forgeAdAt: number;
+  /** Purchases by product id: how many times each was bought. */
+  purchases: Record<string, number>;
+  /** Celestial body skin id, or 'default'. */
+  skin: string;
+  /** Hours of production saved in the Stardust Vault. */
+  vaultHours: number;
+  /** Real-time ms of the last vault fill; 0 until it starts. */
+  vaultAt: number;
+  vaultsOpened: number;
+  /** The starter offer pops up once on its own. */
+  starterOffered: boolean;
   settings: Settings;
 }
 
@@ -179,6 +190,12 @@ export function newState(now = Date.now()): GameState {
     forgeHeatAt: 0,
     forgeCasts: 0,
     forgeAdAt: 0,
+    purchases: {},
+    skin: 'default',
+    vaultHours: 0,
+    vaultAt: 0,
+    vaultsOpened: 0,
+    starterOffered: false,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

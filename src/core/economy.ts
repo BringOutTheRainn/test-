@@ -7,6 +7,7 @@ import { COSMIC, COSMIC_BY_ID, type CosmicEffect } from '../data/cosmic.js';
 import { RELICS } from '../data/expeditions.js';
 import { ANOMALIES, ANOMALY_BY_ID } from '../data/anomalies.js';
 import { achievementCount, darkMatterAvailable, type GameState } from './state.js';
+import { purchaseMult } from './shop.js';
 
 export const BUFF_MULT = { rush: 7, supernova: 777, well: 0.5, horizon: 66, frenzy: 10 } as const;
 export const HYPER_MULT = 2;
@@ -179,6 +180,7 @@ export function computeDerived(s: GameState, now = Date.now()): Derived {
   globalMult *= astronomerMult;
   // Contract Medals: +5% each (MEDAL_PCT in contracts.ts).
   globalMult *= 1 + 0.05 * s.contractMedals;
+  globalMult *= purchaseMult(s);
 
   let nonDrone = 0;
   for (let i = 1; i < n; i++) nonDrone += s.generators[i];

@@ -26,6 +26,8 @@ import { badgeReady, currentEvent, eventTimeLeft } from './core/event.js';
 import { planReminders } from './core/notify.js';
 import { clearReminders, scheduleReminders } from './ui/notify.js';
 import { initAds, setBanner } from './ui/ads.js';
+import { initStore, maybeOfferStarter, openShop } from './ui/store.js';
+import { fillVault } from './core/shop.js';
 import { hyperRemainingMs } from './core/ads.js';
 import { AD_CONFIG } from './data/ads.js';
 import { CosmosPanel, cosmosUnlocked, ProbesPanel, TrophiesPanel, UpgradesPanel } from './ui/panels.js';
@@ -47,6 +49,7 @@ function layout(): void {
         <div class="amount-row"><span class="sd-dot big"></span><span class="amount" id="amount">0</span></div>
         <div class="rate" id="rate">0 per second</div>
       </div>
+      <button class="icon-btn shop-btn" id="btn-shop" aria-label="Shop">${icon('cart')}</button>
       <button class="icon-btn" id="btn-stats" aria-label="Stats">${icon('chart')}</button>
       <button class="icon-btn" id="btn-settings" aria-label="Settings">${icon('gear')}</button>
     </header>
@@ -145,6 +148,7 @@ function start(): void {
       ctx.recalc();
       applySettings(ctx);
       sky.setStage(stageFor(s.earnedRun));
+      sky.setSkin(s.skin);
       ctx.save();
       ctx.dirty();
       ctx.showTab('build');
@@ -169,6 +173,8 @@ function start(): void {
 
   applySettings(ctx);
   sky.setStage(stageFor(state.earnedRun));
+  sky.setSkin(state.skin);
+  void initStore(ctx);
 
   // Offline progress since the last session.
   const off = applyOffline(ctx.s, ctx.d);
@@ -181,6 +187,7 @@ function start(): void {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]');
     if (b) ctx.showTab(b.dataset.tab!);
   });
+  $('#btn-shop').addEventListener('click', () => openShop(ctx, () => refreshSlow(true)));
   $('#btn-stats').addEventListener('click', () => openStats(ctx));
   $('#btn-settings').addEventListener('click', () => openSettings(ctx));
   $('#btn-daily').addEventListener('click', () => openDaily(ctx, () => refreshSlow(true)));
@@ -312,6 +319,10 @@ function start(): void {
     missionCount.hidden = ready === 0;
     setText(missionCount, String(ready));
     toggleClass(missionBtn, 'ready', ready > 0);
+
+    // Stardust Vault fills in real time; the starter offer pops up once.
+    fillVault(s);
+    if (!modalOpen()) maybeOfferStarter(ctx);
 
     // Weekend event: Friday to Sunday, once the player has a real economy.
     const ev = currentEvent(s);

@@ -299,6 +299,12 @@ function anvil(): string {
     <path d="M24 14 l3 -8 M34 12 l1 -9 M42 16 l4 -7" stroke="#ffcf5a" stroke-width="2.5" stroke-linecap="round"/>`);
 }
 
+function cart(): string {
+  return svg(`<path d="M6 12 h8 l6 28 h28 l6 -20 h-36" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="24" cy="52" r="5" fill="currentColor"/><circle cx="44" cy="52" r="5" fill="currentColor"/>
+    <path d="M36 6 l2.2 4.6 5 .7 -3.6 3.5 .9 5 -4.5 -2.4 -4.5 2.4 .9 -5 -3.6 -3.5 5 -.7z" fill="#ffcf5a"/>`);
+}
+
 function build(): string {
   return svg(`<path d="M8 56 V30 l12 -8 v8 l12 -8 v8 l12 -8 v34z" fill="currentColor"/><rect x="46" y="10" width="8" height="46" fill="currentColor"/>`);
 }
@@ -314,7 +320,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift, anvil,
+  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift, anvil, cart,
 };
 
 let installed = false;

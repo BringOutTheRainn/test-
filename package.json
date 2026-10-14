@@ -25,6 +25,7 @@
     "@capacitor/core": "^7.0.0",
     "@capacitor/haptics": "^7.0.0",
     "@capacitor/local-notifications": "^7.0.0",
-    "@capacitor/splash-screen": "^7.0.0"
+    "@capacitor/splash-screen": "^7.0.0",
+    "cordova-plugin-purchase": "^13.10.0"
   }
 }

@@ -3,6 +3,7 @@
 
 import { GENERATORS } from '../data/generators.js';
 import { iconImage } from './icons.js';
+import { SKINS } from '../data/store.js';
 
 export const STAGES = [
   { name: 'Asteroid', at: 0 },
@@ -55,6 +56,12 @@ export class Sky {
   private craters: Array<[number, number, number]> = [];
   particlesOn = true;
   aura: 'none' | 'rush' | 'horizon' | 'well' | 'supernova' = 'none';
+  /** Canvas filter for the bought planet skin. */
+  private bodyFilter = 'none';
+
+  setSkin(id: string): void {
+    this.bodyFilter = SKINS.find((k) => k.id === id)?.filter ?? 'none';
+  }
 
   constructor(private canvas: HTMLCanvasElement, private hooks: SkyHooks) {
     this.ctx = canvas.getContext('2d')!;
@@ -278,7 +285,9 @@ export class Sky {
     g.save();
     g.translate(cx, cy);
     g.scale(1 + sq, 1 - sq);
+    if (this.bodyFilter !== 'none') g.filter = this.bodyFilter;
     this.drawBody(r);
+    g.filter = 'none';
     g.restore();
     this.drawDrones(cx, cy, r);
 

@@ -37,8 +37,9 @@ export function deserialize(text: string, now = Date.now()): GameState {
   const ev = raw.event as Record<string, unknown> | null | undefined;
   s.event = ev && typeof ev.week === 'number' && Array.isArray(ev.gens) && typeof ev.flux === 'number'
     ? { week: ev.week, flux: ev.flux, earned: Number(ev.earned) || 0, gens: EVENT_GENS.map((_, i) => Math.max(0, Math.floor(Number((ev.gens as unknown[])[i]) || 0))),
-      last: Number(ev.last) || now, claimed: Math.min(3, Math.max(0, Math.floor(Number(ev.claimed) || 0))), adReadyAt: Number(ev.adReadyAt) || 0 }
+      last: Number(ev.last) || now, claimed: Math.min(4, Math.max(0, Math.floor(Number(ev.claimed) || 0))), adReadyAt: Number(ev.adReadyAt) || 0, pass: ev.pass === true }
     : null;
+  s.purchases = raw.purchases && typeof raw.purchases === 'object' ? { ...(raw.purchases as Record<string, number>) } : {};
   const plots = Array.isArray(raw.garden) ? (raw.garden as unknown[]) : [];
   s.garden = plots.slice(0, 9).map((p) => {
     const q = p as Plot | null;
