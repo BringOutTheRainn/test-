@@ -103,6 +103,17 @@ Memory (start in the Twilight Reef), Pearl Inheritance (start with Pearls), Long
 lasts longer), Clam Mastery (higher combo cap), Whale Friend (whales twice as often, from the shallows),
 Research Notes (keep Reef Research through migrations).
 
+## Geyser (active skill)
+
+Unlocks after 500 Pearls. Tap the geyser button to erupt: 20 seconds of 10 automatic taps a second (they
+keep the combo up), then 10 minutes to recharge.
+
+## Daily Tide Gift
+
+Tap the clam 150 times in a day (geyser taps don't count) to open that day's gift, worth 10, 15, 20, 30, 45,
+60 and 90 minutes of production over a 7 day streak; day 7 adds a Whale Song. A missed day starts the streak
+over. Shown as a chip at the top left of the scene, which glows when the gift is ready.
+
 ## Saving and offline
 
 Auto-save every 10 s and on hide, to local storage, as versioned JSON. Offline earnings for up to 8 hours
@@ -118,5 +129,24 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 
 1. **Playable first version** (this build): everything above in the browser, tests, screenshots.
 2. **Mobile release**: Capacitor Android build in CI, icon, splash, back button, safe areas.
-3. **Retention**: daily tide gifts, missions, reminders, opt-in rewarded ads (same rules as Stardust Empire).
+3. **Retention**: ~~daily tide gifts~~ (built), ~~geyser~~ (built), missions, reminders, opt-in rewarded
+   ads (same rules as Stardust Empire), Hearts from fed fish to unlock rare creatures.
 4. **Depth content**: an expedition submarine, a reef garden minigame, weekend events.
+
+## Research log
+
+**Run 1 (Oct 14, evening).** Sources: TouchArcade and Reefbuilders reviews of AbyssRium (Tap Tap Fish),
+Sensor Tower's 2026 note on monetization and retention, a 2026 Playio post on rewarded ads and retention,
+Mind Studios' idle clicker design guide.
+- AbyssRium's volcano skill auto-taps the reef about ten times a second for a short burst, and reviewers
+  liked it as a break from tapping by hand. **Built: Geyser.** 20 s of 10 auto-taps a second, 10 minute
+  recharge, unlocked at 500 Pearls. It feeds the combo, so it pairs well with high tide.
+- Daily rewards tied to actually playing build the return habit better than plain login rewards, because
+  they get the player into the core loop. **Built: Daily Tide Gift.** 150 taps a day opens a 7 day streak
+  gift; day 7 adds a Whale Song. Logbook entries for the first gift, a full week, and geyser use.
+- Reviewers of AbyssRium found interest fading after about two weeks, and its rare fish need "Love" that
+  fish drop now and then. **Next:** Hearts dropped by visitors that unlock rare creatures with small
+  permanent bonuses, so there is a long collection goal.
+- Rewarded ads work best as a short, capped version of a bigger boost (for example x2 for a few minutes),
+  placed at natural moments. **Next:** opt-in ads for x2 offline earnings and a doubled Tide Gift, with a
+  daily cap.

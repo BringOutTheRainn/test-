@@ -118,6 +118,10 @@ function buildAchievements(): AchDef[] {
   ZONES.forEach((z, i) => { if (i > 0) list.push({ id: `zone_${i}`, name: z.name, desc: `Descend to ${z.depth.toLocaleString('en-US')} m.` }); });
   ([[1, 'Moving House'], [5, 'Nomad Colony'], [20, 'Eternal Tides']] as [number, string][]).forEach(([n, name]) =>
     list.push({ id: `mig_${n}`, name, desc: `Migrate ${n} time${n > 1 ? 's' : ''}.` }));
+  ([[1, 'First Gift'], [7, 'Full Week of Tides']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `daily_${n}`, name, desc: n === 1 ? 'Claim a Daily Tide Gift.' : 'Reach day 7 of the Tide Gift streak.' }));
+  ([[1, 'Thar She Blows'], [25, 'Geyser Keeper']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `geyser_${n}`, name, desc: `Erupt the geyser ${n} time${n > 1 ? 's' : ''}.` }));
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();

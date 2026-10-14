@@ -55,6 +55,17 @@ await game(() => { const a = window.__fathom; a.s.nextVisitorAt = 0; a.s.visitor
 await page.waitForTimeout(1500);
 await shot('03_twilight_fish');
 
+// Geyser erupting, then the Daily Tide Gift ready to claim.
+await page.click('#geyser');
+await page.waitForTimeout(1200);
+await shot('10_geyser');
+await game(() => { const s = window.__fathom.s; s.daily.taps = 150; s.daily.claimedDay = ''; s.daily.streak = 2; });
+await page.waitForTimeout(300);
+await shot('11_gift_ready');
+await page.click('#gift');
+await shot('12_gift_modal');
+await page.click('#modal .act');
+
 await page.click('#tabs button[data-tab="depths"]');
 await shot('04_depths');
 

@@ -3,6 +3,12 @@
 const SAVE_KEY = 'fathom.save';
 const rng = () => Math.random();
 
+// The player's local calendar date, YYYY-MM-DD.
+function localDay(now: number): string {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 type Tab = 'colony' | 'depths' | 'logbook' | 'migrate' | 'stats';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, html?: string): HTMLElementTagNameMap[K] {
@@ -76,6 +82,8 @@ class App {
       <section id="stage">
         <canvas id="scene"></canvas>
         <div id="depth-tag"></div>
+        <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
+        <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
         <div id="boosts"></div>
         <div id="combo"><div class="fill"></div><span>Combo x1.00</span></div>
         <div id="ticker"></div>
@@ -100,6 +108,17 @@ class App {
       this.renderPanel();
     }));
     $('#gear').addEventListener('click', () => this.showSettings());
+    $('#gift').addEventListener('click', () => this.showGift());
+    $('#geyser').addEventListener('click', () => {
+      const now = Date.now();
+      if (startGeyser(this.s, now)) {
+        if (this.s.settings.sound) playWhale();
+        this.vibrate(40);
+        this.scene.announce('Geyser!', '#9ff7ff');
+      } else if (!geyserActive(this.s, now)) {
+        this.toast(`The geyser is building pressure: ready in ${fmtTime((this.s.geyser.readyAt - now) / 1000)}.`);
+      }
+    });
     $('#tide').addEventListener('click', () => this.toast(isHighTide(this.s, Date.now())
       ? 'High tide: taps x3. Tap while it lasts!' : 'Low tide: your colony produces +25%.'));
     this.renderPanel();
@@ -138,7 +157,12 @@ class App {
     const dt = Math.min(0.25, (t - this.last) / 1000);
     this.last = t;
     const now = Date.now();
-    tick(this.s, now, dt * 1000, rng);
+    rollDaily(this.s, localDay(now));
+    const auto = tick(this.s, now, dt * 1000, rng);
+    for (let k = 0; k < auto.autoTaps; k++) {
+      const sc = this.scene;
+      sc.tapAt(sc.clamX + (Math.random() - 0.5) * sc.clamR * 1.6, sc.clamY - sc.clamR * 0.3, '+' + fmt(auto.autoPearls / auto.autoTaps, this.s.settings.sci), '#9ff7ff');
+    }
     this.scene.draw(this.s, now, dt);
     this.updateHud(now, dt);
     if (t - this.lastRefresh > 250) {
@@ -166,6 +190,20 @@ class App {
     ($('#combo span') as HTMLElement).textContent = `Combo x${comboMult(s).toFixed(2)}`;
     $('#combo').classList.toggle('full', s.combo >= cap - 0.01);
     $('#combo').classList.toggle('idle', s.combo <= 0.01);
+    const gift = $('#gift');
+    const claimed = s.daily.claimedDay === s.daily.day;
+    const giftHtml = claimed ? `🎁 Day ${s.daily.streak} claimed`
+      : dailyReady(s) ? '🎁 Tide Gift ready!' : `🎁 Gift ${Math.min(s.daily.taps, DAILY_TAPS)}/${DAILY_TAPS} taps`;
+    if (gift.innerHTML !== giftHtml) gift.innerHTML = giftHtml;
+    gift.classList.toggle('ready', dailyReady(s));
+    gift.classList.toggle('done', claimed);
+    const gy = $('#geyser');
+    gy.hidden = !geyserUnlocked(s);
+    const gActive = geyserActive(s, now), gReady = geyserReady(s, now);
+    const gyHtml = gActive ? `<b>${Math.ceil((s.geyser.until - now) / 1000)}s</b><small>erupting</small>`
+      : gReady ? '<b>Geyser</b><small>tap to erupt</small>' : `<b>${fmtTime((s.geyser.readyAt - now) / 1000)}</b><small>recharging</small>`;
+    if (gy.innerHTML !== gyHtml) gy.innerHTML = gyHtml;
+    gy.className = 'geyser' + (gActive ? ' active' : gReady ? ' ready' : '');
     $('#depth-tag').textContent = `${ZONES[s.zone].name} · ${ZONES[s.zone].depth.toLocaleString('en-US')} m`;
     const boosts = s.boosts.filter((b) => b.until > now).map((b) => {
       const name = b.kind === 'rush' ? 'Pearl Rush' : b.kind === 'burst' ? 'Bubble Burst' : 'Whale Song';
@@ -433,6 +471,31 @@ class App {
       <p>Spend Pearls on creatures that gather for you, then <b>descend</b> into deeper, stranger waters.</p>
       <p>Watch the <b>tide</b>: high tide triples your taps. And catch any golden fish that swims by.</p>`,
     [['Dive in', () => {}]]);
+  }
+
+  showGift() {
+    const s = this.s;
+    const streak = s.daily.claimedDay === s.daily.day ? s.daily.streak : nextStreak(s);
+    const days = DAILY_MINUTES.map((m, i) => {
+      const n = i + 1;
+      const cls = n < streak || (n === streak && dailyClaimed(s)) ? 'got' : n === streak ? 'today' : '';
+      return `<div class="gday ${cls}"><b>Day ${n}</b><small>${n === 7 ? m + ' min + whale' : m + ' min'}</small></div>`;
+    }).join('');
+    const head = `<h2>Daily Tide Gift</h2><p>Tap the clam ${DAILY_TAPS} times each day to earn a gift worth minutes of production. Come back on the next day to grow your streak.</p><div class="gdays">${days}</div>`;
+    if (dailyClaimed(s)) {
+      this.modal(head + `<p>Today's gift is claimed. The next one opens tomorrow.</p>`, [['Close', () => {}]]);
+    } else if (dailyReady(s)) {
+      this.modal(head + `<p class="big-num">${ICON_PEARL}${fmt(dailyReward(s, streak))}</p>`, [['Claim', () => {
+        const r = claimDaily(s, Date.now());
+        if (!r) return;
+        if (s.settings.sound) (r.whale ? playWhale : playChime)();
+        this.scene.announce(`Day ${r.streak} gift`, '#ffd84a');
+        this.toast(`<b>Tide Gift:</b> +${fmt(r.pearls)} Pearls${r.whale ? ' and Whale Song' : ''}.`);
+        this.save();
+      }]]);
+    } else {
+      this.modal(head + `<p>Today: ${s.daily.taps} of ${DAILY_TAPS} taps.</p>`, [['Keep tapping', () => {}]]);
+    }
   }
 
   showOffline(off: { seconds: number; pearls: number }) {

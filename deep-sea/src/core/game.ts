@@ -27,7 +27,12 @@ interface State {
   settings: { sound: boolean; vibrate: boolean; sci: boolean };
   buyAmount: number; // 1, 10, 100 or -1 for max
   lastSeen: number;
+  daily: Daily;
+  geyser: { until: number; readyAt: number; acc: number; uses: number };
 }
+
+// Daily Tide Gift: earned by playing (taps today), not just by opening the app.
+interface Daily { day: string; taps: number; claimedDay: string; streak: number; }
 
 const SAVE_VERSION = 1;
 const OFFLINE_CAP_MS = 8 * 3600e3;
@@ -53,6 +58,8 @@ function newState(now: number): State {
     settings: { sound: true, vibrate: true, sci: false },
     buyAmount: 1,
     lastSeen: now,
+    daily: { day: '', taps: 0, claimedDay: '', streak: 0 },
+    geyser: { until: 0, readyAt: 0, acc: 0, uses: 0 },
   };
 }
 
@@ -214,7 +221,14 @@ function earn(s: State, n: number) {
   s.earnedLife += n;
 }
 
-function tap(s: State, now: number): number {
+function tap(s: State, now: number, auto = false): number {
+  if (auto) {
+    const v = tapValue(s, now);
+    earn(s, v);
+    s.stats.tapEarned += v;
+    return v;
+  }
+  s.daily.taps += 1;
   if (now - s.lastTap < COMBO_WINDOW_MS || s.combo > 0) s.combo = Math.min(comboCap(s), s.combo + 1);
   s.lastTap = now;
   s.stats.bestCombo = Math.max(s.stats.bestCombo, s.combo);
@@ -277,9 +291,80 @@ function catchVisitor(s: State, now: number, rand: () => number): CatchResult | 
 
 // ---------- Tick ----------
 
-function tick(s: State, now: number, dtMs: number, rand: () => number) {
+// ---------- Geyser (active skill) ----------
+
+const GEYSER_UNLOCK = 500;
+const GEYSER_TAPS_PER_S = 10;
+const GEYSER_LENGTH_MS = 20e3;
+const GEYSER_COOLDOWN_MS = 10 * 60e3;
+
+const geyserUnlocked = (s: State) => s.earnedRun >= GEYSER_UNLOCK || s.geyser.uses > 0;
+const geyserActive = (s: State, now: number) => s.geyser.until > now;
+const geyserReady = (s: State, now: number) => geyserUnlocked(s) && now >= s.geyser.readyAt;
+
+function startGeyser(s: State, now: number): boolean {
+  if (!geyserReady(s, now)) return false;
+  s.geyser.until = now + GEYSER_LENGTH_MS;
+  s.geyser.readyAt = now + GEYSER_COOLDOWN_MS;
+  s.geyser.acc = 0;
+  s.geyser.uses += 1;
+  return true;
+}
+
+// ---------- Daily Tide Gift ----------
+
+const DAILY_TAPS = 150;
+const DAILY_MINUTES = [10, 15, 20, 30, 45, 60, 90];
+
+function prevDayKey(day: string): string {
+  const d = new Date(day + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// Called with the player's local date (YYYY-MM-DD); starts a new day's goal when it changes.
+function rollDaily(s: State, day: string) {
+  if (s.daily.day === day) return;
+  s.daily.day = day;
+  s.daily.taps = 0;
+}
+
+const dailyClaimed = (s: State) => s.daily.claimedDay === s.daily.day;
+const dailyReady = (s: State) => !dailyClaimed(s) && s.daily.taps >= DAILY_TAPS;
+
+// The streak day the next gift counts as (1 to 7, then it starts over).
+function nextStreak(s: State): number {
+  const continues = s.daily.claimedDay === prevDayKey(s.daily.day);
+  return continues ? (s.daily.streak % 7) + 1 : 1;
+}
+
+function dailyReward(s: State, streak: number): number {
+  return Math.max(rawPPS(s) * 60 * DAILY_MINUTES[streak - 1], 100 * streak);
+}
+
+function claimDaily(s: State, now: number): { streak: number; pearls: number; whale: boolean } | null {
+  if (!dailyReady(s)) return null;
+  const streak = nextStreak(s);
+  const pearls = dailyReward(s, streak);
+  earn(s, pearls);
+  s.daily.streak = streak;
+  s.daily.claimedDay = s.daily.day;
+  const whale = streak === 7;
+  if (whale) s.boosts.push({ kind: 'whale', until: now + 120e3, mult: 4 });
+  return { streak, pearls, whale };
+}
+
+// ---------- Tick ----------
+
+// Returns the pearls from geyser auto-taps this tick (so the scene can show them).
+function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTaps: number; autoPearls: number } {
   const dt = Math.max(0, dtMs) / 1000;
   earn(s, pps(s, now) * dt);
+  let autoTaps = 0, autoPearls = 0;
+  if (geyserActive(s, now)) {
+    s.geyser.acc += GEYSER_TAPS_PER_S * dt;
+    while (s.geyser.acc >= 1) { s.geyser.acc -= 1; autoTaps += 1; autoPearls += tap(s, now, true); }
+  }
   if (now - s.lastTap > COMBO_WINDOW_MS && s.combo > 0) {
     const drain = has(s, 'slack_0') ? 6 : 12;
     s.combo = Math.max(0, s.combo - drain * dt);
@@ -288,6 +373,7 @@ function tick(s: State, now: number, dtMs: number, rand: () => number) {
   if (s.visitor && s.visitor.until <= now) s.visitor = null;
   if (!s.visitor && now >= s.nextVisitorAt) spawnVisitor(s, now, rand);
   s.lastSeen = now;
+  return { autoTaps, autoPearls };
 }
 
 // ---------- Logbook ----------
@@ -309,6 +395,9 @@ function checkAchievements(s: State): AchDef[] {
   [1, 10].forEach((n) => { if (s.stats.whales >= n) give(`whale_${n}`); });
   for (let i = 1; i <= s.zone; i++) give(`zone_${i}`);
   [1, 5, 20].forEach((n) => { if (s.stats.migrations >= n) give(`mig_${n}`); });
+  if (s.daily.claimedDay) give('daily_1');
+  if (s.daily.streak >= 7) give('daily_7');
+  [1, 25].forEach((n) => { if (s.geyser.uses >= n) give(`geyser_${n}`); });
   return got;
 }
 
@@ -393,6 +482,8 @@ function deserialize(text: string, now: number): State {
   Object.assign(s, data);
   s.stats = Object.assign(newState(now).stats, data.stats || {});
   s.settings = Object.assign(newState(now).settings, data.settings || {});
+  s.daily = Object.assign(newState(now).daily, data.daily || {});
+  s.geyser = Object.assign(newState(now).geyser, data.geyser || {});
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

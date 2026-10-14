@@ -156,3 +156,45 @@ test('every upgrade can eventually be bought', () => {
   for (let round = 0; round < 20; round++) g.visibleUpgrades(s).forEach((u) => g.buyUpgrade(s, u.id));
   assert.equal(Object.keys(s.upgrades).length, g.UPGRADES.length);
 });
+
+test('the geyser auto-taps for 20 seconds, then recharges for 10 minutes', () => {
+  const s = g.newState(0);
+  assert.equal(g.geyserReady(s, 0), false, 'locked until 500 pearls earned');
+  s.earnedRun = 500;
+  assert.ok(g.startGeyser(s, 1000));
+  assert.equal(g.startGeyser(s, 2000), false);
+  let taps = 0;
+  for (let t = 1000; t < 21000; t += 100) taps += g.tick(s, t, 100, fixed(0.9)).autoTaps;
+  assert.equal(taps, 200);
+  assert.equal(g.geyserActive(s, 21001), false);
+  assert.equal(s.daily.taps, 0, 'geyser taps do not count toward the daily gift');
+  assert.equal(g.geyserReady(s, 1000 + 10 * 60e3), true);
+});
+
+test('daily tide gift needs taps and grows a 7 day streak', () => {
+  const s = g.newState(0);
+  s.owned[1] = 10; // 10 PPS
+  g.rollDaily(s, '2026-10-14');
+  assert.equal(g.claimDaily(s, 0), null);
+  for (let i = 0; i < g.DAILY_TAPS; i++) g.tap(s, i * 2000);
+  const r = g.claimDaily(s, 0);
+  assert.equal(r.streak, 1);
+  assert.equal(r.pearls, 10 * 60 * 10);
+  assert.equal(g.claimDaily(s, 0), null, 'once a day');
+  g.rollDaily(s, '2026-10-15');
+  assert.equal(s.daily.taps, 0);
+  assert.equal(g.nextStreak(s), 2);
+  g.rollDaily(s, '2026-10-17');
+  assert.equal(g.nextStreak(s), 1, 'a missed day restarts the streak');
+  assert.equal(g.prevDayKey('2026-11-01'), '2026-10-31');
+});
+
+test('day 7 of the streak adds a whale song, then the streak starts over', () => {
+  const s = g.newState(0);
+  s.daily = { day: '2026-10-20', taps: 200, claimedDay: '2026-10-19', streak: 6 };
+  const r = g.claimDaily(s, 0);
+  assert.equal(r.streak, 7);
+  assert.ok(r.whale);
+  s.daily.day = '2026-10-21'; s.daily.taps = 200;
+  assert.equal(g.nextStreak(s), 1);
+});

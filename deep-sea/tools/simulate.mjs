@@ -20,6 +20,7 @@ for (let t = 0; t < hours * 3600e3; t += step) {
   if ((t / step) % Math.max(1, Math.round(1000 / step / tps)) === 0) for (let k = 0; k < Math.max(1, tps * step / 1000); k++) g.tap(s, t);
   g.tick(s, t, step, rand);
   if (s.visitor && t - s.visitor.spawnedAt > 3000) g.catchVisitor(s, t, rand);
+  g.startGeyser(s, t);
   if (t % 1000 !== 0) continue;
   for (const u of g.visibleUpgrades(s)) if (s.pearls >= u.cost) g.buyUpgrade(s, u.id);
   // Descend when the cost is under a few minutes of production or the next generator is the zone's.
