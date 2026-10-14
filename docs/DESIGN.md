@@ -251,7 +251,19 @@ wiki (version history: time-limited global boosts and sales), run 6's AdVenture 
 - Egg, Inc. added time-limited global boosts and sales. **Next:** a "double weekend" variant where a
   rewarded boost lasts twice as long during events.
 
+**Run 8 (Oct 14, morning).** Sources: Cookie Clicker wiki (Grimoire).
+- The Grimoire is Cookie Clicker's second building minigame, opened by levelling Wizard Towers with a
+  sugar lump. Magic refills over time and its cap grows with the building; spells summon golden
+  cookies or buffs, and the strongest can backfire. It rewards active play, where the garden rewards
+  coming back. **Built: Star Forge.** Levelling the Star Forge to 1 lights it: 50 heat (+10 per level)
+  that refills from empty in 2 hours, even while away. Four forgings: Smelt Stardust (20 heat, 20 min
+  of production, 10% of melts fail), Comet Lure (25, a comet now), Overclock (35, production x7 for
+  30 s) and Supernova Strike (30, taps x777 for 13 s). A rewarded ad refills the forge, once every 4
+  hours. Achievements at 1, 25 and 250 forgings.
+- Minigames moved to their own row at the top of the Build tab (Nebula Garden and Star Forge cards
+  with live status), and the buy row now shares its width when crystals and Auto are both shown.
+
 ### Backlog from research (best first)
-1. More generator minigames on crystal levels (Star Forge: a timed smelting game; Warp Gate: trade routes).
+1. Warp Gate minigame: trade routes that send cargo for a few hours and return Stardust or crystals.
 2. "Remove ads" in-app purchase that also keeps rewarded ads optional (the `noAds` flag already exists).
 3. Event double weekends: rewarded boosts last twice as long while an event runs (Egg, Inc. style global boosts).

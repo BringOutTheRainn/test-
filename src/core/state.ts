@@ -110,6 +110,12 @@ export interface GameState {
   event: EventState | null;
   /** Gold badges won across all weekend events. */
   eventGolds: number;
+  /** Star Forge heat, brought up to date lazily from forgeHeatAt (real ms). */
+  forgeHeat: number;
+  forgeHeatAt: number;
+  forgeCasts: number;
+  /** Real-time ms when the stoke ad is available again. */
+  forgeAdAt: number;
   settings: Settings;
 }
 
@@ -169,6 +175,10 @@ export function newState(now = Date.now()): GameState {
     gardenFertilizeAt: 0,
     event: null,
     eventGolds: 0,
+    forgeHeat: 0,
+    forgeHeatAt: 0,
+    forgeCasts: 0,
+    forgeAdAt: 0,
     settings: { sound: true, music: true, vibration: true, numberStyle: 'short', particles: true, notifications: false },
   };
 }

@@ -75,6 +75,11 @@ function build(): AchievementDef[] {
     list.push({ id: `golds_${i}`, name, desc: `Win ${n} Gold badge${n === 1 ? '' : 's'} in weekend events.`, check: (s) => s.eventGolds >= n });
   });
 
+  const casts: Array<[number, string]> = [[1, 'First Light'], [25, 'Smith of Stars'], [250, 'Forgemaster']];
+  casts.forEach(([n, name], i) => {
+    list.push({ id: `casts_${i}`, name, desc: `Use ${n} forging${n === 1 ? '' : 's'} at the Star Forge.`, check: (s) => s.forgeCasts >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

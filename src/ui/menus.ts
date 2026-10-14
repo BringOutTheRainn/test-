@@ -23,6 +23,7 @@ import { GENERATORS as GENS } from '../data/generators.js';
 import { generatorVisible } from '../core/economy.js';
 import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize, fertilizeReady, harvest, harvestAll, harvestValue, plant, plotCount, plotProgress, plotReady, readyPlots, seedById } from '../core/garden.js';
 import { BADGE_GOALS, BADGE_MINUTES, BADGE_NAMES, EVENT_AD_MINUTES, EVENT_GENS, badgeReady, badgeReward, buyEventGen, claimBadge, currentEvent, eventAdBoost, eventAdReady, eventPrice, eventRate, eventTap, eventTapOnce, eventDay, eventTheme, eventTimeLeft } from '../core/event.js';
+import { FORGE_GEN, REFILL_MINUTES, SPELLS, STOKE_COOLDOWN_HOURS, cast, heatFullIn, maxHeat, spellById, stoke, stokeReady, syncHeat } from '../core/forge.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
 
 export const VERSION = '1.0.0';
@@ -315,7 +316,7 @@ export function openCrystals(ctx: Ctx, onChange: () => void): void {
       const cost = levelCost(s, i);
       return `<div class="lvl-row">
         <div class="lvl-ico">${icon(g.id)}</div>
-        <div class="lvl-main"><b>${esc(g.name)}</b><span class="dim small">${lvl ? `Level ${lvl} · +${fmtPercent(lvl * LEVEL_PCT)} production` : 'Not levelled yet'}${i === GARDEN_GEN ? (lvl ? ' · Garden open' : ' · Level 1 opens the Nebula Garden') : ''}</span></div>
+        <div class="lvl-main"><b>${esc(g.name)}</b><span class="dim small">${lvl ? `Level ${lvl} · +${fmtPercent(lvl * LEVEL_PCT)} production` : 'Not levelled yet'}${i === GARDEN_GEN ? (lvl ? ' · Garden open' : ' · Level 1 opens the Nebula Garden') : ''}${i === FORGE_GEN ? (lvl ? ' · Forge lit' : ' · Level 1 lights the Star Forge minigame') : ''}</span></div>
         <button class="btn ${s.crystals >= cost ? 'btn-primary' : 'btn-plain'}" data-level="${i}" ${s.crystals >= cost ? '' : 'disabled'}>${icon('crystal')}${cost}</button>
       </div>`;
     }).join('');
@@ -340,7 +341,10 @@ export function openCrystals(ctx: Ctx, onChange: () => void): void {
       const gen = Number(t.dataset.level);
       if (!levelUp(ctx.s, gen)) return;
       if (gen === GARDEN_GEN && ctx.s.genLevels[gen] === 1) {
-        toast(`<div class="t-ico">${icon('sprout')}</div><div><b>Nebula Garden open</b><br>Tap the sprout on the Build tab to plant spores.</div>`, 'good', 5000);
+        toast(`<div class="t-ico">${icon('sprout')}</div><div><b>Nebula Garden open</b><br>Find it at the top of the Build tab.</div>`, 'good', 5000);
+      }
+      if (gen === FORGE_GEN && ctx.s.genLevels[gen] === 1) {
+        toast(`<div class="t-ico">${icon('anvil')}</div><div><b>Star Forge lit</b><br>Spend its heat from the top of the Build tab.</div>`, 'good', 5000);
       }
       sfxAchievement();
       haptic('medium');
@@ -525,6 +529,72 @@ export function openEvent(ctx: Ctx, onChange: () => void): void {
           ctx.save();
         }
         redraw();
+      });
+      return;
+    }
+    redraw();
+  });
+}
+
+export function openForge(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const s = ctx.s;
+    const now = Date.now();
+    const heat = syncHeat(s, now);
+    const max = maxHeat(s);
+    const full = heatFullIn(s);
+    const spells = SPELLS.map((x) => {
+      const ok = heat >= x.cost;
+      return `<button class="spell${ok ? ' ok' : ''}" data-spell="${x.id}" ${ok ? '' : 'disabled'}>
+        <b>${esc(x.name)}</b><span class="spell-cost">${x.cost} heat</span><span class="dim">${esc(x.desc)}</span></button>`;
+    }).join('');
+    const canAd = stokeReady(s, now) && rewardedAvailable();
+    const cool = Math.max(0, s.forgeAdAt - now);
+    return `<div class="heat-head">${icon('anvil')}<div class="heat-main">
+        <div class="heat-n">${Math.floor(heat)} / ${max} heat</div>
+        <div class="bar"><div class="bar-fill heat-fill" style="width:${max ? (heat / max) * 100 : 0}%"></div></div>
+        <div class="dim small">${full > 0 ? `Full in ${fmtTime(full / 1000)}` : 'The forge is white hot.'}</div></div></div>
+      <div class="spells">${spells}</div>
+      ${canAd ? `<button class="btn btn-plain btn-wide" data-stoke="1">Watch ad: refill the forge</button>` : cool > 0 ? `<p class="dim small">Stoke again in ${fmtTime(cool / 1000)}.</p>` : ''}
+      <p class="dim small">Heat refills from empty in ${REFILL_MINUTES / 60} hours, even while you are away. Star Forge level ${s.genLevels[FORGE_GEN] ?? 0}: each level adds 10 heat. Forgings used: ${fmt(s.forgeCasts)}. Stoking is once every ${STOKE_COOLDOWN_HOURS} hours.</p>`;
+  };
+  const el = openModal({ title: 'Star Forge', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-spell],[data-stoke]');
+    if (!t || t.disabled || busy) return;
+    if (t.dataset.spell) {
+      const spell = spellById(t.dataset.spell)!;
+      const r = cast(ctx.s, ctx.d, spell.id);
+      if (!r.ok) { sfxDenied(); return; }
+      haptic('medium');
+      if (r.failed) {
+        sfxDenied();
+        toast(`<div class="t-ico">${icon('anvil')}</div><div><b>The melt cracked</b><br>The heat is gone. Better luck next pour.</div>`, 'info');
+      } else {
+        sfxAchievement();
+        const detail = r.amount ? `+${fmt(r.amount)} Stardust` : esc(spell.desc);
+        toast(`<div class="t-ico">${icon('anvil')}</div><div><b>${esc(spell.name)}</b><br>${detail}</div>`, 'good');
+      }
+      ctx.recalc();
+      ctx.dirty();
+      ctx.save();
+      onChange();
+      // Buffs and comets happen on the sky, so get out of the way.
+      if (spell.id !== 'smelt') { closeModal(el); return; }
+    } else {
+      busy = true;
+      void showRewarded('stoke the forge').then((ok) => {
+        busy = false;
+        if (ok && stoke(ctx.s)) {
+          ctx.save();
+          toast(`<div class="t-ico">${icon('anvil')}</div><div><b>Forge stoked</b><br>Heat is full again</div>`, 'good');
+        }
+        redraw();
+        onChange();
       });
       return;
     }

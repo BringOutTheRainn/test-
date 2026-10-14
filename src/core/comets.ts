@@ -35,7 +35,7 @@ export function rollBlack(d: Derived, rng: Rng = Math.random): boolean {
   return d.blackComets && rng() < 0.12;
 }
 
-function addBuff(s: GameState, kind: BuffKind, seconds: number): void {
+export function addBuff(s: GameState, kind: BuffKind, seconds: number): void {
   const endsAt = s.time + seconds;
   const existing = s.buffs.find((b) => b.kind === kind);
   if (existing) {

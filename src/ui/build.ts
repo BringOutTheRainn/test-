@@ -10,8 +10,9 @@ import { $, esc, setText, toast, toggleClass } from './dom.js';
 import { icon } from './icons.js';
 import { haptic } from './platform.js';
 import { crystalsUnlocked } from '../core/crystals.js';
-import { openCrystals, openGarden } from './menus.js';
-import { gardenUnlocked, readyPlots } from '../core/garden.js';
+import { openCrystals, openForge, openGarden } from './menus.js';
+import { gardenUnlocked, plotCount, readyPlots } from '../core/garden.js';
+import { forgeUnlocked, maxHeat, syncHeat } from '../core/forge.js';
 
 interface Row {
   el: HTMLElement;
@@ -32,9 +33,12 @@ export class BuildPanel implements Panel {
       <div class="buy-row" role="group" aria-label="Buy amount">
         <span class="buy-label">Buy</span>
         <button class="crystal-chip" data-crystals="1" hidden aria-label="Quasar Crystals">${icon('crystal')}<b class="crystal-n">0</b></button>
-        <button class="crystal-chip garden-chip" data-garden="1" hidden aria-label="Nebula Garden">${icon('sprout')}<b class="garden-n"></b></button>
         ${(['1', '10', '100', 'max'] as const).map((a) => `<button class="chip" data-amt="${a}">${a === 'max' ? 'Max' : 'x' + a}</button>`).join('')}
         <button class="chip chip-auto" data-auto="1" hidden aria-pressed="false" title="Auto-Fabricators">Auto</button>
+      </div>
+      <div class="mini-row" hidden>
+        <button class="mini" data-garden="1" hidden>${icon('sprout')}<span><b>Nebula Garden</b><i class="mini-sub garden-sub"></i></span></button>
+        <button class="mini mini-forge" data-forge="1" hidden>${icon('anvil')}<span><b>Star Forge</b><i class="mini-sub forge-sub"></i></span></button>
       </div>
       <div class="upg-strip" id="upg-strip" aria-label="Ready upgrades"></div>
       <div class="gen-list" id="gen-list"></div>`;
@@ -56,13 +60,15 @@ export class BuildPanel implements Panel {
       this.rows.push({ el, name: $('.gen-name', el), price: $('.p', el), qty: $('.q', el), sub: $('.gen-sub', el), owned: $('.gen-owned', el) });
     });
 
+    root.querySelector('.mini-row')!.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-garden]')) openGarden(ctx, () => this.refresh(ctx));
+      else if (t.closest('[data-forge]')) openForge(ctx, () => this.refresh(ctx));
+    });
+
     root.querySelector('.buy-row')!.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).closest('[data-crystals]')) {
         openCrystals(ctx, () => this.refresh(ctx));
-        return;
-      }
-      if ((e.target as HTMLElement).closest('[data-garden]')) {
-        openGarden(ctx, () => this.refresh(ctx));
         return;
       }
       if ((e.target as HTMLElement).closest('[data-auto]')) {
@@ -154,11 +160,22 @@ export class BuildPanel implements Panel {
     chip.hidden = !crystalsUnlocked(s);
     setText(chip.querySelector<HTMLElement>('.crystal-n')!, String(s.crystals));
     toggleClass(chip, 'ready', s.crystals > 0);
+    // Minigames opened by crystal levels.
     const garden = this.root.querySelector<HTMLElement>('[data-garden]')!;
     garden.hidden = !gardenUnlocked(s);
     const ripe = garden.hidden ? 0 : readyPlots(s);
-    setText(garden.querySelector<HTMLElement>('.garden-n')!, ripe ? String(ripe) : '');
+    const planted = s.garden.slice(0, plotCount(s)).filter(Boolean).length;
+    setText(garden.querySelector<HTMLElement>('.garden-sub')!, ripe ? `${ripe} ready to harvest` : planted ? `${planted} growing` : 'Plots empty');
     toggleClass(garden, 'ready', ripe > 0);
+    const forge = this.root.querySelector<HTMLElement>('[data-forge]')!;
+    forge.hidden = !forgeUnlocked(s);
+    if (!forge.hidden) {
+      const heat = Math.floor(syncHeat(s));
+      const max = maxHeat(s);
+      setText(forge.querySelector<HTMLElement>('.forge-sub')!, `Heat ${heat} / ${max}`);
+      toggleClass(forge, 'ready', heat >= max);
+    }
+    this.root.querySelector<HTMLElement>('.mini-row')!.hidden = garden.hidden && forge.hidden;
     const auto = this.root.querySelector<HTMLElement>('[data-auto]')!;
     auto.hidden = !d.autoBuy;
     toggleClass(auto, 'on', s.autoBuyOn);

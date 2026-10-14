@@ -292,6 +292,13 @@ function rift(): string {
     <circle cx="14" cy="20" r="2" fill="#fff"/><circle cx="50" cy="44" r="2.5" fill="#fff"/><circle cx="48" cy="16" r="1.5" fill="#fff"/>`);
 }
 
+function anvil(): string {
+  return svg(`<defs><radialGradient id="anvg" cx=".5" cy=".3" r=".6"><stop offset="0" stop-color="#ffe7a0"/><stop offset=".5" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3c3c" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="32" cy="22" r="18" fill="url(#anvg)"/>
+    <path d="M8 30 h40 c6 0 9 -4 10 -6 v8 c-3 4 -8 6 -14 6 h-6 l4 10 h6 v6 h-36 v-6 h6 l4 -10 h-8 c-4 0 -6 -3 -6 -8z" fill="#5b6488" stroke="#c9d2ff" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M24 14 l3 -8 M34 12 l1 -9 M42 16 l4 -7" stroke="#ffcf5a" stroke-width="2.5" stroke-linecap="round"/>`);
+}
+
 function build(): string {
   return svg(`<path d="M8 56 V30 l12 -8 v8 l12 -8 v8 l12 -8 v34z" fill="currentColor"/><rect x="46" y="10" width="8" height="46" fill="currentColor"/>`);
 }
@@ -307,7 +314,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift,
+  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift, anvil,
 };
 
 let installed = false;

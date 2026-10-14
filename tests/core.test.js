@@ -626,3 +626,37 @@ test('weekend events run Friday to Sunday, keep flowing while away and pay badge
   assert.equal(next.claimed, 0);
   assert.equal(back.eventGolds, 1);
 });
+
+test('star forge heat refills in real time and pays for forgings', async () => {
+  const f = await import('../www/js/core/forge.js');
+  const M = 60000;
+  const T = 1.7e12;
+  const s = newState(0);
+  s.generators[0] = 100;
+  const d = computeDerived(s, 0);
+  assert.equal(f.cast(s, d, 'smelt', T).ok, false, 'locked');
+  s.genLevels[f.FORGE_GEN] = 1;
+  assert.equal(f.maxHeat(s), 50);
+  assert.equal(f.syncHeat(s, T), 50, 'starts full');
+  const before = s.stardust;
+  const r = f.cast(s, d, 'smelt', T, () => 0.5);
+  assert.ok(r.ok && !r.failed && r.amount > 0);
+  assert.ok(Math.abs(s.stardust - before - r.amount) < 1e-6);
+  assert.equal(s.forgeHeat, 30);
+  assert.ok(f.cast(s, d, 'smelt', T, () => 0.01).failed, 'a cracked melt');
+  assert.equal(s.forgeHeat, 10);
+  assert.equal(f.cast(s, d, 'lure', T).ok, false, 'not enough heat');
+  // 120 minutes refill 50 heat: 60 minutes give 25.
+  assert.ok(Math.abs(f.syncHeat(s, T + 60 * M) - 35) < 1e-9);
+  s.time = 500; s.nextCometAt = 9999;
+  assert.ok(f.cast(s, d, 'lure', T + 60 * M).ok);
+  assert.equal(s.nextCometAt, 500, 'comet due now');
+  assert.ok(Math.abs(f.heatFullIn(s) - 96 * M) < 1);
+  // Stoke ad refills, then waits 4 hours.
+  assert.ok(f.stoke(s, T + 60 * M));
+  assert.equal(s.forgeHeat, 50);
+  assert.ok(f.cast(s, d, 'overclock', T + 60 * M).ok);
+  assert.ok(s.buffs.some((b) => b.kind === 'rush'));
+  assert.equal(f.stoke(s, T + 61 * M), false);
+  assert.equal(s.forgeCasts, 4);
+});
