@@ -13,3 +13,7 @@ const out = html
 mkdirSync('build', { recursive: true });
 writeFileSync('build/emberdeep.html', out);
 console.log('wrote build/emberdeep.html', (out.length / 1024).toFixed(0) + ' KB');
+
+// The same game as a page body (no html/head/body wrapper), for hosts that add their own.
+const body = `<title>Emberdeep</title>\n<link rel="icon" href="${icon}" type="image/svg+xml">\n<style>\n${css}</style>\n<div id="app"><div class="boot">Emberdeep</div></div>\n<script>\n${js}</script>\n`;
+writeFileSync('build/emberdeep-page.html', body);
