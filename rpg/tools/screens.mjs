@@ -91,6 +91,29 @@ await shot('11_forge');
 await page.click('[data-act="forgetab"][data-t="bag"]');
 await shot('12_bag');
 
+// The Daily Trial, won on autopilot, with the rewarded-ad button.
+await page.click('[data-act="tab"][data-tab="map"]');
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await page.click('.trial');
+await shot('16_trial');
+await page.click('.modal [data-act="fight"]');
+await page.waitForSelector('.skill:not([disabled])', { timeout: 20000 });
+await shot('17_trial_battle', 300);
+await page.click('[data-act="auto"]');
+await page.click('[data-act="fast"]');
+await page.waitForSelector('.result', { timeout: 180000 });
+await shot('18_trial_result', 1200);
+const ad = page.locator('.adbtn');
+if (await ad.count()) {
+  await ad.click();
+  await shot('19_ad', 600);
+  await page.waitForSelector('.adlayer', { state: 'detached', timeout: 10000 });
+}
+await page.click('.modal [data-act="leave"]');
+await page.evaluate(() => { const s = window.__emberdeep.s; s.settings.auto = false; s.settings.fast = false; window.__emberdeep.save(); });
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await shot('20_map_trial_done');
+
 // A boss fight.
 await page.click('[data-act="tab"][data-tab="map"]');
 await game(() => { const s = window.__emberdeep.s; for (const id of ['3-2', '3-3', '3-4']) s.stars[id] = 2; window.__emberdeep.render(); });

@@ -289,4 +289,14 @@ const REGIONS: RegionDef[] = [
 ];
 
 const STAGES: StageDef[] = REGIONS.flatMap((r) => r.stages);
+
+/** Daily Trial modifiers: one is picked per day and changes every unit in the fight. */
+const TRIAL_MODS: Record<string, { name: string; desc: string }> = {
+  swift: { name: 'Swift Foes', desc: 'Enemies are 20% faster.' },
+  ironhide: { name: 'Iron Hide', desc: 'Enemies have 60% more defence.' },
+  glass: { name: 'Glass Cannons', desc: 'Everyone deals 40% more damage.' },
+  blessed: { name: 'Blessed Start', desc: 'Your heroes start with Regen and Fury.' },
+  warded: { name: 'Warded', desc: 'Enemies start shielded.' },
+  frail: { name: 'Frail Heroes', desc: 'Your heroes start at 75% health.' },
+};
 const MAX_LEVEL = 30;

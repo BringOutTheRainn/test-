@@ -16,6 +16,10 @@ interface GameState {
   wins: number;
   settings: { sound: boolean; fast: boolean; auto: boolean };
   seenIntro: boolean;
+  /** Daily Trial progress: the last day it was won and the run of consecutive days. */
+  trial: { lastWon: string; streak: number };
+  /** Rewarded ads watched today. */
+  ads: { day: string; used: number };
 }
 
 interface Rewards {
@@ -26,6 +30,8 @@ interface Rewards {
   xp: number;
   levelUps: { id: string; level: number }[];
   item: ItemInst | null;
+  /** Set for Daily Trial fights. */
+  trial?: { streak: number; repeat: boolean };
 }
 
 const SAVE_VERSION = 1;
@@ -45,6 +51,8 @@ function newState(seed = Date.now()): GameState {
     wins: 0,
     settings: { sound: true, fast: false, auto: false },
     seenIntro: false,
+    trial: { lastWon: '', streak: 0 },
+    ads: { day: '', used: 0 },
   };
 }
 
@@ -158,6 +166,89 @@ function beginBattle(s: GameState, stageId: string): Battle {
   return startBattle(stageDef(stageId), partyUnits(s), nextSeed(s));
 }
 
+// ---- Daily Trial: one generated fight per day with a twist, for a big reward and a streak.
+
+const AD_LIMIT = 3;
+const TRIAL_UNLOCK = '1-2';
+
+/** The UTC day, like "2026-10-14". Days roll over at midnight UTC for everyone. */
+function dayKey(now: number): string { return new Date(now).toISOString().slice(0, 10); }
+
+function prevDay(day: string): string { return dayKey(Date.parse(day + 'T00:00:00Z') - 86400e3); }
+
+function hashStr(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+function trialUnlocked(s: GameState): boolean { return s.stars[TRIAL_UNLOCK] !== undefined; }
+function trialWonToday(s: GameState, day: string): boolean { return s.trial.lastWon === day; }
+
+/** Today's streak if the trial is won today. */
+function trialNextStreak(s: GameState, day: string): number {
+  if (trialWonToday(s, day)) return s.trial.streak;
+  return s.trial.lastWon === prevDay(day) ? s.trial.streak + 1 : 1;
+}
+
+/** The trial for a day: the same for everyone at the same progress, built from the frontier region. */
+function trialFor(s: GameState, day: string): { stage: StageDef; region: RegionDef; mod: string } {
+  let r = hashStr(day);
+  const pick = <T>(xs: T[]): T => { r = Math.imul(r ^ (r >>> 15), 2246822507) >>> 0; return xs[r % xs.length]; };
+  const front = frontier(s);
+  const region = regionOf(front.id);
+  // A little under the frontier: three waves with a twist is already a harder fight than a stage.
+  const level = Math.max(1, Math.max(...front.waves.flat().map(([, l]) => l)) - 2);
+  const pool = region.stages.filter((st) => !st.boss).flatMap((st) => st.waves);
+  const waves = [pick(pool), pick(pool), pick(pool)].map((w) => w.map(([k]) => [k, level] as [string, number]));
+  const streak = trialNextStreak(s, day);
+  const bonus = 1 + 0.1 * Math.min(streak - 1, 5);
+  const stage: StageDef = {
+    id: 'trial', name: 'Daily Trial', waves,
+    gold: Math.round(front.gold * 3 * bonus), xp: front.xp * 2,
+  };
+  return { stage, region, mod: pick(Object.keys(TRIAL_MODS)) };
+}
+
+function beginTrial(s: GameState, day: string): Battle {
+  const t = trialFor(s, day);
+  return startBattle(t.stage, partyUnits(s), nextSeed(s), t.region.id, t.mod);
+}
+
+function finishTrial(s: GameState, b: Battle, day: string): Rewards {
+  s.battles++;
+  const repeat = trialWonToday(s, day);
+  const stage = b.stage;
+  if (b.over !== 'win') {
+    const xp = repeat ? 0 : Math.round(stage.xp * 0.3 * (1 + b.wave) / stage.waves.length);
+    return { result: 'lose', stars: 0, first: false, gold: 0, xp, levelUps: addXp(s, xp), item: null, trial: { streak: s.trial.streak, repeat } };
+  }
+  s.wins++;
+  if (repeat) return { result: 'win', stars: 0, first: false, gold: 0, xp: 0, levelUps: [], item: null, trial: { streak: s.trial.streak, repeat } };
+  s.trial.streak = trialNextStreak(s, day);
+  s.trial.lastWon = day;
+  s.gold += stage.gold;
+  const levelUps = addXp(s, stage.xp);
+  const loot = REGIONS.find((r) => r.id === b.region)!.loot;
+  const item = giveItem(s, loot[Math.floor(gameRand(s) * loot.length)]);
+  return { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, trial: { streak: s.trial.streak, repeat } };
+}
+
+// ---- Rewarded ads: optional, a few a day, double the gold from a win.
+
+function adsLeft(s: GameState, day: string): number {
+  return s.ads.day === day ? Math.max(0, AD_LIMIT - s.ads.used) : AD_LIMIT;
+}
+
+/** Call after the player finished watching an ad. Returns false when today's ads are used up. */
+function claimAdBonus(s: GameState, gold: number, day: string): boolean {
+  if (gold <= 0 || adsLeft(s, day) <= 0) return false;
+  if (s.ads.day !== day) s.ads = { day, used: 0 };
+  s.ads.used++;
+  s.gold += gold;
+  return true;
+}
+
 function addXp(s: GameState, amount: number): { id: string; level: number }[] {
   const ups: { id: string; level: number }[] = [];
   for (const h of s.heroes) {
@@ -185,8 +276,9 @@ function rollLoot(s: GameState, stage: StageDef): string {
 }
 
 /** Applies the outcome of a finished battle to the save and says what the player got. */
-function finishBattle(s: GameState, b: Battle): Rewards {
-  const stage = stageDef(b.stageId);
+function finishBattle(s: GameState, b: Battle, now = Date.now()): Rewards {
+  if (b.stageId === 'trial') return finishTrial(s, b, dayKey(now));
+  const stage = b.stage;
   s.battles++;
   if (b.over !== 'win') {
     const xp = Math.round(stage.xp * 0.3 * (1 + b.wave) / stage.waves.length);
@@ -294,6 +386,8 @@ function deserialize(text: string | null): GameState | null {
     if (!raw || typeof raw !== 'object' || typeof raw.v !== 'number') return null;
     const s = Object.assign(newState(raw.seed ?? 1), raw) as GameState;
     s.settings = Object.assign(newState().settings, raw.settings ?? {});
+    s.trial = Object.assign(newState().trial, raw.trial ?? {});
+    s.ads = Object.assign(newState().ads, raw.ads ?? {});
     // Heroes added in later versions join at level 1.
     for (const d of HEROES) if (!s.heroes.some((h) => h.id === d.id)) s.heroes.push({ id: d.id, level: 1, xp: 0, gear: { weapon: null, armor: null, charm: null } });
     s.items = s.items.filter((i) => ITEMS[i.id]);

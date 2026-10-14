@@ -29,6 +29,7 @@ const exportsList = [
   'newState', 'heroStats', 'partyUnits', 'beginBattle', 'finishBattle', 'stageUnlocked', 'regionUnlocked', 'frontier', 'starsFor', 'parFor',
   'xpToNext', 'addXp', 'giveItem', 'equip', 'canEquip', 'shopStock', 'buyItem', 'sellItem', 'upgradeItem', 'upgradeCost', 'itemStats',
   'serialize', 'deserialize', 'stageDef', 'heroState', 'suggestedLevel', 'power',
+  'TRIAL_MODS', 'dayKey', 'prevDay', 'trialFor', 'beginTrial', 'trialUnlocked', 'trialWonToday', 'adsLeft', 'claimAdBonus',
 ];
 mkdirSync('build', { recursive: true });
 writeFileSync('build/core.js', join(CORE) + `\nif (typeof module !== "undefined") module.exports = { ${exportsList.join(', ')} };\n`);

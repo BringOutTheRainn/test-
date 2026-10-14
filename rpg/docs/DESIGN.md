@@ -48,7 +48,44 @@ stars, remaining health and hero turns per stage. Current curve: the first regio
 later regions win about 90–100% of first tries with sensible gear but with real damage taken, and
 the final boss needs a little farming. Difficulty knobs are at the top of `src/core/battle.ts`.
 
-## Not in this version
+## Daily Trial
 
-More heroes to recruit, endless or daily dungeons, hero skill upgrades, music, store builds
-(Capacitor), monetisation.
+From stage 1-2 on, the top of the dungeon map offers one generated fight a day: three waves from
+the region you're pushing, a little under its level, with one twist from a list of six (Swift Foes,
+Iron Hide, Glass Cannons, Blessed Start, Warded, Frail Heroes). The trial is the same all day and
+changes at midnight UTC. The first win of the day pays 3× that region's stage gold, double XP and a
+guaranteed piece of gear. Winning on consecutive days builds a streak worth +10% gold per day, up to
++50%. Losses can be retried freely; after the day's win it can still be played for practice.
+
+## Ads
+
+Optional only. After a win that paid gold, a "Watch an ad" button doubles the gold, three times a
+day. In the browser build it plays a 5-second placeholder; the Android build will use AdMob
+rewarded video. No interstitials.
+
+## Milestones
+
+1. ~~First playable: combat, 20 stages, levels, gear, forge, stars.~~
+2. ~~Daily Trial with streaks, and opt-in rewarded ads.~~
+3. More heroes to recruit (pick three of five or six for each fight), using the hero art in
+   `art/raw/heroes2`.
+4. An endless tower with a best-floor record, for players who finish the campaign.
+5. Music and more sound.
+6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
+7. Hero skill upgrades and a fifth depth.
+
+## Research log
+
+**2026-10-14, evening.** Mobile RPG retention fades fast after day one: benchmarks put RPGs near
+30% D1 but only about 10% D7 and 3–5% D30, and progression walls and content droughts are named as
+the usual D30 killers ([Playio](https://blog.playio.co/retention-by-game-genre),
+[Segwise](https://segwise.ai/blog/mobile-gaming-app-user-retention-strategies.md)). Daily resets
+with growing streak rewards and capped rewarded-video placements are the standard answers; Sensor
+Tower notes daily limits drive rewarded-video views and every ad button trains a habit, so place
+them sparingly ([Sensor Tower](https://sensortower.com/blog/best-mobile-game-monetization-retention-practices)).
+Slay the Spire's mobile reviews praise short runs that change your character a lot and learning
+enemy patterns, which Emberdeep's intents already lean on
+([Pocket Gamer](https://www.pocketgamer.com/slay-the-spire/review/)). Built: the Daily Trial (a
+reason to open the game every day, and new content against the wall at the final boss) and a capped,
+opt-in ad that doubles gold. Next: more heroes, so losing to a boss can be answered with a
+different party, not only grinding.

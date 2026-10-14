@@ -32,6 +32,11 @@ interface Unit {
 
 interface Battle {
   stageId: string;
+  stage: StageDef;
+  /** Region whose backdrop and loot this fight uses. */
+  region: string;
+  /** Daily Trial modifier id, if any. */
+  mod: string | null;
   wave: number;
   waves: [string, number][][];
   heroes: Unit[];
@@ -95,19 +100,36 @@ function makeEnemy(b: Battle, key: string, level: number): Unit {
   return u;
 }
 
-function startBattle(stage: StageDef, heroes: Unit[], seed: number): Battle {
+function startBattle(stage: StageDef, heroes: Unit[], seed: number, region = '', mod: string | null = null): Battle {
   const b: Battle = {
-    stageId: stage.id, wave: 0, waves: stage.waves, heroes, enemies: [], seed: seed | 0, time: 0,
+    stageId: stage.id, stage, region: region || (REGIONS.find((r) => r.stages.includes(stage)) ?? REGIONS[0]).id, mod, wave: 0, waves: stage.waves, heroes, enemies: [], seed: seed | 0, time: 0,
     turn: null, heroActions: 0, fallen: false, over: null, nextUid: 1,
   };
   for (const h of heroes) h.ct = (TURN_COST / h.spd) * (0.2 + rand(b) * 0.5);
+  if (mod) for (const h of heroes) applyMod(mod, h);
   spawnWave(b);
   return b;
 }
 
 function spawnWave(b: Battle): void {
   b.enemies = b.waves[b.wave].map(([key, lvl]) => makeEnemy(b, key, lvl));
+  if (b.mod) for (const e of b.enemies) applyMod(b.mod, e);
   for (const e of b.enemies) chooseIntent(b, e);
+}
+
+/** Applies a Daily Trial modifier to one unit as it enters the fight. */
+function applyMod(mod: string, u: Unit): void {
+  const foe = u.side === 'enemy';
+  switch (mod) {
+    case 'swift': if (foe) u.spd = Math.round(u.spd * 1.2); break;
+    case 'ironhide': if (foe) u.def = Math.round(u.def * 1.6); break;
+    case 'glass': u.atk = Math.round(u.atk * 1.4 * 10) / 10; break;
+    case 'blessed':
+      if (!foe) u.statuses.push({ kind: 'regen', turns: 3, value: Math.round(u.maxHp * 0.06) }, { kind: 'atkUp', turns: 2, value: 0 });
+      break;
+    case 'warded': if (foe) u.statuses.push({ kind: 'shield', turns: 3, value: Math.round(u.maxHp * 0.3) }); break;
+    case 'frail': if (!foe) u.hp = Math.round(u.hp * 0.75); break;
+  }
 }
 
 const alive = (us: Unit[]) => us.filter((u) => u.hp > 0);

@@ -263,3 +263,55 @@ test('the opening stage is beatable by a fresh party', () => {
   }
   assert.ok(wins >= 28, `${wins}/30`);
 });
+
+test('the daily trial is the same all day, changes by day and unlocks after 1-2', () => {
+  const s = g.newState(1);
+  assert.ok(!g.trialUnlocked(s));
+  s.stars['1-1'] = 3; s.stars['1-2'] = 3;
+  assert.ok(g.trialUnlocked(s));
+  const a = g.trialFor(s, '2026-10-14');
+  const b = g.trialFor(s, '2026-10-14');
+  assert.deepEqual(a.stage.waves, b.stage.waves);
+  assert.equal(a.mod, b.mod);
+  assert.equal(a.stage.waves.length, 3);
+  assert.ok(g.TRIAL_MODS[a.mod]);
+  const days = new Set(['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'].map((d) => g.trialFor(s, d).mod + JSON.stringify(g.trialFor(s, d).stage.waves)));
+  assert.ok(days.size > 1, 'varies between days');
+});
+
+test('winning the trial pays once a day and builds a streak', () => {
+  const s = g.newState(2);
+  for (const id of ['1-1', '1-2', '1-3', '1-4', '1-5']) s.stars[id] = 3;
+  for (const h of s.heroes) h.level = 12;
+  const win = (day) => {
+    for (let i = 0; i < 5; i++) {
+      const b = g.beginTrial(s, day);
+      assert.equal(b.stageId, 'trial');
+      assert.ok(b.mod);
+      g.autoBattle(b);
+      const r = g.finishBattle(s, b, Date.parse(day + 'T12:00:00Z'));
+      if (r.result === 'win') return r;
+    }
+    throw new Error('could not win the trial');
+  };
+  const d1 = win('2026-10-14');
+  assert.ok(d1.gold > 0 && d1.item);
+  assert.equal(d1.trial.streak, 1);
+  assert.ok(g.trialWonToday(s, '2026-10-14'));
+  const again = win('2026-10-14');
+  assert.equal(again.gold, 0, 'no second reward the same day');
+  assert.equal(again.trial.repeat, true);
+  assert.equal(win('2026-10-15').trial.streak, 2);
+  assert.equal(win('2026-10-17').trial.streak, 1, 'missing a day resets the streak');
+});
+
+test('rewarded ads add gold up to a daily limit', () => {
+  const s = g.newState(1);
+  const day = '2026-10-14';
+  assert.equal(g.adsLeft(s, day), 3);
+  for (let i = 0; i < 3; i++) assert.ok(g.claimAdBonus(s, 10, day));
+  assert.equal(s.gold, 30);
+  assert.ok(!g.claimAdBonus(s, 10, day));
+  assert.equal(g.adsLeft(s, '2026-10-15'), 3, 'resets the next day');
+  assert.equal(g.prevDay('2026-03-01'), '2026-02-28');
+});

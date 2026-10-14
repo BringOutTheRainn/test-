@@ -106,7 +106,8 @@ function render(): void {
   const m = document.getElementById('main')!;
   if (scroll >= 0 && app.tab === lastTab) m.scrollTop = scroll;
   else if (app.tab === 'map') {
-    const next = m.querySelector('.stage.next') as HTMLElement | null;
+    // Show the Daily Trial first while today's is still open; otherwise jump to the next stage.
+    const next = m.querySelector('.trial:not(.done):not(.locked)') ? null : m.querySelector('.stage.next') as HTMLElement | null;
     if (next) m.scrollTop = Math.max(0, next.offsetTop - m.clientHeight * 0.45);
   }
   lastTab = app.tab;
@@ -159,8 +160,41 @@ function mapView(): string {
       <div class="stages">${rows}</div>
     </section>`;
   }).join('');
+  const trial = trialCard();
   const end = done ? `<div class="banner">You sealed the Ember Gate. Replay stages for three stars, gold and better gear. More depths are coming.</div>` : '';
-  return end + regions;
+  return trial + end + regions;
+}
+
+function trialCard(): string {
+  const s = app.s;
+  if (!trialUnlocked(s)) return `<div class="trial locked"><b>Daily Trial</b><small>Clear ${TRIAL_UNLOCK} to unlock a new challenge every day.</small></div>`;
+  const day = today();
+  const t = trialFor(s, day);
+  const won = trialWonToday(s, day);
+  const next = new Date(Date.parse(day + 'T00:00:00Z') + 86400e3);
+  const hours = Math.max(1, Math.ceil((next.getTime() - Date.now()) / 3600e3));
+  return `<button class="trial ${won ? 'done' : ''}" data-act="trial">
+    <div><small>Daily Trial · ${t.region.name}</small><b>${TRIAL_MODS[t.mod].name}</b><span>${TRIAL_MODS[t.mod].desc}</span></div>
+    <div class="tside">${won ? `<em>✓ Done</em><small>new in ${hours}h</small>` : `<em>${coin()}${t.stage.gold}</em><small>+ gear</small>`}${s.trial.streak && (won || s.trial.lastWon === prevDay(day)) ? `<small>🔥 ${s.trial.streak}</small>` : ''}</div>
+  </button>`;
+}
+
+function openTrial(): void {
+  const s = app.s;
+  const day = today();
+  const t = trialFor(s, day);
+  const won = trialWonToday(s, day);
+  const foes = uniqueFoes(t.stage).map((k) => `<div class="foe">${sprite(ENEMIES[k].art, '', ENEMIES[k].tint)}<span>${ENEMIES[k].name}</span></div>`).join('');
+  const streak = trialNextStreak(s, day);
+  openModal(`
+    <h3><small>Daily Trial · ${t.region.name}</small>${TRIAL_MODS[t.mod].name}</h3>
+    <p>${TRIAL_MODS[t.mod].desc}</p>
+    <div class="foes">${foes}</div>
+    <p class="muted">3 waves · enemy level ${t.stage.waves[0][0][1]} · a new trial every day at midnight UTC</p>
+    ${won ? '<p class="warn">You already won today\'s trial. You can fight it again for practice, but there are no rewards until tomorrow.</p>'
+      : `<div class="rewards"><span class="chip">${coin()}${t.stage.gold}</span><span class="chip">✦ ${t.stage.xp} XP</span><span class="chip">🎁 gear</span></div>
+         <p class="muted center">${streak > 1 ? `Day ${streak} of your streak: +${Math.min(streak - 1, 5) * 10}% gold.` : 'Win on consecutive days for up to +50% gold.'}</p>`}
+    <div class="btns"><button data-act="close">Back</button><button class="primary" data-act="fight" data-id="trial">${won ? 'Practice' : 'Fight'}</button></div>`);
 }
 
 function openStage(id: string): void {
@@ -297,7 +331,7 @@ function showIntro(): void {
 
 function startFight(stageId: string): void {
   closeModal();
-  app.b = beginBattle(app.s, stageId);
+  app.b = stageId === 'trial' ? beginTrial(app.s, today()) : beginBattle(app.s, stageId);
   app.sel = null;
   renderBattle();
   playSfx('wave');
@@ -374,20 +408,28 @@ function skillButtons(b: Battle, u: Unit, disabled: boolean): string {
   }).join('')}</div>`;
 }
 
+const today = () => dayKey(Date.now());
+const regionArt = (b: Battle) => ART[REGIONS.find((r) => r.id === b.region)!.art];
+
+function battleSubtitle(b: Battle): string {
+  const wave = `Wave ${b.wave + 1}/${b.waves.length}`;
+  return b.mod ? `${wave} · ${TRIAL_MODS[b.mod].name}` : `${wave} · Turn ${b.heroActions}/${parFor(b.stage)}`;
+}
+
 function renderBattle(): void {
   const b = app.b!;
-  const st = stageDef(b.stageId);
+  const st = b.stage;
   const s = app.s.settings;
   screenEl.innerHTML = `
     <div class="battle">
       <div class="bhead">
         <button class="icon-btn" data-act="pause" aria-label="Menu">❚❚</button>
-        <div class="btitle"><b>${st.id} ${st.name}</b><small>Wave ${b.wave + 1}/${b.waves.length} · Turn ${b.heroActions}/${parFor(st)}</small></div>
+        <div class="btitle"><b>${b.mod ? '' : st.id + ' '}${st.name}</b><small>${battleSubtitle(b)}</small></div>
         <button class="tog ${s.fast ? 'on' : ''}" data-act="fast">2×</button>
         <button class="tog ${s.auto ? 'on' : ''}" data-act="auto">Auto</button>
       </div>
       <div class="queue" id="queue">${queueHtml(b)}</div>
-      <div class="field" id="field" style="background-image:url(${ART[regionOf(b.stageId).art]})">
+      <div class="field" id="field" style="background-image:url(${regionArt(b)})">
         <div class="row enemies" id="enemies">${b.enemies.map((u) => unitHtml(b, u)).join('')}</div>
         <div class="row heroes" id="heroes">${b.heroes.map((u) => unitHtml(b, u)).join('')}</div>
         <div class="fx" id="fx"></div>
@@ -407,9 +449,8 @@ function refreshBattle(): void {
   document.getElementById('heroes')!.innerHTML = b.heroes.map((u) => unitHtml(b, u)).join('');
   document.getElementById('queue')!.innerHTML = queueHtml(b);
   document.getElementById('cmd')!.innerHTML = cmdHtml(b);
-  const st = stageDef(b.stageId);
   const small = screenEl.querySelector('.btitle small');
-  if (small) small.textContent = `Wave ${b.wave + 1}/${b.waves.length} · Turn ${b.heroActions}/${parFor(st)}`;
+  if (small) small.textContent = battleSubtitle(b);
   const cur = current(b);
   if (cur) unitEl(cur.uid)?.classList.add('active');
   markTargets();
@@ -623,14 +664,65 @@ async function battleLoop(b: Battle): Promise<void> {
   if (app.b === b && b.over) await showResult(b);
 }
 
+/** The optional "watch an ad to double your gold" button for a win. */
+function adButton(gold: number): string {
+  const left = adsLeft(app.s, today());
+  if (gold <= 0 || left <= 0) return '';
+  return `<button class="adbtn" data-act="ad" data-gold="${gold}">▶ Watch an ad: +${gold} gold <small>${left} left today</small></button>`;
+}
+
+/** Stand-in for a real rewarded ad (AdMob on Android later): a short countdown the player can't skip. */
+async function playRewardedAd(): Promise<boolean> {
+  const layer = document.createElement('div');
+  layer.className = 'adlayer';
+  layer.innerHTML = '<div><small>Advertisement</small><b>Your ad here</b><span class="count">5</span></div>';
+  document.body.appendChild(layer);
+  for (let i = 5; i > 0; i--) { layer.querySelector('.count')!.textContent = String(i); await sleep(1000); }
+  layer.remove();
+  return true;
+}
+
+function showTrialResult(b: Battle, r: Rewards): void {
+  const ups = levelUpsHtml(r);
+  const mod = TRIAL_MODS[b.mod!];
+  if (r.result === 'win') {
+    playSfx('win');
+    const item = r.item ? `<div class="loot">${sprite(ITEMS[r.item.id].art, 'ico')}<div><small>Trial reward</small><b>${ITEMS[r.item.id].name}</b><small>${statLine(itemStats(r.item))}</small></div></div>` : '';
+    openModal(`
+      <div class="result win">
+        <h3>Trial complete</h3>
+        <p class="muted">${mod.name} · ${r.trial!.repeat ? 'already won today, so no rewards this time' : `streak: ${r.trial!.streak} day${r.trial!.streak > 1 ? 's' : ''} 🔥`}</p>
+        ${r.trial!.repeat ? '' : `<div class="rewards"><span class="chip">${coin()}+${r.gold}</span><span class="chip">✦ +${r.xp} XP</span></div>`}
+        ${item}${ups}
+        ${adButton(r.gold)}
+        <p class="muted">A new trial opens at midnight UTC. Win on consecutive days for up to +50% gold.</p>
+        <div class="btns"><button class="primary" data-act="leave">Map</button></div>
+      </div>`, 'center');
+  } else {
+    playSfx('lose');
+    openModal(`
+      <div class="result lose">
+        <h3>Trial failed</h3>
+        <p class="muted">You can try again as many times as you like today.</p>
+        ${r.xp ? `<div class="rewards"><span class="chip">✦ +${r.xp} XP</span></div>` : ''}${ups}
+        <div class="btns"><button data-act="leave">Map</button><button class="primary" data-act="fight" data-id="trial">Retry</button></div>
+      </div>`, 'center');
+  }
+}
+
+function levelUpsHtml(r: Rewards): string {
+  return r.levelUps.length
+    ? `<div class="ups">${[...new Set(r.levelUps.map((x) => x.id))].map((id) => `<span>${heroDef(id).name} reached level ${heroState(app.s, id).level}!</span>`).join('')}</div>` : '';
+}
+
 async function showResult(b: Battle): Promise<void> {
   const r = finishBattle(app.s, b);
   save();
-  const st = stageDef(b.stageId);
+  if (b.mod) { showTrialResult(b, r); return; }
+  const st = b.stage;
   const idx = STAGES.indexOf(st);
   const next = STAGES[idx + 1];
-  const ups = r.levelUps.length
-    ? `<div class="ups">${[...new Set(r.levelUps.map((x) => x.id))].map((id) => `<span>${heroDef(id).name} reached level ${heroState(app.s, id).level}!</span>`).join('')}</div>` : '';
+  const ups = levelUpsHtml(r);
   if (r.result === 'win') {
     playSfx('win');
     if (r.levelUps.length) setTimeout(() => playSfx('level'), 700);
@@ -647,6 +739,7 @@ async function showResult(b: Battle): Promise<void> {
         </ul>
         <div class="rewards"><span class="chip">${coin()}+${r.gold}</span><span class="chip">✦ +${r.xp} XP</span></div>
         ${item}${ups}
+        ${adButton(r.gold)}
         ${lastStage ? '<p class="muted">You beat the first version of Emberdeep. Thank you for playing! Replay stages for stars and loot.</p>' : ''}
         <div class="btns">
           <button data-act="leave">Map</button>
@@ -749,6 +842,7 @@ root.addEventListener('click', (ev) => {
     case 'stage': playSfx('tap'); openStage(d.id!); break;
     case 'close': closeModal(); break;
     case 'fight': {
+      if (d.id === 'trial') { if (trialUnlocked(s)) { app.b = null; startFight('trial'); } break; }
       const st = stageDef(d.id!);
       if (!stageUnlocked(s, st.id)) break;
       app.b = null;
@@ -756,6 +850,16 @@ root.addEventListener('click', (ev) => {
       break;
     }
     case 'leave': leaveBattle(); break;
+    case 'trial': playSfx('tap'); openTrial(); break;
+    case 'ad': {
+      const gold = Number(d.gold);
+      el.setAttribute('disabled', '');
+      void playRewardedAd().then((ok) => {
+        if (ok && claimAdBonus(s, gold, today())) { save(); playSfx('coin'); toast(`+${gold} gold!`); el.remove(); }
+        else el.removeAttribute('disabled');
+      });
+      break;
+    }
     case 'goheroes': app.tab = 'heroes'; leaveBattle(); break;
     case 'goforge': app.tab = 'forge'; app.forgeTab = 'shop'; closeModal(); render(); break;
     case 'slot': openSlot(d.hero!, d.slot as Slot); break;
