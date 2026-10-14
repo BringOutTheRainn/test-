@@ -1,0 +1,24 @@
+name: Emberdeep tests
+
+# Rules tests for the turn-based RPG in rpg/.
+on:
+  push:
+    branches: [main]
+    paths: ['rpg/**', 'art/**', '.github/workflows/rpg.yml']
+  pull_request:
+    paths: ['rpg/**', 'art/**', '.github/workflows/rpg.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rpg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run sim
