@@ -132,15 +132,17 @@ passives and the `"stats"` of each worn item. Point rates, tiers and respec cost
 tab and a Skills tab. Saves from before blank heroes turn each old class hero into a blank hero
 at the same level, keeping their gear, with every point free to spend.
 
-**Hero looks: paper-doll gear.** Every hero shares one body (`art/heroes/adventurer.png`) and each
-worn item draws its own layer on top (`art/gear/<item id>.png`, or the item's `"worn"` path), in the
-order config `"hero_build.layer_order"` gives (armor, head, weapon). Layers are the same size as the
-body, so swapping gear swaps the look everywhere: the hero sheet, the party tabs and battle. To make
+**Hero looks: paper-doll gear.** A hero base lists its `"bodies"` (brown hair, ponytail, curly
+hair); each recruit gets the one fewest heroes have, and the Look button on their sheet changes it.
+Each body has a `"sprite"` and a `"gear"` folder holding one layer per item
+(`<folder>/<item id>.png`), drawn on top in the order config `"hero_build.layer_order"` gives
+(armor, head, weapon). Layers are the same size as their body, so swapping gear swaps the look
+everywhere: the hero sheet, the party tabs and battle. A new body needs its own set of layers. To make
 a layer, generate the plain body on magenta, ask the image model to edit that same image so the body
 wears or holds the item (same pose and framing), and run:
 
 ```sh
-python3 tools/gear_layers.py body_raw.png --body art/heroes/adventurer.png edit_raw.png:art/gear/iron_helm.png
+python3 tools/gear_layers.py body_raw.png --body art/heroes/adventurer_curly.png edit_raw.png:art/gear/curly/iron_helm.png
 ```
 
 It crops and shrinks both images the same way and keeps only the pixels the edit changed.

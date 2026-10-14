@@ -66,7 +66,7 @@ func recruit(hero_name: String = "", base: String = "") -> Dictionary:
 	_next_hero += 1
 	if hero_name == "":
 		hero_name = next_name()
-	heroes[uid] = {"id": uid, "name": hero_name, "base": base, "level": 1, "xp": 0, "gear": {}, "row": "front", "points": {}, "skills": {}}
+	heroes[uid] = {"id": uid, "name": hero_name, "base": base, "body": _next_body(base), "level": 1, "xp": 0, "gear": {}, "row": "front", "points": {}, "skills": {}}
 	changed.emit(uid)
 	return heroes[uid]
 
@@ -401,18 +401,56 @@ func battle_entry(id: String) -> Dictionary:
 
 # --- Looks ---------------------------------------------------------------------
 
+## The looks a hero base offers ("bodies" in data/heroes): each has an id, a
+## "sprite" for the plain body and a "gear" folder with one layer per item,
+## drawn to fit that body. A base without "bodies" uses its "sprite" and
+## art/gear/.
+func bodies(base: String) -> Array:
+	var def: Dictionary = content.entry("heroes", base)
+	if def.has("bodies"):
+		return def.bodies
+	return [{"id": "default", "sprite": str(def.get("sprite", "res://art/heroes/%s.png" % base)), "gear": "res://art/gear"}]
+
+
+## The body a hero wears.
+func body(id: String) -> Dictionary:
+	var all := bodies(str(hero(id).get("base", "")))
+	for b in all:
+		if str(b.id) == str(hero(id).get("body", "")):
+			return b
+	return all[0] if not all.is_empty() else {}
+
+
+func set_body(id: String, body_id: String) -> void:
+	if has_hero(id) and bodies(str(heroes[id].base)).any(func(b): return str(b.id) == body_id):
+		heroes[id].body = body_id
+		changed.emit(id)
+
+
+## The body the fewest current heroes have, so recruits don't look alike.
+func _next_body(base: String) -> String:
+	var best := ""
+	var best_count := 1 << 30
+	for b in bodies(base):
+		var n := heroes.values().filter(func(h): return str(h.get("body", "")) == str(b.id)).size()
+		if n < best_count:
+			best = str(b.id)
+			best_count = n
+	return best
+
+
 ## Image paths drawn on top of each other to show the hero: the body, then
-## each worn item's "worn" layer in config "hero_build.layer_order".
+## each worn item's layer from the body's "gear" folder, in config
+## "hero_build.layer_order". An item with no layer for this body isn't drawn.
 func look(id: String) -> Array:
-	var def := base_def(id)
-	var body := str(def.get("sprite", "res://art/heroes/%s.png" % str(def.get("id", ""))))
-	var out: Array = [body]
+	var b := body(id)
+	var out: Array = [str(b.get("sprite", ""))]
 	var gear: Dictionary = hero(id).get("gear", {})
 	for slot in _build().get("layer_order", _slot_ids()):
 		if not gear.has(slot):
 			continue
 		var item := item_def(gear[slot])
-		var path := str(item.get("worn", "res://art/gear/%s.png" % str(item.get("id", ""))))
+		var path := str(b.get("gear", "res://art/gear")).path_join(str(item.get("id", "")) + ".png")
 		if ResourceLoader.exists(path) or FileAccess.file_exists(path):
 			out.append(path)
 	return out
@@ -516,7 +554,7 @@ func from_dict(data: Dictionary) -> void:
 		if not content.has_entry("heroes", str(h.base)):
 			continue
 		heroes[id] = {
-			"id": id, "name": str(h.get("name", id)), "base": str(h.base),
+			"id": id, "name": str(h.get("name", id)), "base": str(h.base), "body": str(h.get("body", "")),
 			"level": int(h.get("level", 1)), "xp": int(h.get("xp", 0)), "gear": h.get("gear", {}).duplicate(),
 			"row": str(h.get("row", "front")), "points": h.get("points", {}).duplicate(), "skills": h.get("skills", {}).duplicate(),
 		}

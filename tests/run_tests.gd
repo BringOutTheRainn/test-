@@ -147,6 +147,14 @@ func test_content_references() -> void:
 
 ## A "sprite" named in data must point at a real file.
 func test_sprite_paths() -> void:
+	# Every hero body needs its own layer for each item the first body can wear.
+	for h in content.list("heroes"):
+		var all: Array = h.get("bodies", [])
+		for b in all:
+			check(FileAccess.file_exists(str(b.sprite)), "hero body %s exists" % b.id)
+			for item in content.list("items"):
+				if FileAccess.file_exists(str(all[0].gear).path_join(item.id + ".png")):
+					check(FileAccess.file_exists(str(b.gear).path_join(item.id + ".png")), "body %s has a layer for %s" % [b.id, item.id])
 	for type in ContentDB.TYPES:
 		for e in content.list(type):
 			if e.has("sprite"):
@@ -284,6 +292,16 @@ func test_hero_levels_and_gear() -> void:
 	check(copy.level(a) == 2 and copy.stats(b) == roster.stats(b), "roster survives a save")
 	check(copy.add_item("lucky_charm").uid not in roster.items, "new items get fresh ids after loading")
 	check(copy.recruit().id not in roster.heroes, "new heroes get fresh ids after loading")
+	var c = Heroes.new()
+	c.setup(content)
+	c.new_roster(["A", "B", "C"], ["iron_helm"])
+	var looks: Array = c.heroes.values().map(func(x): return str(x.body))
+	check(looks[0] != looks[1] and looks[1] != looks[2] and looks[0] != looks[2], "recruits get different looks")
+	var third: String = c.heroes.keys()[2]
+	c.equip(third, c.items.keys()[0])
+	check(c.look(third)[1] == str(c.body(third).gear).path_join("iron_helm.png"), "gear is drawn from the hero's own body folder")
+	c.set_body(third, str(c.bodies("adventurer")[0].id))
+	check(c.look(third)[0] == str(c.bodies("adventurer")[0].sprite), "a hero's look can be changed")
 	var run = DungeonRun.new()
 	var entry: Dictionary = roster.battle_entry(a)
 	entry.stats = {"hp": 999, "atk": 1, "def": 0, "spd": 1}

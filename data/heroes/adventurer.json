@@ -1,7 +1,7 @@
 {
   "id": "adventurer",
   "name": "Adventurer",
-  "description": "Every hero starts like this. Gear, stat points and skills decide what they become.",
+  "description": "Every hero starts like this. Gear, stat points and skills decide what they become; \"bodies\" are the looks a recruit can have.",
   "color": "#c0cbdc",
   "faces": "right",
   "stats": {
@@ -17,5 +17,25 @@
   },
   "skills": [
     "defend"
+  ],
+  "bodies": [
+    {
+      "id": "brown_hair",
+      "name": "Brown hair",
+      "sprite": "res://art/heroes/adventurer.png",
+      "gear": "res://art/gear"
+    },
+    {
+      "id": "ponytail",
+      "name": "Ponytail",
+      "sprite": "res://art/heroes/adventurer_ponytail.png",
+      "gear": "res://art/gear/ponytail"
+    },
+    {
+      "id": "curly",
+      "name": "Curly hair",
+      "sprite": "res://art/heroes/adventurer_curly.png",
+      "gear": "res://art/gear/curly"
+    }
   ]
 }

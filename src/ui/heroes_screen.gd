@@ -148,6 +148,14 @@ func _show_sheet(id: String) -> void:
 	var rename := UI.button("Rename", func(): _ask_name(id), 48)
 	rename.add_theme_font_size_override("font_size", UI.SMALL)
 	name_row.add_child(rename)
+	var all_bodies: Array = roster.bodies(str(h.base))
+	if all_bodies.size() > 1:
+		var look := UI.button("Look", func():
+			var i: int = all_bodies.map(func(b): return str(b.id)).find(str(roster.body(id).id))
+			roster.set_body(id, str(all_bodies[(i + 1) % all_bodies.size()].id))
+			Game.save_game(), 48)
+		look.add_theme_font_size_override("font_size", UI.SMALL)
+		name_row.add_child(look)
 	var title := str(role.name) if str(role.role) == "" else "%s  -  %s" % [role.name, role.role]
 	info.add_child(_l(title, UI.FONT_SIZE, Color(str(role.color))))
 	info.add_child(_l("Level %d" % int(h.level), UI.FONT_SIZE))
