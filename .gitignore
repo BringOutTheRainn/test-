@@ -8,3 +8,4 @@ android/
 *.aab
 *.ipa
 build/
+__pycache__/
