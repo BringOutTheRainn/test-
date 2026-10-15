@@ -198,3 +198,32 @@ test('day 7 of the streak adds a whale song, then the streak starts over', () =>
   s.daily.day = '2026-10-21'; s.daily.taps = 200;
   assert.equal(g.nextStreak(s), 1);
 });
+
+test('Current Surge doubles production, stacks by 10 minutes and is capped at 4 a day', () => {
+  const s = g.newState(0);
+  s.owned[1] = 10;
+  g.rollAds(s, '2026-10-15');
+  assert.equal(g.rewardSurge(s, 0), false, 'locked until 1,000 pearls earned');
+  s.earnedRun = 1000;
+  const base = g.pps(s, 1);
+  assert.ok(g.rewardSurge(s, 0));
+  assert.ok(Math.abs(g.pps(s, 1) / base - 2) < 1e-9);
+  for (let i = 0; i < 3; i++) assert.ok(g.rewardSurge(s, 0));
+  assert.equal(g.rewardSurge(s, 0), false);
+  assert.equal(s.boosts.filter((b) => b.kind === 'surge').length, 1);
+  assert.equal(s.boosts[0].until, 40 * 60e3);
+  g.rollAds(s, '2026-10-16');
+  assert.equal(g.surgesLeft(s), 4);
+});
+
+test('ads can double offline earnings and the Tide Gift (once a day)', () => {
+  const s = g.newState(0);
+  s.owned[1] = 10;
+  assert.equal(g.rewardOffline(s, 500), 500);
+  assert.equal(s.pearls, 500);
+  s.daily = { day: '2026-10-15', taps: 200, claimedDay: '', streak: 0 };
+  assert.equal(g.canDoubleGift(s), false, 'claim first');
+  const r = g.claimDaily(s, 0);
+  assert.equal(g.rewardGift(s), r.pearls);
+  assert.equal(g.rewardGift(s), 0);
+});

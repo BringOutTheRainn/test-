@@ -53,6 +53,15 @@ svg { display: block; width: 100%; height: 100%; }
 .gday small { color: var(--muted); font-size: 10px; }
 .gday.got { opacity: 0.5; }
 .gday.today { box-shadow: inset 0 0 0 2px var(--gold); }
+#surge { position: absolute; right: 10px; bottom: 34px; width: 74px; height: 74px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; background: rgba(255, 216, 74, 0.88); color: #3a2a00; box-shadow: 0 0 14px rgba(255, 216, 74, 0.5); }
+#surge b { font-size: 15px; }
+#surge small { font-size: 10px; }
+#surge.spent { background: rgba(0, 20, 40, 0.55); color: var(--muted); box-shadow: none; }
+.boost.surge { color: var(--accent); }
+.adbreak { position: fixed; inset: 0; z-index: 20; background: rgba(0, 6, 14, 0.94); display: grid; place-items: center; padding: 20px; }
+.adcard { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--text); }
+.adcard small { color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.adcount { font-size: 64px; font-weight: 800; color: var(--accent); }
 #boosts { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; pointer-events: none; }
 .boost { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: rgba(0, 20, 40, 0.55); }
 .boost.rush { color: var(--gold); }

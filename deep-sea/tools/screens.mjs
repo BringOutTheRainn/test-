@@ -65,6 +65,18 @@ await shot('11_gift_ready');
 await page.click('#gift');
 await shot('12_gift_modal');
 await page.click('#modal .act');
+await page.waitForTimeout(300);
+await shot('13_gift_double');
+await page.click('#modal .act.ghost');
+
+// Current Surge through the browser stand-in ad.
+await page.click('#surge');
+await shot('14_surge_offer');
+await page.click('#modal .act:not(.ghost)');
+await page.waitForTimeout(1200);
+await shot('15_ad_standin');
+await page.waitForTimeout(5000);
+await shot('16_surge_active');
 
 await page.click('#tabs button[data-tab="depths"]');
 await shot('04_depths');

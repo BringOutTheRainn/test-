@@ -84,6 +84,7 @@ class App {
         <div id="depth-tag"></div>
         <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
         <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
+        <button id="surge" class="surge" aria-label="Current Surge" hidden></button>
         <div id="boosts"></div>
         <div id="combo"><div class="fill"></div><span>Combo x1.00</span></div>
         <div id="ticker"></div>
@@ -109,6 +110,7 @@ class App {
     }));
     $('#gear').addEventListener('click', () => this.showSettings());
     $('#gift').addEventListener('click', () => this.showGift());
+    $('#surge').addEventListener('click', () => this.showSurge());
     $('#geyser').addEventListener('click', () => {
       const now = Date.now();
       if (startGeyser(this.s, now)) {
@@ -143,6 +145,7 @@ class App {
     const high = isHighTide(this.s, now);
     this.scene.tapAt(x, y, '+' + fmt(v, this.s.settings.sci), high ? '#9ff7ff' : '#ffffff');
     if (this.s.settings.sound) playBubble(1 + this.s.combo / 100);
+    if (this.s.settings.sound && this.s.settings.ambience) startAmbient(this.s.zone);
     this.vibrate(8);
   }
 
@@ -158,6 +161,8 @@ class App {
     this.last = t;
     const now = Date.now();
     rollDaily(this.s, localDay(now));
+    rollAds(this.s, localDay(now));
+    setAmbientDepth(this.s.zone);
     const auto = tick(this.s, now, dt * 1000, rng);
     for (let k = 0; k < auto.autoTaps; k++) {
       const sc = this.scene;
@@ -197,6 +202,11 @@ class App {
     if (gift.innerHTML !== giftHtml) gift.innerHTML = giftHtml;
     gift.classList.toggle('ready', dailyReady(s));
     gift.classList.toggle('done', claimed);
+    const su = $('#surge');
+    su.hidden = !surgeUnlocked(s);
+    const suHtml = surgesLeft(s) > 0 ? `<b>x2 ▶</b><small>${surgesLeft(s)} left today</small>` : '<b>x2</b><small>back tomorrow</small>';
+    if (su.innerHTML !== suHtml) su.innerHTML = suHtml;
+    su.classList.toggle('spent', surgesLeft(s) <= 0);
     const gy = $('#geyser');
     gy.hidden = !geyserUnlocked(s);
     const gActive = geyserActive(s, now), gReady = geyserReady(s, now);
@@ -206,8 +216,8 @@ class App {
     gy.className = 'geyser' + (gActive ? ' active' : gReady ? ' ready' : '');
     $('#depth-tag').textContent = `${ZONES[s.zone].name} · ${ZONES[s.zone].depth.toLocaleString('en-US')} m`;
     const boosts = s.boosts.filter((b) => b.until > now).map((b) => {
-      const name = b.kind === 'rush' ? 'Pearl Rush' : b.kind === 'burst' ? 'Bubble Burst' : 'Whale Song';
-      return `<span class="boost ${b.kind}">${name} x${b.mult} · ${Math.ceil((b.until - now) / 1000)}s</span>`;
+      const name = b.kind === 'rush' ? 'Pearl Rush' : b.kind === 'burst' ? 'Bubble Burst' : b.kind === 'surge' ? 'Current Surge' : 'Whale Song';
+      return `<span class="boost ${b.kind}">${name} x${b.mult} · ${fmtTime((b.until - now) / 1000)}</span>`;
     }).join('');
     const bx = $('#boosts');
     if (bx.innerHTML !== boosts) bx.innerHTML = boosts;
@@ -483,7 +493,8 @@ class App {
     }).join('');
     const head = `<h2>Daily Tide Gift</h2><p>Tap the clam ${DAILY_TAPS} times each day to earn a gift worth minutes of production. Come back on the next day to grow your streak.</p><div class="gdays">${days}</div>`;
     if (dailyClaimed(s)) {
-      this.modal(head + `<p>Today's gift is claimed. The next one opens tomorrow.</p>`, [['Close', () => {}]]);
+      if (canDoubleGift(s)) this.offerGiftDouble();
+      else this.modal(head + `<p>Today's gift is claimed. The next one opens tomorrow.</p>`, [['Close', () => {}]]);
     } else if (dailyReady(s)) {
       this.modal(head + `<p class="big-num">${ICON_PEARL}${fmt(dailyReward(s, streak))}</p>`, [['Claim', () => {
         const r = claimDaily(s, Date.now());
@@ -492,17 +503,53 @@ class App {
         this.scene.announce(`Day ${r.streak} gift`, '#ffd84a');
         this.toast(`<b>Tide Gift:</b> +${fmt(r.pearls)} Pearls${r.whale ? ' and Whale Song' : ''}.`);
         this.save();
+        this.offerGiftDouble();
       }]]);
     } else {
       this.modal(head + `<p>Today: ${s.daily.taps} of ${DAILY_TAPS} taps.</p>`, [['Keep tapping', () => {}]]);
     }
   }
 
+  offerGiftDouble() {
+    const s = this.s;
+    if (!canDoubleGift(s)) return;
+    this.modal(`<h2>Double your gift?</h2><p>Watch a short ad to get today's Tide Gift again.</p>
+      <p class="big-num">+${ICON_PEARL}${fmt(dailyReward(s, s.daily.streak))}</p>`,
+    [['No thanks', () => {}, 'ghost'], ['▶ Watch ad', async () => {
+      if (await showRewardedAd()) {
+        const got = rewardGift(s);
+        if (got > 0) { if (s.settings.sound) playChime(); this.toast(`<b>Gift doubled:</b> +${fmt(got)} Pearls.`); this.save(); }
+      }
+    }]]);
+  }
+
+  showSurge() {
+    const s = this.s;
+    const left = surgesLeft(s);
+    if (left <= 0) { this.toast('No more Current Surges today. They come back tomorrow.'); return; }
+    this.modal(`<h2>Current Surge</h2><p>Watch a short ad to ride a strong current: all production x2 for 10 minutes. Each extra ad adds another 10 minutes.</p>
+      <p><small>${left} of 4 left today. Ads are always optional.</small></p>`,
+    [['Not now', () => {}, 'ghost'], ['▶ Watch ad', async () => {
+      if (await showRewardedAd() && rewardSurge(s, Date.now())) {
+        if (s.settings.sound) playWhale();
+        this.scene.announce('Current Surge x2', '#5ad1ff');
+        this.save();
+      }
+    }]]);
+  }
+
   showOffline(off: { seconds: number; pearls: number }) {
     this.shownPearls = this.s.pearls;
     this.modal(`<h2>Welcome back</h2><p>While you were away for ${fmtTime(off.seconds)}, your colony gathered</p>
       <p class="big-num">${ICON_PEARL}${fmt(off.pearls)}</p><small>Offline rate ${Math.round(offlineRate(this.s) * 100)}%, up to 8 hours.</small>`,
-    [['Collect', () => {}]]);
+    [['Collect', () => {}, 'ghost'], ['▶ Ad: collect x2', async () => {
+      if (await showRewardedAd()) {
+        const got = rewardOffline(this.s, off.pearls);
+        if (this.s.settings.sound) playChime();
+        this.toast(`<b>Doubled:</b> +${fmt(got)} more Pearls.`);
+        this.save();
+      }
+    }]]);
   }
 
   showUpgrade(u: UpgradeDef) {
@@ -520,6 +567,7 @@ class App {
     const on = (b: boolean) => (b ? 'On' : 'Off');
     this.modal(`<h2>Settings</h2>
       <div class="setting"><span>Sound</span><button data-k="sound">${on(s.settings.sound)}</button></div>
+      <div class="setting"><span>Ocean ambience</span><button data-k="ambience">${on(s.settings.ambience)}</button></div>
       <div class="setting"><span>Vibration</span><button data-k="vibrate">${on(s.settings.vibrate)}</button></div>
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
@@ -527,7 +575,11 @@ class App {
       <small>Fathom 0.1 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
-      if (k) { s.settings[k] = !s.settings[k]; b.textContent = on(s.settings[k]); return; }
+      if (k) {
+        s.settings[k] = !s.settings[k]; b.textContent = on(s.settings[k]);
+        if (s.settings.sound && s.settings.ambience) startAmbient(s.zone); else stopAmbient();
+        return;
+      }
       if (b.dataset.a === 'export') {
         const code = btoa(unescape(encodeURIComponent(serialize(s))));
         try { navigator.clipboard.writeText(code); this.toast('Save copied to the clipboard.'); } catch { prompt('Your save:', code); }

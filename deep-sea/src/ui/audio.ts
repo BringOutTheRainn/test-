@@ -65,3 +65,43 @@ function playWhale() {
   o.start(t);
   o.stop(t + 1.9);
 }
+
+// Ocean ambience: filtered noise that swells like slow waves, darker the deeper you go.
+let ambient: { gain: GainNode; filter: BiquadFilterNode; lfo: OscillatorNode } | null = null;
+
+function startAmbient(depth: number) {
+  const ac = audio();
+  if (!ac || ambient) return;
+  const len = ac.sampleRate * 4;
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; data[i] = last * 3.5; }
+  const src = ac.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const filter = ac.createBiquadFilter();
+  filter.type = 'lowpass';
+  const gain = ac.createGain();
+  gain.gain.value = 0.05;
+  // A slow LFO on the volume makes the waves.
+  const lfo = ac.createOscillator();
+  lfo.frequency.value = 0.09;
+  const lfoGain = ac.createGain();
+  lfoGain.gain.value = 0.03;
+  lfo.connect(lfoGain).connect(gain.gain);
+  src.connect(filter).connect(gain).connect(ac.destination);
+  src.start(); lfo.start();
+  ambient = { gain, filter, lfo };
+  setAmbientDepth(depth);
+}
+
+function setAmbientDepth(depth: number) {
+  if (ambient) ambient.filter.frequency.value = Math.max(180, 900 - depth * 170);
+}
+
+function stopAmbient() {
+  if (!ambient) return;
+  ambient.gain.disconnect();
+  ambient.lfo.stop();
+  ambient = null;
+}

@@ -1,6 +1,6 @@
 // Game rules: pure-ish functions over one State object. Time is in milliseconds.
 
-interface Boost { kind: 'rush' | 'burst' | 'whale'; until: number; mult: number; }
+interface Boost { kind: 'rush' | 'burst' | 'whale' | 'surge'; until: number; mult: number; }
 interface Visitor { kind: 'fish' | 'whale'; spawnedAt: number; until: number; y: number; dir: 1 | -1; }
 
 interface State {
@@ -24,11 +24,12 @@ interface State {
     taps: number; tapsRun: number; fish: number; whales: number; migrations: number;
     bestCombo: number; tapEarned: number; startedAt: number; runStartedAt: number;
   };
-  settings: { sound: boolean; vibrate: boolean; sci: boolean };
+  settings: { sound: boolean; vibrate: boolean; sci: boolean; ambience: boolean };
   buyAmount: number; // 1, 10, 100 or -1 for max
   lastSeen: number;
   daily: Daily;
   geyser: { until: number; readyAt: number; acc: number; uses: number };
+  ads: { day: string; surges: number; giftDoubled: string; watched: number };
 }
 
 // Daily Tide Gift: earned by playing (taps today), not just by opening the app.
@@ -55,11 +56,12 @@ function newState(now: number): State {
     perks: {},
     achievements: {},
     stats: { taps: 0, tapsRun: 0, fish: 0, whales: 0, migrations: 0, bestCombo: 0, tapEarned: 0, startedAt: now, runStartedAt: now },
-    settings: { sound: true, vibrate: true, sci: false },
+    settings: { sound: true, vibrate: true, sci: false, ambience: true },
     buyAmount: 1,
     lastSeen: now,
     daily: { day: '', taps: 0, claimedDay: '', streak: 0 },
     geyser: { until: 0, readyAt: 0, acc: 0, uses: 0 },
+    ads: { day: '', surges: 0, giftDoubled: '', watched: 0 },
   };
 }
 
@@ -192,7 +194,7 @@ function rawPPS(s: State): number {
 }
 
 function pps(s: State, now: number): number {
-  let p = rawPPS(s) * boostMult(s, 'rush', now) * boostMult(s, 'whale', now);
+  let p = rawPPS(s) * boostMult(s, 'rush', now) * boostMult(s, 'whale', now) * boostMult(s, 'surge', now);
   if (!isHighTide(s, now)) p *= 1.25;
   return p;
 }
@@ -289,8 +291,6 @@ function catchVisitor(s: State, now: number, rand: () => number): CatchResult | 
   return { kind: 'burst', title: 'Bubble Burst', text: 'Tap power x77 for 13 seconds.' };
 }
 
-// ---------- Tick ----------
-
 // ---------- Geyser (active skill) ----------
 
 const GEYSER_UNLOCK = 500;
@@ -352,6 +352,53 @@ function claimDaily(s: State, now: number): { streak: number; pearls: number; wh
   const whale = streak === 7;
   if (whale) s.boosts.push({ kind: 'whale', until: now + 120e3, mult: 4 });
   return { streak, pearls, whale };
+}
+
+// ---------- Opt-in rewarded ads ----------
+// Every ad is the player's choice. Rewards are capped per day so ads stay a bonus, not a chore.
+
+const SURGE_UNLOCK = 1000;
+const SURGE_MS = 10 * 60e3;
+const SURGE_PER_DAY = 4;
+
+function rollAds(s: State, day: string) {
+  if (s.ads.day === day) return;
+  s.ads.day = day;
+  s.ads.surges = 0;
+}
+
+const surgeUnlocked = (s: State) => s.earnedRun >= SURGE_UNLOCK || s.ads.watched > 0;
+const surgesLeft = (s: State) => Math.max(0, SURGE_PER_DAY - s.ads.surges);
+
+// Current Surge: production x2 for 10 minutes; another ad adds 10 more (up to 4 a day).
+function rewardSurge(s: State, now: number): boolean {
+  if (!surgeUnlocked(s) || surgesLeft(s) <= 0) return false;
+  const cur = s.boosts.find((b) => b.kind === 'surge' && b.until > now);
+  if (cur) cur.until += SURGE_MS;
+  else s.boosts.push({ kind: 'surge', until: now + SURGE_MS, mult: 2 });
+  s.ads.surges += 1;
+  s.ads.watched += 1;
+  return true;
+}
+
+// Doubles the welcome-back haul (the ad pays the same amount again).
+function rewardOffline(s: State, pearls: number): number {
+  if (pearls <= 0) return 0;
+  earn(s, pearls);
+  s.ads.watched += 1;
+  return pearls;
+}
+
+// Doubles today's Tide Gift, once a day, right after it is claimed.
+const canDoubleGift = (s: State) => dailyClaimed(s) && s.ads.giftDoubled !== s.daily.day;
+
+function rewardGift(s: State): number {
+  if (!canDoubleGift(s)) return 0;
+  const pearls = dailyReward(s, s.daily.streak);
+  earn(s, pearls);
+  s.ads.giftDoubled = s.daily.day;
+  s.ads.watched += 1;
+  return pearls;
 }
 
 // ---------- Tick ----------
@@ -484,6 +531,7 @@ function deserialize(text: string, now: number): State {
   s.settings = Object.assign(newState(now).settings, data.settings || {});
   s.daily = Object.assign(newState(now).daily, data.daily || {});
   s.geyser = Object.assign(newState(now).geyser, data.geyser || {});
+  s.ads = Object.assign(newState(now).ads, data.ads || {});
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

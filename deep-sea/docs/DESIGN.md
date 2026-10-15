@@ -114,6 +114,22 @@ Tap the clam 150 times in a day (geyser taps don't count) to open that day's gif
 60 and 90 minutes of production over a 7 day streak; day 7 adds a Whale Song. A missed day starts the streak
 over. Shown as a chip at the top left of the scene, which glows when the gift is ready.
 
+## Opt-in rewarded ads
+
+Every ad is the player's choice, and rewards are capped so ads stay a bonus:
+- **Current Surge**: production x2 for 10 minutes; each extra ad adds 10 minutes, up to 4 a day. A gold
+  button at the bottom right of the scene, shown from 1,000 Pearls.
+- **Welcome back x2**: doubles the offline haul.
+- **Tide Gift x2**: doubles today's gift right after it is claimed, once a day.
+
+On phones the AdMob plugin plays a real rewarded video (Google's test unit until release). In the browser a
+five second stand-in countdown plays instead, so every flow can be tried. No interstitials or banners.
+
+## Ocean ambience
+
+A soft wave soundscape (filtered noise with a slow swell) starts with the first tap. It sounds darker in
+deeper zones. It has its own switch in Settings.
+
 ## Saving and offline
 
 Auto-save every 10 s and on hide, to local storage, as versioned JSON. Offline earnings for up to 8 hours
@@ -129,8 +145,8 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 
 1. **Playable first version** (this build): everything above in the browser, tests, screenshots.
 2. **Mobile release**: Capacitor Android build in CI, icon, splash, back button, safe areas.
-3. **Retention**: ~~daily tide gifts~~ (built), ~~geyser~~ (built), missions, reminders, opt-in rewarded
-   ads (same rules as Stardust Empire), Hearts from fed fish to unlock rare creatures.
+3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
+   missions, reminders, Hearts from visitors to unlock rare creatures.
 4. **Depth content**: an expedition submarine, a reef garden minigame, weekend events.
 
 ## Research log
@@ -150,3 +166,15 @@ Mind Studios' idle clicker design guide.
 - Rewarded ads work best as a short, capped version of a bigger boost (for example x2 for a few minutes),
   placed at natural moments. **Next:** opt-in ads for x2 offline earnings and a doubled Tide Gift, with a
   daily cap.
+
+**Run 2 (Oct 15, morning).** Sources: App Store listings for Idle Fish (Vivid Games), Fish Farm Merge, Idle Sea
+Park and Fishing Clicker; Android Central's review of Fishing Life; run 1's rewarded-ad notes.
+- Every ocean idle game checked pays offline earnings, and the common ad placements are a doubled
+  welcome-back haul and a timed production boost. **Built: opt-in rewarded ads.** Current Surge (x2 for
+  10 minutes, stacks, 4 a day), doubled offline haul and a doubled Tide Gift. A browser stand-in plays a
+  countdown; the AdMob plugin path is wired for the phone build.
+- Fishing Life's reviews are mostly about the mood: relaxing wave sounds and a day and night cycle. Fathom
+  had no ambient sound. **Built: ocean ambience** that sounds darker the deeper the colony goes, with a
+  Settings switch.
+- **Next:** the Android build in CI (Capacitor, installable APK) so the ads and haptics run on a phone, then
+  Hearts and rare creatures.
