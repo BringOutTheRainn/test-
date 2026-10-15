@@ -8,6 +8,7 @@ import type { ContractState } from './contracts.js';
 import type { Plot } from './garden.js';
 import type { EventState } from './event.js';
 import type { PassState } from './pass.js';
+import type { MarketState } from './market.js';
 
 export const SAVE_VERSION = 1;
 
@@ -117,6 +118,12 @@ export interface GameState {
   forgeCasts: number;
   /** Real-time ms when the stoke ad is available again. */
   forgeAdAt: number;
+  /** Warp Exchange prices and holdings; null until first opened. */
+  market: MarketState | null;
+  /** Credits gained (or lost) selling goods. */
+  marketProfit: number;
+  /** Sales made at a profit. */
+  marketWins: number;
   /** Purchases by product id: how many times each was bought. */
   purchases: Record<string, number>;
   /** Celestial body skin id, or 'default'. */
@@ -197,6 +204,9 @@ export function newState(now = Date.now()): GameState {
     forgeHeatAt: 0,
     forgeCasts: 0,
     forgeAdAt: 0,
+    market: null,
+    marketProfit: 0,
+    marketWins: 0,
     purchases: {},
     skin: 'default',
     vaultHours: 0,

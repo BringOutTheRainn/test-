@@ -80,6 +80,11 @@ function build(): AchievementDef[] {
     list.push({ id: `casts_${i}`, name, desc: `Use ${n} forging${n === 1 ? '' : 's'} at the Star Forge.`, check: (s) => s.forgeCasts >= n });
   });
 
+  const trades: Array<[number, string]> = [[1, 'Buy Low'], [25, 'Sell High'], [200, 'Warp Tycoon']];
+  trades.forEach(([n, name], i) => {
+    list.push({ id: `trades_${i}`, name, desc: `Sell goods at a profit ${n === 1 ? 'once' : `${n} times`} on the Warp Exchange.`, check: (s) => s.marketWins >= n });
+  });
+
   const ownLevels: Array<[number, string]> = [[1, ''], [50, 'Fleet'], [100, 'Armada'], [200, 'Empire']];
   GENERATORS.forEach((g, gi) => {
     ownLevels.forEach(([n, suffix], li) => {

@@ -10,9 +10,10 @@ import { $, esc, setText, toast, toggleClass } from './dom.js';
 import { icon } from './icons.js';
 import { haptic } from './platform.js';
 import { crystalsUnlocked } from '../core/crystals.js';
-import { openCrystals, openForge, openGarden } from './menus.js';
+import { openCrystals, openForge, openGarden, openMarket } from './menus.js';
 import { gardenUnlocked, plotCount, readyPlots } from '../core/garden.js';
 import { forgeUnlocked, maxHeat, syncHeat } from '../core/forge.js';
+import { GOODS, marketUnlocked, syncMarket } from '../core/market.js';
 
 interface Row {
   el: HTMLElement;
@@ -37,8 +38,9 @@ export class BuildPanel implements Panel {
         <button class="chip chip-auto" data-auto="1" hidden aria-pressed="false" title="Auto-Fabricators">Auto</button>
       </div>
       <div class="mini-row" hidden>
-        <button class="mini" data-garden="1" hidden>${icon('sprout')}<span><b>Nebula Garden</b><i class="mini-sub garden-sub"></i></span></button>
-        <button class="mini mini-forge" data-forge="1" hidden>${icon('anvil')}<span><b>Star Forge</b><i class="mini-sub forge-sub"></i></span></button>
+        <button class="mini" data-garden="1" hidden>${icon('sprout')}<span><b>Garden</b><i class="mini-sub garden-sub"></i></span></button>
+        <button class="mini mini-forge" data-forge="1" hidden>${icon('anvil')}<span><b>Forge</b><i class="mini-sub forge-sub"></i></span></button>
+        <button class="mini mini-market" data-market="1" hidden>${icon('exchange')}<span><b>Market</b><i class="mini-sub market-sub"></i></span></button>
       </div>
       <div class="upg-strip" id="upg-strip" aria-label="Ready upgrades"></div>
       <div class="gen-list" id="gen-list"></div>`;
@@ -64,6 +66,7 @@ export class BuildPanel implements Panel {
       const t = e.target as HTMLElement;
       if (t.closest('[data-garden]')) openGarden(ctx, () => this.refresh(ctx));
       else if (t.closest('[data-forge]')) openForge(ctx, () => this.refresh(ctx));
+      else if (t.closest('[data-market]')) openMarket(ctx, () => this.refresh(ctx));
     });
 
     root.querySelector('.buy-row')!.addEventListener('click', (e) => {
@@ -165,17 +168,27 @@ export class BuildPanel implements Panel {
     garden.hidden = !gardenUnlocked(s);
     const ripe = garden.hidden ? 0 : readyPlots(s);
     const planted = s.garden.slice(0, plotCount(s)).filter(Boolean).length;
-    setText(garden.querySelector<HTMLElement>('.garden-sub')!, ripe ? `${ripe} ready to harvest` : planted ? `${planted} growing` : 'Plots empty');
+    setText(garden.querySelector<HTMLElement>('.garden-sub')!, ripe ? `${ripe} ready` : planted ? `${planted} growing` : 'Plots empty');
     toggleClass(garden, 'ready', ripe > 0);
     const forge = this.root.querySelector<HTMLElement>('[data-forge]')!;
     forge.hidden = !forgeUnlocked(s);
     if (!forge.hidden) {
       const heat = Math.floor(syncHeat(s));
       const max = maxHeat(s);
-      setText(forge.querySelector<HTMLElement>('.forge-sub')!, `Heat ${heat} / ${max}`);
+      setText(forge.querySelector<HTMLElement>('.forge-sub')!, `${heat}/${max} heat`);
       toggleClass(forge, 'ready', heat >= max);
     }
-    this.root.querySelector<HTMLElement>('.mini-row')!.hidden = garden.hidden && forge.hidden;
+    const market = this.root.querySelector<HTMLElement>('[data-market]')!;
+    market.hidden = !marketUnlocked(s);
+    if (!market.hidden) {
+      const m = syncMarket(s)!;
+      // Flag a bargain: any good well under its resting price.
+      const cheap = GOODS.findIndex((g, i) => m.goods[i].price < g.rest * 0.75);
+      const held = m.goods.reduce((n, g) => n + g.held, 0);
+      setText(market.querySelector<HTMLElement>('.market-sub')!, cheap >= 0 ? `${GOODS[cheap].short} cheap` : held ? `${held} held` : 'Prices steady');
+      toggleClass(market, 'ready', cheap >= 0);
+    }
+    this.root.querySelector<HTMLElement>('.mini-row')!.hidden = garden.hidden && forge.hidden && market.hidden;
     const auto = this.root.querySelector<HTMLElement>('[data-auto]')!;
     auto.hidden = !d.autoBuy;
     toggleClass(auto, 'on', s.autoBuyOn);

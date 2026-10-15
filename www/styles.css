@@ -732,6 +732,35 @@ body.collapsing #app { animation: collapse 1.6s ease-in-out; }
 .mini-forge.ready { border-color: #ff9a4d; box-shadow: 0 0 10px rgba(255, 154, 77, .35); }
 .mini-forge.ready .mini-sub { color: #ffb27a; }
 
+
+.mini-market.ready { border-color: #35e0c4; box-shadow: 0 0 10px rgba(53, 224, 196, .35); }
+.mini-market.ready .mini-sub { color: #7ff5e0; }
+
+/* Warp Exchange */
+.market-head { display: flex; align-items: center; gap: 12px; }
+.market-head .ico { width: 48px; height: 48px; flex: none; }
+.market-tick { font-size: 17px; font-weight: 800; color: #7ff5e0; font-variant-numeric: tabular-nums; }
+.goods { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 8px; }
+.good { padding: 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel-2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.good.tipped { border-color: #35e0c4; }
+.good-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.good-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; }
+.good-name b { font-size: 14px; color: var(--text); }
+.good-tip { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0b2a2a; background: #7ff5e0; border-radius: 6px; padding: 1px 6px; }
+.good-price { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; display: flex; flex-direction: column; line-height: 1.1; }
+.good-price span { font-size: 11px; font-weight: 700; }
+.good .up { color: #7dffb0; }
+.good .down { color: #ff8a8a; }
+.spark { width: 100%; height: 30px; display: block; }
+.spark-rest { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 3 3; opacity: .6; vector-effect: non-scaling-stroke; }
+.spark-line { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.spark-line.up { stroke: #7dffb0; }
+.spark-line.down { stroke: #ff8a8a; }
+.good-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.good-held { flex: 1; min-width: 0; font-size: 12px; line-height: 1.35; color: var(--dim); font-variant-numeric: tabular-nums; }
+.good-btns { display: flex; gap: 6px; flex: none; }
+.good-btns .chip[disabled] { opacity: .45; }
+
 /* Star Forge */
 .heat-head { display: flex; align-items: center; gap: 12px; }
 .heat-head .ico { width: 52px; height: 52px; flex: none; }

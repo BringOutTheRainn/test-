@@ -787,3 +787,56 @@ test('rewarded boosts last twice as long during weekend events', async () => {
   ads.grantHyper(s, fri);
   assert.equal(s.hyperEndsAt - fri, normal * 2);
 });
+
+test('warp exchange prices drift, goods trade at a profit, and tips lift the cheapest good', async () => {
+  const mk = await import('../www/js/core/market.js');
+  const M = 60000;
+  const T = 1.7e12;
+  const s = newState(0);
+  s.generators[0] = 100;
+  const d = computeDerived(s, 0);
+  assert.equal(mk.syncMarket(s, T), null, 'locked');
+  s.genLevels[mk.MARKET_GEN] = 1;
+  assert.equal(mk.holdSize(s), 50);
+  const m = mk.syncMarket(s, T, () => 0.5);
+  assert.equal(m.goods[0].price, mk.GOODS[0].rest);
+  // A day and a half away only catches up a day of ticks.
+  let n = 0;
+  mk.syncMarket(s, T + 36 * 60 * M, () => { n++; return 0.5; });
+  assert.ok(n > 0 && n <= mk.MAX_CATCHUP * mk.GOODS.length * 3);
+  assert.equal(m.last, T + 36 * 60 * M);
+  for (const g of m.goods) assert.ok(g.hist.length <= mk.HISTORY && g.price > 0);
+  // Buy at a set price, sell higher: only the profit counts as earned.
+  const unit = mk.creditValue(d);
+  m.goods[1].price = 10;
+  s.stardust = 1000 * unit;
+  assert.equal(mk.buyGood(s, d, 1, 80, T + 36 * 60 * M), 50, 'hold caps the buy');
+  assert.ok(Math.abs(s.stardust - 500 * unit) < 1e-6);
+  m.goods[1].price = 14;
+  const earned = s.earnedAll;
+  const r = mk.sellGood(s, d, 1, Infinity, T + 36 * 60 * M);
+  assert.equal(r.sold, 50);
+  assert.ok(Math.abs(r.profit - 200) < 1e-9);
+  assert.ok(Math.abs(s.stardust - 1200 * unit) < 1e-6);
+  assert.ok(Math.abs(s.earnedAll - earned - 200 * unit) < 1e-6);
+  assert.equal(s.marketWins, 1);
+  // A loss returns what the goods fetch and earns nothing.
+  mk.buyGood(s, d, 1, 10, T + 36 * 60 * M);
+  m.goods[1].price = 7;
+  assert.ok(mk.sellGood(s, d, 1, 10, T + 36 * 60 * M).profit < 0);
+  assert.equal(s.marketWins, 1);
+  // The tip goes to the good furthest under its resting price and rises.
+  m.goods[2].price = mk.GOODS[2].rest * 0.3;
+  const at = T + 36 * 60 * M;
+  assert.equal(mk.insiderTip(s, at), 2);
+  assert.equal(mk.insiderTip(s, at), -1, 'one at a time');
+  const before = m.goods[2].price;
+  mk.syncMarket(s, at + 30 * M, () => 0.5);
+  assert.ok(m.goods[2].price > before);
+  mk.syncMarket(s, at + 70 * M, () => 0.5);
+  assert.equal(m.tip, -1, 'tip ends after an hour');
+  // Saves round-trip.
+  const back = deserialize(serialize(s), at);
+  assert.equal(back.market.goods[2].hist.length, m.goods[2].hist.length);
+  assert.equal(back.marketWins, 1);
+});

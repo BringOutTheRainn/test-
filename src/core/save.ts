@@ -4,6 +4,7 @@ import { GENERATORS } from '../data/generators.js';
 import { earn, HYPER_MULT, type Derived } from './economy.js';
 import { EVENT_GENS } from './event.js';
 import { seedById, type Plot } from './garden.js';
+import { GOODS, HISTORY } from './market.js';
 import { newState, SAVE_VERSION, type GameState } from './state.js';
 
 export const SAVE_KEY = 'stardust-empire-save';
@@ -38,6 +39,22 @@ export function deserialize(text: string, now = Date.now()): GameState {
   s.event = ev && typeof ev.week === 'number' && Array.isArray(ev.gens) && typeof ev.flux === 'number'
     ? { week: ev.week, flux: ev.flux, earned: Number(ev.earned) || 0, gens: EVENT_GENS.map((_, i) => Math.max(0, Math.floor(Number((ev.gens as unknown[])[i]) || 0))),
       last: Number(ev.last) || now, claimed: Math.min(4, Math.max(0, Math.floor(Number(ev.claimed) || 0))), adReadyAt: Number(ev.adReadyAt) || 0, pass: ev.pass === true }
+    : null;
+  const mk = raw.market as Record<string, unknown> | null | undefined;
+  s.market = mk && typeof mk.last === 'number' && Array.isArray(mk.goods) && mk.goods.length === GOODS.length
+    ? {
+      last: mk.last,
+      goods: GOODS.map((def, i) => {
+        const g = (mk.goods as Array<Record<string, unknown>>)[i] ?? {};
+        const price = Number(g.price) > 0 ? Number(g.price) : def.rest;
+        const held = Math.max(0, Math.floor(Number(g.held) || 0));
+        return { price, trend: Number(g.trend) || 0, held, avg: held ? Number(g.avg) || price : 0,
+          hist: Array.isArray(g.hist) ? (g.hist as unknown[]).map(Number).filter((x) => x > 0).slice(-HISTORY) : [price] };
+      }),
+      tip: Number.isInteger(mk.tip) ? (mk.tip as number) : -1,
+      tipTicks: Math.max(0, Math.floor(Number(mk.tipTicks) || 0)),
+      tipAt: Number(mk.tipAt) || 0,
+    }
     : null;
   s.purchases = raw.purchases && typeof raw.purchases === 'object' ? { ...(raw.purchases as Record<string, number>) } : {};
   const plots = Array.isArray(raw.garden) ? (raw.garden as unknown[]) : [];

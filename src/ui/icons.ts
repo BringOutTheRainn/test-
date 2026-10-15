@@ -299,6 +299,14 @@ function anvil(): string {
     <path d="M24 14 l3 -8 M34 12 l1 -9 M42 16 l4 -7" stroke="#ffcf5a" stroke-width="2.5" stroke-linecap="round"/>`);
 }
 
+function exchange(): string {
+  return svg(`<defs><radialGradient id="exg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#b8fff0"/><stop offset=".6" stop-color="#35c9b4"/><stop offset="1" stop-color="#0b3a4a" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="32" cy="32" r="28" fill="url(#exg)"/>
+    <ellipse cx="32" cy="32" rx="22" ry="22" fill="none" stroke="#c9fff4" stroke-width="3"/>
+    <path d="M14 40 l10 -10 l8 6 l16 -16" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 18 h9 v9" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`);
+}
+
 function cart(): string {
   return svg(`<path d="M6 12 h8 l6 28 h28 l6 -20 h-36" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="24" cy="52" r="5" fill="currentColor"/><circle cx="44" cy="52" r="5" fill="currentColor"/>
@@ -320,7 +328,7 @@ function cosmos(): string {
 const FACTORIES: Record<string, () => string> = {
   drone, harvester, lunar, station, siphon, reactor, dyson, warp, nebula, forge, quasar, wormhole, galaxy, compiler,
   tap: tapIcon, research, synergy, comet, blackComet, astronomer, trophy, darkMatter, probe, gift, gear, chart, lock, relic,
-  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift, anvil, cart,
+  build, upgrade, cosmos, mission, crystal, sprout, moss, bloom, orchid, rift, anvil, exchange, cart,
 };
 
 let installed = false;

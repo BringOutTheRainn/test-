@@ -283,5 +283,21 @@ on season passes in idle games, Idle Miner Tycoon's monthly pass.
 - Egg, Inc.'s global boost events. **Built: Double weekends.** Hyperdrive and Tap Frenzy last twice as
   long while a weekend event runs; the Boosts window says so.
 
+**Run 10 (Oct 15, morning).** Sources: Cookie Clicker wiki (Stock Market), a GamePretty stocks guide,
+Galactic Civilizations' trade-route notes.
+- Cookie Clicker's Stock Market is its third building minigame, opened by levelling the Bank. Goods tick
+  every minute around a resting value, profit is counted in seconds of production, and the Office adds
+  warehouse space. It is the minigame for players who like to watch and time things, where the garden
+  rewards coming back and the forge rewards bursts. Trade routes (the backlog idea) would have repeated
+  Expeditions, so the market won. **Built: Warp Exchange.** Levelling the Warp Gate to 1 opens it: four
+  goods (Comet Ice rests at 8, Iridium Ore 20, Neutron Plasma 50, Antimatter 120 credits, each more
+  volatile than the last) priced in seconds of base production. Prices move every 10 minutes, even
+  while away (up to a day caught up), drift toward rest, and sometimes catch a rumour that pushes one
+  good up or down for a while. The hold is 50 of each good, +25 per level. Only profit counts toward
+  Stardust earned. A rewarded ad (Insider tip) lifts the good furthest under its resting price for an
+  hour, once every 4 hours. Achievements at 1, 25 and 200 profitable sales, which also earn Star Pass XP.
+  Each good shows a sparkline of the last six hours.
+- The minigame row now fits three cards: Garden, Forge and Market with short live status.
+
 ### Backlog from research (best first)
-1. Warp Gate minigame: trade routes that send cargo for a few hours and return Stardust or crystals.
+1. Collapse warning: offer to sell Warp Exchange goods before collapsing, since prices follow production.

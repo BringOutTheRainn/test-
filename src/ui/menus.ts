@@ -24,6 +24,7 @@ import { generatorVisible } from '../core/economy.js';
 import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize, fertilizeReady, harvest, harvestAll, harvestValue, plant, plotCount, plotProgress, plotReady, readyPlots, seedById } from '../core/garden.js';
 import { BADGE_GOALS, BADGE_MINUTES, BADGE_NAMES, GOLD_TIER, PLATINUM_CRYSTALS, badgeCount, EVENT_AD_MINUTES, EVENT_GENS, badgeReady, badgeReward, buyEventGen, claimBadge, currentEvent, eventAdBoost, eventAdReady, eventPrice, eventRate, eventTap, eventTapOnce, eventDay, eventTheme, eventTimeLeft } from '../core/event.js';
 import { FORGE_GEN, REFILL_MINUTES, SPELLS, STOKE_COOLDOWN_HOURS, cast, heatFullIn, maxHeat, spellById, stoke, stokeReady, syncHeat } from '../core/forge.js';
+import { GOODS, MARKET_GEN, TICK_MINUTES, TIP_COOLDOWN_HOURS, TIP_TICKS, buyGood, creditValue, holdSize, insiderTip, maxBuy, nextTickIn, sellGood, syncMarket, tipReady, type GoodState } from '../core/market.js';
 import { buyProduct, productPrice } from './store.js';
 import { PASS_TIERS, XP_PER_TIER, XP_RATES, claimPass, currentPass, passClaimable, passTier, passXp, seasonNumber, seasonTimeLeft, tierReward as passReward, type PassReward } from '../core/pass.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
@@ -54,6 +55,7 @@ export function openStats(ctx: Ctx): void {
       ['Missions completed', fmt(s.missionsDone)],
       ['Event Gold badges', String(s.eventGolds)],
       ['Stardust Vaults opened', String(s.vaultsOpened)],
+      ['Warp Exchange profit', `${fmt(s.marketProfit)} credits`],
       ['Contract Medals', `${s.contractMedals} (+${fmtPercent(s.contractMedals * MEDAL_PCT)})`],
       ['Ads watched', String(s.adsWatched)],
       ['Login streak', `${s.dailyStreak} day${s.dailyStreak === 1 ? '' : 's'}`],
@@ -620,6 +622,101 @@ export function openForge(ctx: Ctx, onChange: () => void): void {
   });
 }
 
+function sparkline(g: GoodState, rest: number): string {
+  const pts = g.hist.length > 1 ? g.hist : [g.price, g.price];
+  const lo = Math.min(rest, ...pts);
+  const hi = Math.max(rest, ...pts);
+  const span = hi - lo || 1;
+  const y = (v: number): string => (28 - ((v - lo) / span) * 26).toFixed(1);
+  const step = 100 / (pts.length - 1);
+  const line = pts.map((v, i) => `${(i * step).toFixed(1)},${y(v)}`).join(' ');
+  const up = pts[pts.length - 1] >= pts[0];
+  return `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="0" x2="100" y1="${y(rest)}" y2="${y(rest)}" class="spark-rest"/>
+    <polyline points="${line}" class="spark-line ${up ? 'up' : 'down'}"/></svg>`;
+}
+
+export function openMarket(ctx: Ctx, onChange: () => void): void {
+  const render = (): string => {
+    const { s, d } = ctx;
+    const now = Date.now();
+    const m = syncMarket(s, now)!;
+    const unit = creditValue(d);
+    const hold = holdSize(s);
+    const rows = GOODS.map((def, i) => {
+      const g = m.goods[i];
+      const prev = g.hist.length > 1 ? g.hist[g.hist.length - 2] : g.price;
+      const move = g.price - prev;
+      const pl = g.held ? (g.price - g.avg) * g.held : 0;
+      const canBuy = maxBuy(s, d, m, i);
+      const tip = m.tip === i && m.tipTicks > 0;
+      return `<div class="good${tip ? ' tipped' : ''}">
+        <div class="good-top">
+          <div class="good-name"><b>${esc(def.name)}</b>${tip ? '<span class="good-tip">Tip</span>' : ''}<span class="dim small">rests at ${def.rest}</span></div>
+          <div class="good-price ${move >= 0 ? 'up' : 'down'}">${g.price.toFixed(1)}<span>${move >= 0 ? '▲' : '▼'} ${Math.abs(move).toFixed(1)}</span></div>
+        </div>
+        ${sparkline(g, def.rest)}
+        <div class="good-foot">
+          <span class="good-held">${g.held} / ${hold}${g.held ? ` · paid ${g.avg.toFixed(1)}` : ''}${g.held ? ` · <b class="${pl >= 0 ? 'up' : 'down'}">${pl >= 0 ? '+' : ''}${fmt(pl)}</b>` : ''}</span>
+          <span class="good-btns">
+            <button class="chip" data-buy="${i}" data-n="10" ${canBuy ? '' : 'disabled'}>+10</button>
+            <button class="chip" data-buy="${i}" data-n="max" ${canBuy ? '' : 'disabled'}>Max</button>
+            <button class="chip" data-sell="${i}" ${g.held ? '' : 'disabled'}>Sell</button>
+          </span>
+        </div>
+      </div>`;
+    }).join('');
+    const canAd = tipReady(m, now) && rewardedAvailable();
+    const cool = Math.max(0, m.tipAt - now);
+    return `<div class="market-head">${icon('exchange')}<div>
+        <div class="market-tick">Prices move in ${fmtTime(nextTickIn(m, now) / 1000)}</div>
+        <div class="dim small">1 credit = 1 second of production (${fmt(unit)} Stardust)</div></div></div>
+      <div class="goods">${rows}</div>
+      ${canAd ? `<button class="btn btn-plain btn-wide" data-tip="1">Watch ad: get an insider tip</button>` : cool > 0 ? `<p class="dim small">Next tip in ${fmtTime(cool / 1000)}.</p>` : ''}
+      <p class="dim small">Prices drift every ${TICK_MINUTES} minutes, even while you are away, and pull back toward their resting price. Warp Gate level ${s.genLevels[MARKET_GEN] ?? 0}: holds ${hold} of each good (25 more per level). A tip lifts the cheapest good for ${TIP_TICKS * TICK_MINUTES} minutes, once every ${TIP_COOLDOWN_HOURS} hours. Goods are priced from your production, so sell before you collapse. Profit so far: ${fmt(s.marketProfit)} credits.</p>`;
+  };
+  const el = openModal({ title: 'Warp Exchange', body: render(), onClose: () => clearInterval(timer) });
+  const body = el.querySelector<HTMLElement>('.modal-body')!;
+  let busy = false;
+  const redraw = (): void => { body.innerHTML = render(); };
+  const timer = setInterval(() => { if (!busy) redraw(); }, 1000);
+  body.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-buy],[data-sell],[data-tip]');
+    if (!t || t.disabled || busy) return;
+    const { s, d } = ctx;
+    if (t.dataset.buy) {
+      const n = t.dataset.n === 'max' ? Infinity : Number(t.dataset.n);
+      if (!buyGood(s, d, Number(t.dataset.buy), n)) { sfxDenied(); return; }
+      sfxBuy();
+      haptic('light');
+    } else if (t.dataset.sell) {
+      const i = Number(t.dataset.sell);
+      const r = sellGood(s, d, i, Infinity);
+      if (!r.sold) return;
+      if (r.profit > 0) sfxAchievement(); else sfxTap();
+      const word = r.profit >= 0 ? 'profit' : 'loss';
+      toast(`<div class="t-ico">${icon('exchange')}</div><div><b>Sold ${r.sold} ${esc(GOODS[i].name)}</b><br>+${fmt(r.value)} Stardust, ${fmt(Math.abs(r.profit))} credit ${word}</div>`, r.profit > 0 ? 'good' : 'info');
+    } else {
+      busy = true;
+      void showRewarded('get a market tip').then((ok) => {
+        busy = false;
+        if (ok) {
+          const i = insiderTip(ctx.s);
+          if (i >= 0) toast(`<div class="t-ico">${icon('exchange')}</div><div><b>Insider tip</b><br>${esc(GOODS[i].name)} is about to rise</div>`, 'good');
+          ctx.save();
+        }
+        redraw();
+      });
+      return;
+    }
+    ctx.recalc();
+    ctx.dirty();
+    ctx.save();
+    onChange();
+    redraw();
+  });
+}
+
 function passCard(ctx: Ctx): string {
   const s = ctx.s;
   const p = currentPass(s);
@@ -663,7 +760,7 @@ export function openPass(ctx: Ctx, onChange: () => void): void {
     const ways = ([
       ['Mission', XP_RATES.missions], ['Daily drop', XP_RATES.dailies], ['Contract tier', XP_RATES.contractTiers],
       ['Event badge', XP_RATES.badges], ['Collapse', XP_RATES.collapses], ['Comet', XP_RATES.comets],
-      ['Forging', XP_RATES.casts], ['Harvest', XP_RATES.harvests],
+      ['Forging', XP_RATES.casts], ['Profitable sale', XP_RATES.trades], ['Harvest', XP_RATES.harvests],
     ] as Array<[string, number]>).map(([n, x]) => `<span>${n} <b>+${x}</b></span>`).join('');
     return `<div class="pass-top"><div><div class="contract-kicker">Season ends in ${fmtTime(seasonTimeLeft() / 1000)}</div>
         <div class="ev-name">Tier ${tier} of ${PASS_TIERS}</div><div class="dim small">${fmt(xp)} XP · ${XP_PER_TIER} XP per tier</div></div></div>

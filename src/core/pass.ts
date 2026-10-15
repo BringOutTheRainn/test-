@@ -25,6 +25,7 @@ export const XP_RATES = {
   badges: 40,
   harvests: 2,
   casts: 3,
+  trades: 3,
   collapses: 60,
 } as const;
 
@@ -57,6 +58,7 @@ function counters(s: GameState): Record<Counter, number> {
     badges: s.badgesWon,
     harvests: s.gardenHarvests,
     casts: s.forgeCasts,
+    trades: s.marketWins,
     collapses: s.collapses,
   };
 }
