@@ -4,3 +4,4 @@ screens/
 www/game.js
 /android/
 package-lock.json
+!resources/android/
