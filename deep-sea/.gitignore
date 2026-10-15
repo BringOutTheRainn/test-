@@ -2,5 +2,5 @@ node_modules/
 build/
 screens/
 www/game.js
-android/
+/android/
 package-lock.json
