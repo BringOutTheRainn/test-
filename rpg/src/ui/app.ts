@@ -161,7 +161,7 @@ function mapView(): string {
       <div class="stages">${rows}</div>
     </section>`;
   }).join('');
-  const trial = trialCard();
+  const trial = trialCard() + towerCard();
   const end = done ? `<div class="banner">You sealed the Ember Gate. Replay stages for three stars, gold and better gear. More depths are coming.</div>` : '';
   return trial + end + regions;
 }
@@ -178,6 +178,34 @@ function trialCard(): string {
     <div><small>Daily Trial · ${t.region.name}</small><b>${TRIAL_MODS[t.mod].name}</b><span>${TRIAL_MODS[t.mod].desc}</span></div>
     <div class="tside">${won ? `<em>✓ Done</em><small>new in ${hours}h</small>` : `<em>${coin()}${t.stage.gold}</em><small>+ gear</small>`}${s.trial.streak && (won || s.trial.lastWon === prevDay(day)) ? `<small>🔥 ${s.trial.streak}</small>` : ''}</div>
   </button>`;
+}
+
+function towerCard(): string {
+  const s = app.s;
+  if (!towerUnlocked(s)) return `<div class="trial tower locked"><b>The Ember Spire</b><small>Clear ${TOWER_UNLOCK} to open an endless climb.</small></div>`;
+  const f = towerNext(s);
+  const t = towerFloor(f);
+  return `<button class="trial tower" data-act="tower">
+    <div><small>The Ember Spire · endless</small><b>Floor ${f}${t.stage.boss ? ' <em>BOSS</em>' : ''}</b><span>${s.tower.best ? `Your best: floor ${s.tower.best}` : 'Climb as high as you can. Every floor pays once.'}</span></div>
+    <div class="tside"><em>${coin()}${t.stage.gold}</em><small>enemy Lv ${towerLevel(f)}</small></div>
+  </button>`;
+}
+
+function openTower(): void {
+  const s = app.s;
+  const f = towerNext(s);
+  const t = towerFloor(f);
+  const foes = uniqueFoes(t.stage).map((k) => `<div class="foe ${ENEMIES[k].boss ? 'boss' : ''}">${sprite(ENEMIES[k].art, '', ENEMIES[k].tint)}<span>${ENEMIES[k].name}</span></div>`).join('');
+  const nextBoss = Math.ceil(f / 5) * 5;
+  openModal(`
+    <h3><small>The Ember Spire · ${t.region.name}</small>Floor ${f}${t.stage.boss ? ' · Boss' : ''}</h3>
+    <div class="foes">${foes}</div>
+    <p class="muted">${t.stage.waves.length} waves · enemy level ${towerLevel(f)} · ${s.tower.best ? `best: floor ${s.tower.best}` : 'no floors cleared yet'}</p>
+    ${towerLevel(f) > partyLevel() + 1 ? `<p class="warn">Your heroes are level ${partyLevel()}. This floor will be tough.</p>` : ''}
+    ${s.heroes.length > PARTY_SIZE ? partyStrip('tower') : ''}
+    <div class="rewards"><span class="chip">${coin()}${t.stage.gold}</span><span class="chip">✦ ${t.stage.xp} XP</span>${t.stage.boss ? '<span class="chip">🎁 gear</span>' : ''}</div>
+    <p class="muted center">${t.stage.boss ? 'A boss guards this floor. Beat it for a piece of gear.' : `Boss on floor ${nextBoss} guards a piece of gear.`} Losing costs nothing.</p>
+    <div class="btns"><button data-act="close">Back</button><button class="primary" data-act="fight" data-id="tower">Climb</button></div>`);
 }
 
 function openTrial(): void {
@@ -243,7 +271,7 @@ function openPartySlot(slot: number, stageId = ''): void {
   }).join('');
   openModal(`<h3><small>Party slot ${slot + 1}</small>Replace ${heroDef(cur).name}</h3>
     ${rows || '<p class="muted">No other heroes yet. Recruits join at the Tavern below the party.</p>'}
-    <div class="btns">${stageId ? `<button data-act="stage" data-id="${stageId}">Back</button>` : '<button data-act="close">Back</button>'}</div>`);
+    <div class="btns">${stageId ? `<button data-act="${stageId === 'tower' ? 'tower' : 'stage'}" data-id="${stageId}">Back</button>` : '<button data-act="close">Back</button>'}</div>`);
 }
 
 function tavernView(): string {
@@ -373,7 +401,7 @@ function showIntro(): void {
 
 function startFight(stageId: string): void {
   closeModal();
-  app.b = stageId === 'trial' ? beginTrial(app.s, today()) : beginBattle(app.s, stageId);
+  app.b = stageId === 'trial' ? beginTrial(app.s, today()) : stageId === 'tower' ? beginTower(app.s) : beginBattle(app.s, stageId);
   app.sel = null;
   renderBattle();
   playSfx('wave');
@@ -455,6 +483,7 @@ const regionArt = (b: Battle) => ART[REGIONS.find((r) => r.id === b.region)!.art
 
 function battleSubtitle(b: Battle): string {
   const wave = `Wave ${b.wave + 1}/${b.waves.length}`;
+  if (b.stageId === 'tower') return `${wave} · Ember Spire`;
   return b.mod ? `${wave} · ${TRIAL_MODS[b.mod].name}` : `${wave} · Turn ${b.heroActions}/${parFor(b.stage)}`;
 }
 
@@ -466,7 +495,7 @@ function renderBattle(): void {
     <div class="battle">
       <div class="bhead">
         <button class="icon-btn" data-act="pause" aria-label="Menu">❚❚</button>
-        <div class="btitle"><b>${b.mod ? '' : st.id + ' '}${st.name}</b><small>${battleSubtitle(b)}</small></div>
+        <div class="btitle"><b>${b.mod || st.id === 'tower' ? '' : st.id + ' '}${st.name}</b><small>${battleSubtitle(b)}</small></div>
         <button class="tog ${s.fast ? 'on' : ''}" data-act="fast">2×</button>
         <button class="tog ${s.auto ? 'on' : ''}" data-act="auto">Auto</button>
       </div>
@@ -752,6 +781,35 @@ function showTrialResult(b: Battle, r: Rewards): void {
   }
 }
 
+function showTowerResult(b: Battle, r: Rewards): void {
+  const ups = levelUpsHtml(r);
+  const floor = r.tower!.floor;
+  if (r.result === 'win') {
+    playSfx('win');
+    if (r.levelUps.length) setTimeout(() => playSfx('level'), 700);
+    const item = r.item ? `<div class="loot">${sprite(ITEMS[r.item.id].art, 'ico')}<div><small>Spire boss reward</small><b>${ITEMS[r.item.id].name}</b><small>${statLine(itemStats(r.item))}</small></div></div>` : '';
+    const next = towerFloor(floor + 1);
+    openModal(`
+      <div class="result win">
+        <h3>Floor ${floor} cleared</h3>
+        <p class="muted">New best: floor ${floor}. Next up: floor ${floor + 1}${next.stage.boss ? ', a boss floor' : ''}, enemy level ${towerLevel(floor + 1)}.</p>
+        <div class="rewards"><span class="chip">${coin()}+${r.gold}</span><span class="chip">✦ +${r.xp} XP</span></div>
+        ${item}${ups}
+        ${adButton(r.gold)}
+        <div class="btns"><button data-act="leave">Map</button><button class="primary" data-act="fight" data-id="tower">Climb on</button></div>
+      </div>`, 'center');
+  } else {
+    playSfx('lose');
+    openModal(`
+      <div class="result lose">
+        <h3>Thrown back from floor ${floor}</h3>
+        <p class="muted">Your best is still floor ${app.s.tower.best}. Level up, upgrade gear or try another party, then climb again.</p>
+        ${r.xp ? `<div class="rewards"><span class="chip">✦ +${r.xp} XP</span></div>` : ''}${ups}
+        <div class="btns"><button data-act="leave">Map</button><button data-act="goheroes">Heroes</button><button class="primary" data-act="fight" data-id="tower">Retry</button></div>
+      </div>`, 'center');
+  }
+}
+
 function levelUpsHtml(r: Rewards): string {
   return r.levelUps.length
     ? `<div class="ups">${[...new Set(r.levelUps.map((x) => x.id))].map((id) => `<span>${heroDef(id).name} reached level ${heroState(app.s, id).level}!</span>`).join('')}</div>` : '';
@@ -761,6 +819,7 @@ async function showResult(b: Battle): Promise<void> {
   const r = finishBattle(app.s, b);
   save();
   if (b.mod) { showTrialResult(b, r); return; }
+  if (r.tower) { showTowerResult(b, r); return; }
   const st = b.stage;
   const idx = STAGES.indexOf(st);
   const next = STAGES[idx + 1];
@@ -887,6 +946,7 @@ root.addEventListener('click', (ev) => {
     case 'close': closeModal(); break;
     case 'fight': {
       if (d.id === 'trial') { if (trialUnlocked(s)) { app.b = null; startFight('trial'); } break; }
+      if (d.id === 'tower') { if (towerUnlocked(s)) { app.b = null; startFight('tower'); } break; }
       const st = stageDef(d.id!);
       if (!stageUnlocked(s, st.id)) break;
       app.b = null;
@@ -895,6 +955,7 @@ root.addEventListener('click', (ev) => {
     }
     case 'leave': leaveBattle(); break;
     case 'trial': playSfx('tap'); openTrial(); break;
+    case 'tower': playSfx('tap'); openTower(); break;
     case 'ad': {
       const gold = Number(d.gold);
       el.setAttribute('disabled', '');
@@ -911,7 +972,7 @@ root.addEventListener('click', (ev) => {
     case 'setparty':
       if (setPartySlot(s, Number(d.slot), d.hero!)) { save(); playSfx('buff'); }
       render();
-      if (d.id) openStage(d.id); else closeModal();
+      if (d.id === 'tower') openTower(); else if (d.id) openStage(d.id); else closeModal();
       break;
     case 'recruit':
       if (recruitHero(s, d.hero!)) {

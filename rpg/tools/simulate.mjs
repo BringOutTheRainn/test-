@@ -66,6 +66,17 @@ for (const st of g.STAGES) {
     const r = g.finishBattle(s, b);
     if (r.result === 'win') {
       for (const d of g.HEROES) if (g.canRecruit(s, d.id) && s.gold >= d.recruit.cost) { g.recruitHero(s, d.id); console.log(`       recruited ${d.name} the ${d.cls}`); }
+      if (st.boss && g.towerUnlocked(s)) {
+        // Climb the Ember Spire until two losses in a row, like a player trying it after each boss.
+        let losses = 0;
+        while (losses < 2) {
+          shop(s);
+          const tb = g.beginTower(s); g.autoBattle(tb); fights++;
+          const tr = g.finishBattle(s, tb);
+          losses = tr.result === 'win' ? 0 : losses + 1;
+        }
+        console.log(`       spire: reached floor ${s.tower.best} (enemy lv ${g.towerLevel(s.tower.best)})`);
+      }
       const lv = s.party.map((id) => g.heroState(s, id).level).join('/');
       console.log(`${st.id.padEnd(6)} ${String(tries).padStart(5)}  ${lv.padEnd(8)} ${String(s.gold).padStart(5)}  ${(wr.rate * 100).toFixed(0).padStart(4)}  ${wr.stars.toFixed(1)}   ${(wr.hp * 100).toFixed(0).padStart(3)}%  ${wr.turns.toFixed(1)} (${g.parFor(st)})`);
       break;

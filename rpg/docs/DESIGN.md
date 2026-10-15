@@ -68,7 +68,10 @@ later regions win about 90–100% of first tries with sensible gear but with rea
 the final boss needs a little farming. Difficulty knobs are at the top of `src/core/battle.ts`.
 The sim ends by testing all 20 possible parties on every boss with equal gear: at level 11 they
 range from about 55% to 100% against the final boss, and the starting trio sits in the middle
-(about 85%), so swapping one hero is a real answer to a wall.
+(about 85%), so swapping one hero is a real answer to a wall. When the sim tries the spire after
+each boss, it stalls at the next boss floor: floor 9 after 1-5, 14 after 2-5, 19 after 3-5, and
+about floor 34 after the campaign. Climbing makes the campaign a little easier (more XP and gold),
+which is fine for an optional mode.
 
 ## Daily Trial
 
@@ -78,6 +81,15 @@ Iron Hide, Glass Cannons, Blessed Start, Warded, Frail Heroes). The trial is the
 changes at midnight UTC. The first win of the day pays 3× that region's stage gold, double XP and a
 guaranteed piece of gear. Winning on consecutive days builds a streak worth +10% gold per day, up to
 +50%. Losses can be retried freely; after the day's win it can still be played for practice.
+
+## The Ember Spire
+
+An endless climb that opens after stage 1-5, shown under the Daily Trial on the dungeon map. Each
+floor is fixed (seeded by its number), two waves, and pays gold and XP once; losing costs nothing
+and the record stays. Enemy level is `3 + floor(0.6 × floor)`, so it climbs a little faster than
+heroes level up from the spire alone. Every fifth floor is a boss floor (Acolyte, Warchief, Queen,
+Troll, then round again) that also drops a piece of gear, and those are the natural walls. Foes come
+from deeper regions as the floors rise.
 
 ## Ads
 
@@ -92,7 +104,9 @@ rewarded video. No interstitials.
 3. ~~Three recruitable heroes at the Tavern and party picking.~~
 3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
    Pyromancer "Wildfire"), shown on the party strip.
-4. An endless tower with a best-floor record, for players who finish the campaign.
+4. ~~The Ember Spire: an endless climb with boss floors and a best-floor record.~~
+4b. Spire milestones every 10 floors (a bigger chest), and an idle "spire tithe" of gold per hour
+   based on the best floor, like AFK Arena's tower-linked AFK rewards.
 5. Music and more sound.
 6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
 7. Hero skill upgrades and a fifth depth.
@@ -123,3 +137,14 @@ start at level 1; AFK Arena's Resonating Crystal fixes that by syncing levels. E
 small and fair: no gacha, three fixed recruits bought with gold, joining at party level. Built: the
 Tavern, three heroes and party swapping. Next: an endless tower for players who finish, then
 hero-pair synergies.
+
+**2026-10-15, evening.** AFK Arena's King's Tower is the template for endless PvE climbs: it
+unlocks early, floors can't be replayed, each pays a one-time reward, and bigger rewards land every
+fifth and tenth floor ([afk.guide](https://afk.guide/kings-tower/),
+[AFK Arena wiki](https://afk-arena.fandom.com/wiki/King%27s_Tower_Rewards?oldid=8673)). A ladder of
+the highest floors gives long-term players something to compare
+([ludo.guide](https://www.ludo.guide/guide/afk-arena/kings-tower)), and the floor count has been
+raised in patches over time ([afk.guide patch notes](https://afk.guide/?p=12557)), so an endless mode
+is cheap, lasting content. Built: the Ember Spire, unlocking after the first boss so most players
+see it, with boss floors that drop gear. Kept Emberdeep's identity: same intents, turn order and
+three-hero party. Next: spire milestone chests and idle gold tied to the best floor.

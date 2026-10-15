@@ -23,6 +23,8 @@ interface GameState {
   trial: { lastWon: string; streak: number };
   /** Rewarded ads watched today. */
   ads: { day: string; used: number };
+  /** The Ember Spire: the highest floor cleared. */
+  tower: { best: number };
 }
 
 interface Rewards {
@@ -35,6 +37,8 @@ interface Rewards {
   item: ItemInst | null;
   /** Set for Daily Trial fights. */
   trial?: { streak: number; repeat: boolean };
+  /** Set for Ember Spire fights: the floor fought and whether it was a new record. */
+  tower?: { floor: number; record: boolean };
 }
 
 const SAVE_VERSION = 1;
@@ -63,6 +67,7 @@ function newState(seed = Date.now()): GameState {
     seenIntro: false,
     trial: { lastWon: '', streak: 0 },
     ads: { day: '', used: 0 },
+    tower: { best: 0 },
   };
 }
 
@@ -244,6 +249,67 @@ function finishTrial(s: GameState, b: Battle, day: string): Rewards {
   return { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, trial: { streak: s.trial.streak, repeat } };
 }
 
+// ---- The Ember Spire: an endless climb. Each floor is fixed, a little harder than the last,
+// and pays once. Every fifth floor holds a boss.
+
+const TOWER_UNLOCK = '1-5';
+const BOSS_ORDER = ['acolyte', 'chief', 'queen', 'troll'];
+
+function towerUnlocked(s: GameState): boolean { return s.stars[TOWER_UNLOCK] !== undefined; }
+
+/** Enemy level on a floor: rises a little faster than heroes level up from climbing alone. */
+function towerLevel(floor: number): number { return 3 + Math.floor(floor * 0.6); }
+
+function towerFloor(floor: number): { stage: StageDef; region: RegionDef } {
+  let r = hashStr('spire-' + floor);
+  const pick = <T>(xs: T[]): T => { r = Math.imul(r ^ (r >>> 15), 2246822507) >>> 0; return xs[r % xs.length]; };
+  const level = towerLevel(floor);
+  const boss = floor % 5 === 0;
+  // The spire draws foes from deeper regions as it rises, and loops back through them.
+  const region = REGIONS[Math.floor((floor - 1) / 5) % REGIONS.length];
+  const pool = REGIONS.slice(0, Math.min(REGIONS.length, 1 + Math.floor(floor / 5))).flatMap((rg) => rg.stages.filter((st) => !st.boss).flatMap((st) => st.waves));
+  let waves: [string, number][][];
+  if (boss) {
+    const key = BOSS_ORDER[(floor / 5 - 1) % BOSS_ORDER.length];
+    const adds = region.stages[4].waves[0].filter(([k]) => k !== key).map(([k]) => k);
+    waves = [pick(pool).map(([k]) => [k, level] as [string, number]), [[adds[0], level], [key, level], [adds[1] ?? adds[0], level]]];
+  } else {
+    waves = [pick(pool), pick(pool)].map((w) => w.map(([k]) => [k, level] as [string, number]));
+  }
+  const stage: StageDef = {
+    id: 'tower', name: `Floor ${floor}`, waves, boss,
+    gold: Math.round((20 + floor * 6) * (boss ? 2 : 1)), xp: 15 + floor * 4,
+  };
+  return { stage, region };
+}
+
+function towerNext(s: GameState): number { return s.tower.best + 1; }
+
+function beginTower(s: GameState): Battle {
+  const t = towerFloor(towerNext(s));
+  return startBattle(t.stage, partyUnits(s), nextSeed(s), t.region.id);
+}
+
+function finishTower(s: GameState, b: Battle): Rewards {
+  s.battles++;
+  const floor = towerNext(s);
+  const stage = b.stage;
+  if (b.over !== 'win') {
+    const xp = Math.round(stage.xp * 0.25 * (1 + b.wave) / stage.waves.length);
+    return { result: 'lose', stars: 0, first: false, gold: 0, xp, levelUps: addXp(s, xp), item: null, tower: { floor, record: false } };
+  }
+  s.wins++;
+  s.tower.best = floor;
+  s.gold += stage.gold;
+  const levelUps = addXp(s, stage.xp);
+  let item: ItemInst | null = null;
+  if (stage.boss) {
+    const loot = REGIONS.find((r) => r.id === b.region)!.loot;
+    item = giveItem(s, loot[Math.floor(gameRand(s) * loot.length)]);
+  }
+  return { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, tower: { floor, record: true } };
+}
+
 // ---- Rewarded ads: optional, a few a day, double the gold from a win.
 
 function adsLeft(s: GameState, day: string): number {
@@ -288,6 +354,7 @@ function rollLoot(s: GameState, stage: StageDef): string {
 /** Applies the outcome of a finished battle to the save and says what the player got. */
 function finishBattle(s: GameState, b: Battle, now = Date.now()): Rewards {
   if (b.stageId === 'trial') return finishTrial(s, b, dayKey(now));
+  if (b.stageId === 'tower') return finishTower(s, b);
   const stage = b.stage;
   s.battles++;
   if (b.over !== 'win') {
@@ -431,6 +498,7 @@ function deserialize(text: string | null): GameState | null {
     s.settings = Object.assign(newState().settings, raw.settings ?? {});
     s.trial = Object.assign(newState().trial, raw.trial ?? {});
     s.ads = Object.assign(newState().ads, raw.ads ?? {});
+    s.tower = Object.assign(newState().tower, raw.tower ?? {});
     s.heroes = s.heroes.filter((h) => HEROES.some((d) => d.id === h.id));
     for (const id of STARTERS()) if (!owned(s, id)) s.heroes.push(freshHero(id));
     // Saves from before recruiting have no party: start with the first heroes owned.

@@ -321,3 +321,9 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .recruit button { white-space: nowrap; }
 .bench { font: 600 11px system-ui, sans-serif; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 1px 6px; margin-left: 8px; vertical-align: 3px; font-style: normal; }
 .newhero { border-color: var(--ember); }
+
+/* ---- Ember Spire */
+.trial.tower { border-color: #4b3c7a; background: linear-gradient(120deg, #2a1f4a, #23182c 70%); box-shadow: 0 0 18px rgba(124, 110, 255, 0.16); }
+.trial.tower small { color: #b6a6ff; }
+.trial.tower b em { font: 800 11px system-ui, sans-serif; color: var(--bad); letter-spacing: 0.08em; vertical-align: 3px; margin-left: 4px; font-style: normal; }
+.trial.tower.locked { background: var(--panel); border: 1px dashed var(--line); box-shadow: none; }

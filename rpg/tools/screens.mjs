@@ -130,6 +130,22 @@ await page.evaluate(() => { const s = window.__emberdeep.s; s.settings.auto = fa
 await page.evaluate(() => document.getElementById('main').scrollTop = 0);
 await shot('20_map_trial_done');
 
+// The Ember Spire: open floor 5 (a boss floor) and climb it on autopilot.
+await game(() => { const s = window.__emberdeep.s; s.tower.best = 4; window.__emberdeep.save(); window.__emberdeep.render(); });
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await shot('25_map_spire');
+await page.click('.trial.tower');
+await shot('26_spire_floor');
+await page.click('.modal [data-act="fight"]');
+await page.waitForSelector('.skill:not([disabled])', { timeout: 20000 });
+await shot('27_spire_battle', 300);
+await page.click('[data-act="auto"]');
+await page.click('[data-act="fast"]');
+await page.waitForSelector('.result', { timeout: 180000 });
+await shot('28_spire_result', 1200);
+await page.click('.modal [data-act="leave"]');
+await page.evaluate(() => { const s = window.__emberdeep.s; s.settings.auto = false; s.settings.fast = false; window.__emberdeep.save(); });
+
 // A boss fight.
 await page.click('[data-act="tab"][data-tab="map"]');
 await game(() => { const s = window.__emberdeep.s; for (const id of ['3-2', '3-3', '3-4']) s.stars[id] = 2; window.__emberdeep.render(); });

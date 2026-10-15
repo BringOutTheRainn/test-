@@ -416,3 +416,67 @@ test('every party of three can win a geared mid-game stage', () => {
     assert.ok(wins >= 4, `${s.party.join('+')}: ${wins}/12`);
   }
 });
+
+// ---- The Ember Spire
+
+test('the spire unlocks after the first boss and climbs one floor per win', () => {
+  const s = g.newState(1);
+  assert.equal(g.towerUnlocked(s), false);
+  s.stars['1-5'] = 3;
+  assert.equal(g.towerUnlocked(s), true);
+  assert.equal(g.towerNext(s), 1);
+  for (const h of s.heroes) h.level = 12;
+  gearUp(s, 4, 3);
+  const gold = s.gold;
+  const b = g.beginTower(s);
+  assert.equal(b.stageId, 'tower');
+  g.autoBattle(b);
+  assert.equal(b.over, 'win');
+  const r = g.finishBattle(s, b);
+  assert.deepEqual(r.tower, { floor: 1, record: true });
+  assert.equal(s.tower.best, 1);
+  assert.equal(g.towerNext(s), 2);
+  assert.equal(s.gold, gold + r.gold);
+});
+
+test('a lost spire fight keeps the record and pays a little XP only', () => {
+  const s = g.newState(1);
+  s.stars['1-5'] = 3;
+  s.tower.best = 30;
+  const b = g.beginTower(s);
+  g.autoBattle(b);
+  assert.equal(b.over, 'lose', 'level 1 heroes cannot beat floor 31');
+  const r = g.finishBattle(s, b);
+  assert.equal(r.gold, 0);
+  assert.equal(s.tower.best, 30);
+  assert.equal(r.tower.floor, 31);
+});
+
+test('spire floors are fixed, rise in level, and every fifth holds a boss with loot', () => {
+  assert.deepEqual(g.towerFloor(7).stage.waves, g.towerFloor(7).stage.waves);
+  for (let f = 2; f <= 60; f++) assert.ok(g.towerLevel(f) >= g.towerLevel(f - 1));
+  for (const f of [5, 10, 15, 20, 25]) {
+    const t = g.towerFloor(f);
+    assert.ok(t.stage.boss, `floor ${f}`);
+    assert.ok(t.stage.waves.flat().some(([k]) => g.ENEMIES[k].boss), `floor ${f} has a boss`);
+  }
+  assert.ok(!g.towerFloor(6).stage.waves.flat().some(([k]) => g.ENEMIES[k].boss));
+  const s = g.newState(1);
+  s.stars['1-5'] = 3;
+  s.tower.best = 4;
+  for (const h of s.heroes) h.level = 15;
+  gearUp(s, 4, 4);
+  const b = g.beginTower(s);
+  g.autoBattle(b);
+  const before = s.items.length;
+  const r = g.finishBattle(s, b);
+  assert.equal(r.result, 'win');
+  assert.ok(r.item, 'boss floors drop gear');
+  assert.equal(s.items.length, before + 1);
+});
+
+test('old saves get an empty spire record', () => {
+  const raw = JSON.parse(g.serialize(g.newState(1)));
+  delete raw.tower;
+  assert.deepEqual(g.deserialize(JSON.stringify(raw)).tower, { best: 0 });
+});
