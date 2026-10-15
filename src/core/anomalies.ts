@@ -2,6 +2,7 @@
 
 import { ANOMALY_BY_ID } from '../data/anomalies.js';
 import type { Derived } from './economy.js';
+import { sellAllGoods } from './market.js';
 import { pendingDarkMatter, resetRun } from './prestige.js';
 import type { GameState } from './state.js';
 
@@ -15,6 +16,7 @@ export function anomaliesUnlocked(s: GameState): boolean {
  */
 export function enterAnomaly(s: GameState, d: Derived, id: string, now = Date.now()): number {
   if (!ANOMALY_BY_ID[id] || s.anomaliesDone[id] || !anomaliesUnlocked(s)) return -1;
+  sellAllGoods(s, d, now);
   const gained = pendingDarkMatter(s);
   if (gained >= 1) {
     s.darkMatter += gained;
@@ -37,6 +39,7 @@ export function checkAnomaly(s: GameState): string | null {
 /** Leaves the anomaly by starting a normal universe (keeps pending Dark Matter rules). */
 export function abandonAnomaly(s: GameState, d: Derived, now = Date.now()): number {
   if (!s.anomaly) return -1;
+  sellAllGoods(s, d, now);
   const gained = pendingDarkMatter(s);
   if (gained >= 1) {
     s.darkMatter += gained;

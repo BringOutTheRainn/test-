@@ -4,6 +4,7 @@ import { COSMIC } from '../data/cosmic.js';
 import { GENERATORS } from '../data/generators.js';
 import { UPGRADE_BY_ID } from '../data/upgrades.js';
 import type { Derived } from './economy.js';
+import { sellAllGoods } from './market.js';
 import type { GameState } from './state.js';
 
 export const DM_SCALE = 1e10;
@@ -38,8 +39,10 @@ export function starterGenerators(s: GameState): number[] {
 
 /** Collapse the universe. Returns the Dark Matter gained. */
 export function collapse(s: GameState, d: Derived, now = Date.now()): number {
+  if (pendingDarkMatter(s) < 1) return 0;
+  // Goods are priced from production, so sell them while it is high. Profit counts toward Dark Matter.
+  sellAllGoods(s, d, now);
   const gained = pendingDarkMatter(s);
-  if (gained < 1) return 0;
   s.darkMatter += gained;
   s.collapses++;
   resetRun(s, d, now);

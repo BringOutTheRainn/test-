@@ -299,5 +299,20 @@ Galactic Civilizations' trade-route notes.
   Each good shows a sparkline of the last six hours.
 - The minigame row now fits three cards: Garden, Forge and Market with short live status.
 
+**Run 11 (Oct 15, evening).** Sources: Egg, Inc. wiki (spaceships, artifacts, piggy bank), an
+Antimatter Dimensions review summary, run 10's market notes.
+- Egg, Inc.'s artifacts are the collection layer its late game hangs on; our Expedition Relics already
+  fill that role, so nothing new there. Antimatter Dimensions reviews praise layered progression but
+  call the slow start and end its weakness; a daily reason to open the game helps both ends.
+- Daily prize wheels are the most common daily hook in mobile idle games and one of the best-accepted
+  rewarded-ad spots, because the first spin is free and the ad only buys more. **Built: Lucky Orbit.**
+  A prize wheel at the top of the Boosts window: one free spin a day and two more with an ad. Eight
+  slices: 15 min, 45 min, 1 hour and 2 hours of production, 30 minutes of Hyperdrive, a comet, a Quasar
+  Crystal (2 hours of production before crystals open) and a rare 8-hour jackpot. The Boosts button
+  shows a dot while the free spin waits.
+- From the backlog: **Built: sell-off before collapse.** Warp Exchange goods are now sold automatically
+  when the universe collapses or enters or leaves an anomaly, before Dark Matter is counted, so their
+  profit adds to it. The collapse dialog says how much they will fetch.
+
 ### Backlog from research (best first)
-1. Collapse warning: offer to sell Warp Exchange goods before collapsing, since prices follow production.
+1. Lucky Orbit streak: a bigger wheel (more jackpot weight) after spinning 7 days in a row.

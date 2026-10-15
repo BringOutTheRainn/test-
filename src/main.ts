@@ -7,6 +7,7 @@ import { checkAnomaly } from './core/anomalies.js';
 import { ANOMALY_BY_ID } from './data/anomalies.js';
 import { catchComet, cometDue, cometStaySeconds, rollBlack, scheduleNextComet } from './core/comets.js';
 import { dailyReady } from './core/daily.js';
+import { freeSpinReady } from './core/wheel.js';
 import { availableUpgrades, computeDerived, tap, tick, upgradePrice, type Derived } from './core/economy.js';
 import { fmt, fmtRate, fmtTime } from './core/format.js';
 import { canCollapse } from './core/prestige.js';
@@ -339,6 +340,7 @@ function start(): void {
     if (d.hyper && hyperLeft <= 0) ctx.recalc();
     hyperBtn.hidden = !AD_CONFIG.enabled || (s.generators[1] === 0 && s.collapses === 0);
     toggleClass(hyperBtn, 'on', hyperLeft > 0);
+    toggleClass(hyperBtn, 'spin-ready', freeSpinReady(s));
     setText(hyperText, hyperLeft > 0 ? fmtTime(hyperLeft / 1000) : 'x2');
 
     // Tabs: Cosmos shows a lock until unlocked, Probes only once bought.

@@ -181,3 +181,16 @@ export function insiderTip(s: GameState, now = Date.now()): number {
   s.adsWatched++;
   return best;
 }
+
+/** Sells everything held, as happens before a collapse. Returns the Stardust paid. */
+export function sellAllGoods(s: GameState, d: Derived, now = Date.now()): number {
+  if (!s.market) return 0;
+  let total = 0;
+  for (let i = 0; i < GOODS.length; i++) total += sellGood(s, d, i, Infinity, now).value;
+  return total;
+}
+
+/** Credits' worth of goods held, at today's prices. */
+export function heldValue(s: GameState): number {
+  return s.market ? s.market.goods.reduce((n, g) => n + g.held * g.price, 0) : 0;
+}

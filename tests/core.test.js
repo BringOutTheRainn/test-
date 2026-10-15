@@ -840,3 +840,41 @@ test('warp exchange prices drift, goods trade at a profit, and tips lift the che
   assert.equal(back.market.goods[2].hist.length, m.goods[2].hist.length);
   assert.equal(back.marketWins, 1);
 });
+
+test('lucky orbit gives one free spin a day and two ad spins, and goods are sold before a collapse', async () => {
+  const w = await import('../www/js/core/wheel.js');
+  const mk = await import('../www/js/core/market.js');
+  const day = 86400000;
+  const T = 1.7e12;
+  const s = newState(0);
+  s.generators[0] = 100;
+  const d = computeDerived(s, 0);
+  assert.ok(w.freeSpinReady(s, T));
+  assert.equal(w.adSpinsLeft(s, T), 0, 'free spin first');
+  assert.equal(w.spin(s, d, true, T), null);
+  const r = w.spin(s, d, false, T, () => 0);
+  assert.equal(r.slice, 0);
+  assert.ok(r.amount > 0 && s.stardust >= r.amount);
+  assert.equal(w.spin(s, d, false, T), null, 'one free spin');
+  assert.equal(w.adSpinsLeft(s, T), 2);
+  // Weight just past the 15 min slice lands on Hyperdrive.
+  assert.equal(w.spin(s, d, true, T, () => 25 / 100).slice, 1);
+  assert.ok(s.hyperEndsAt >= T + 30 * 60000);
+  assert.equal(w.spin(s, d, true, T, () => 0.999).slice, 7, 'jackpot is last');
+  assert.equal(w.adSpinsLeft(s, T), 0);
+  assert.equal(s.adsWatched, 2);
+  assert.ok(w.freeSpinReady(s, T + day), 'resets the next day');
+  assert.equal(s.wheelSpins, 3);
+  // Goods are sold before a collapse, so their profit counts toward Dark Matter.
+  s.genLevels[mk.MARKET_GEN] = 1;
+  const m = mk.syncMarket(s, T);
+  m.goods[0].price = 5;
+  s.stardust += 100 * mk.creditValue(d);
+  mk.buyGood(s, d, 0, 10, T);
+  m.goods[0].price = 9;
+  s.earnedAll = 1e13; s.earnedRun = 1e13;
+  const earnedBefore = s.earnedAll;
+  assert.ok(collapse(s, d, T) >= 1);
+  assert.equal(m.goods[0].held, 0);
+  assert.ok(s.earnedAll > earnedBefore, 'profit counted');
+});

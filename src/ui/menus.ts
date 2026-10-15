@@ -25,6 +25,7 @@ import { FERTILIZE_COOLDOWN_HOURS, FERTILIZE_HOURS, GARDEN_GEN, SEEDS, fertilize
 import { BADGE_GOALS, BADGE_MINUTES, BADGE_NAMES, GOLD_TIER, PLATINUM_CRYSTALS, badgeCount, EVENT_AD_MINUTES, EVENT_GENS, badgeReady, badgeReward, buyEventGen, claimBadge, currentEvent, eventAdBoost, eventAdReady, eventPrice, eventRate, eventTap, eventTapOnce, eventDay, eventTheme, eventTimeLeft } from '../core/event.js';
 import { FORGE_GEN, REFILL_MINUTES, SPELLS, STOKE_COOLDOWN_HOURS, cast, heatFullIn, maxHeat, spellById, stoke, stokeReady, syncHeat } from '../core/forge.js';
 import { GOODS, MARKET_GEN, TICK_MINUTES, TIP_COOLDOWN_HOURS, TIP_TICKS, buyGood, creditValue, holdSize, insiderTip, maxBuy, nextTickIn, sellGood, syncMarket, tipReady, type GoodState } from '../core/market.js';
+import { AD_SPINS_PER_DAY, SLICES, adSpinsLeft, freeSpinReady, sliceValue, spin } from '../core/wheel.js';
 import { buyProduct, productPrice } from './store.js';
 import { PASS_TIERS, XP_PER_TIER, XP_RATES, claimPass, currentPass, passClaimable, passTier, passXp, seasonNumber, seasonTimeLeft, tierReward as passReward, type PassReward } from '../core/pass.js';
 import { claimMission, describeMission, missionDone, missionProgress, missionReward, swapMission } from '../core/missions.js';
@@ -55,6 +56,7 @@ export function openStats(ctx: Ctx): void {
       ['Missions completed', fmt(s.missionsDone)],
       ['Event Gold badges', String(s.eventGolds)],
       ['Stardust Vaults opened', String(s.vaultsOpened)],
+      ['Lucky Orbit spins', String(s.wheelSpins)],
       ['Warp Exchange profit', `${fmt(s.marketProfit)} credits`],
       ['Contract Medals', `${s.contractMedals} (+${fmtPercent(s.contractMedals * MEDAL_PCT)})`],
       ['Ads watched', String(s.adsWatched)],
@@ -230,7 +232,38 @@ function askReminders(ctx: Ctx): void {
   });
 }
 
+const SLICE_COLORS = ['#3b4cc0', '#ff7ad9', '#2a9d8f', '#ffcf5a', '#6b3cff', '#5ef0ff', '#e76f51', '#ffd700'];
+
+function wheelSvg(rot: number): string {
+  const r = 92;
+  const pt = (deg: number, rad = r): string => {
+    const a = (deg * Math.PI) / 180;
+    return `${(100 + rad * Math.sin(a)).toFixed(2)},${(100 - rad * Math.cos(a)).toFixed(2)}`;
+  };
+  const slices = SLICES.map((x, i) => {
+    const mid = i * 45;
+    const dark = i === 3 || i === 5 || i === 7;
+    return `<path d="M100,100 L${pt(mid - 22.5)} A${r},${r} 0 0 1 ${pt(mid + 22.5)} Z" fill="${SLICE_COLORS[i]}" stroke="#0c0f23" stroke-width="2"/>
+      ${mid > 90 && mid < 270
+        ? `<text transform="rotate(${mid + 180} 100 100)" x="100" y="171" text-anchor="middle" class="wheel-label${dark ? ' dark' : ''}">${esc(x.label)}</text>`
+        : `<text transform="rotate(${mid} 100 100)" x="100" y="34" text-anchor="middle" class="wheel-label${dark ? ' dark' : ''}">${esc(x.label)}</text>`}`;
+  }).join('');
+  return `<div class="wheel-wrap"><svg class="wheel-disc" viewBox="0 0 200 200" style="transform:rotate(${rot}deg)" aria-hidden="true">
+      <circle cx="100" cy="100" r="96" fill="#0c0f23"/>${slices}
+      <circle cx="100" cy="100" r="16" fill="#141937" stroke="#ffcf5a" stroke-width="3"/></svg>
+    <i class="wheel-pin"></i></div>`;
+}
+
+function prizeText(ctx: Ctx, i: number, amount: number): string {
+  const x = SLICES[i];
+  if (x.kind === 'hyper') return `Hyperdrive +${x.minutes} minutes`;
+  if (x.kind === 'comet') return 'A comet is on its way';
+  if (x.kind === 'crystal' && !amount) return '+1 Quasar Crystal';
+  return `+${fmt(amount)} Stardust${i === 7 ? ', the jackpot!' : ''}`;
+}
+
 export function openHyperdrive(ctx: Ctx): void {
+  let rot = 0;
   const render = (): string => {
     const s = ctx.s;
     const left = hyperRemainingMs(s);
@@ -241,7 +274,18 @@ export function openHyperdrive(ctx: Ctx): void {
     const frenzyText = ctx.d.noTaps ? 'Not available while tapping is disabled.'
       : frenzyOn ? `Active: ${Math.ceil(frenzyOn.endsAt - s.time)}s left.`
       : wait > 0 ? `Recharging: ${fmtTime(wait)}.` : '';
+    const free = freeSpinReady(s);
+    const adLeft = adSpinsLeft(s);
+    const spinBtn = free ? '<button class="btn btn-primary" data-spin="free">Spin free</button>'
+      : adLeft > 0 ? `<button class="btn ${rewardedAvailable() ? 'btn-primary' : 'btn-plain'}" data-spin="ad" ${rewardedAvailable() ? '' : 'disabled'}>Ad spin: ${adLeft} left</button>`
+      : '<p class="dim small">Next free spin tomorrow.</p>';
     return `<div class="boosts">
+      <div class="wheel-card">
+        ${wheelSvg(rot)}
+        <div class="wheel-side"><b>Lucky Orbit</b>
+          <p>One free spin every day and ${AD_SPINS_PER_DAY} more with an ad. Up to 8 hours of production, Hyperdrive, comets and crystals.</p>
+          ${spinBtn}</div>
+      </div>
       ${mult > 1 ? '<p class="ev-pass-on">Double weekend: boosts last twice as long while the weekend event runs.</p>' : ''}
       <div class="boost">
         <div class="boost-ico">${icon('probe')}</div>
@@ -265,7 +309,38 @@ export function openHyperdrive(ctx: Ctx): void {
   const body = el.querySelector<HTMLElement>('.modal-body')!;
   let busy = false;
   const timer = setInterval(() => { if (!busy) body.innerHTML = render(); }, 1000);
+  const doSpin = (viaAd: boolean): void => {
+    const r = spin(ctx.s, ctx.d, viaAd);
+    if (!r) { busy = false; return; }
+    ctx.save();
+    // Land the chosen slice under the pin, after five full turns.
+    const target = (360 - r.slice * 45) % 360;
+    rot += 1800 + ((target - (rot % 360) + 360) % 360);
+    const disc = body.querySelector<SVGElement>('.wheel-disc');
+    body.querySelectorAll<HTMLButtonElement>('[data-spin]').forEach((x) => { x.disabled = true; });
+    sfxTap();
+    if (disc) {
+      disc.classList.add('spinning');
+      disc.style.transform = `rotate(${rot}deg)`;
+    }
+    setTimeout(() => {
+      busy = false;
+      sfxAchievement();
+      haptic('medium');
+      toast(`<div class="t-ico">${icon('gift')}</div><div><b>Lucky Orbit</b><br>${esc(prizeText(ctx, r.slice, r.amount))}</div>`, 'good');
+      ctx.recalc();
+      ctx.dirty();
+      if (el.isConnected) body.innerHTML = render();
+    }, disc ? 2700 : 0);
+  };
   body.addEventListener('click', (e) => {
+    const w = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-spin]');
+    if (w && !w.disabled && !busy) {
+      busy = true;
+      if (w.dataset.spin === 'free') doSpin(false);
+      else void showRewarded('spin the Lucky Orbit').then((ok) => { if (ok) doSpin(true); else busy = false; });
+      return;
+    }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-boost]');
     if (!b || b.disabled || busy) return;
     busy = true;

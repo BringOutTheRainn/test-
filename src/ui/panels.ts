@@ -9,6 +9,7 @@ import { UPGRADES, UPGRADE_BY_ID } from '../data/upgrades.js';
 import { availableUpgrades, buyCosmic, buyUpgrade, cosmicAvailable, upgradePrice } from '../core/economy.js';
 import { collectExpeditions, expeditionDurationMs, expeditionReward, freeSlots, relicName, startExpedition } from '../core/expeditions.js';
 import { fmt, fmtPercent, fmtTime } from '../core/format.js';
+import { creditValue, heldValue } from '../core/market.js';
 import { canCollapse, collapse, DM_SCALE, earningsForNextDarkMatter, pendingDarkMatter } from '../core/prestige.js';
 import { achievementCount, darkMatterAvailable } from '../core/state.js';
 import { sfxAchievement, sfxCollapse, sfxDenied, sfxUpgrade } from './audio.js';
@@ -338,9 +339,10 @@ export class CosmosPanel implements Panel {
     const ctx = this.ctx;
     const pending = pendingDarkMatter(ctx.s);
     if (pending < 1) return;
+    const goods = heldValue(ctx.s);
     confirmModal(
       'Collapse the Universe?',
-      `Everything in this universe collapses: Stardust, generators and upgrades. You keep achievements, Dark Matter and Cosmic upgrades.<br><br>You will gain <b class="dm">+${fmt(pending)} Dark Matter</b>, for <b>+${fmtPercent(pending * 0.02)}</b> production or more, forever.`,
+      `Everything in this universe collapses: Stardust, generators and upgrades. You keep achievements, Dark Matter and Cosmic upgrades.${goods > 0 ? ` Your Warp Exchange goods are sold first, for about ${fmt(goods * creditValue(ctx.d))} Stardust; any profit adds to your Dark Matter.` : ''}<br><br>You will gain <b class="dm">+${fmt(pending)} Dark Matter</b>, for <b>+${fmtPercent(pending * 0.02)}</b> production or more, forever.`,
       'Collapse',
       () => {
         const gained = collapse(ctx.s, ctx.d);

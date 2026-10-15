@@ -124,6 +124,11 @@ export interface GameState {
   marketProfit: number;
   /** Sales made at a profit. */
   marketWins: number;
+  /** Lucky Orbit: local day of the last reset, free spin unused, ad spins used today. */
+  wheelDay: number;
+  wheelFree: boolean;
+  wheelAds: number;
+  wheelSpins: number;
   /** Purchases by product id: how many times each was bought. */
   purchases: Record<string, number>;
   /** Celestial body skin id, or 'default'. */
@@ -207,6 +212,10 @@ export function newState(now = Date.now()): GameState {
     market: null,
     marketProfit: 0,
     marketWins: 0,
+    wheelDay: -1,
+    wheelFree: true,
+    wheelAds: 0,
+    wheelSpins: 0,
     purchases: {},
     skin: 'default',
     vaultHours: 0,
