@@ -1,0 +1,53 @@
+name: Fathom
+
+# Tests the deep sea clicker and builds an installable debug APK
+# ("fathom-apk"). Download it from the run's Summary page.
+on:
+  push:
+    paths: ["deep-sea/**", ".github/workflows/fathom.yml"]
+  pull_request:
+    paths: ["deep-sea/**", ".github/workflows/fathom.yml"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: deep-sea
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Build and run the rule tests
+        run: npm test
+      - name: Pacing simulation (three hours of play)
+        run: node tools/simulate.mjs 3 4
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm install --no-audit --no-fund
+      - name: Build the web game
+        run: node tools/build.mjs
+      - name: Build the APK
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+        run: bash tools/android.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fathom-apk
+          path: deep-sea/build/fathom.apk
+          if-no-files-found: error

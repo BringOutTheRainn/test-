@@ -51,6 +51,14 @@ class App {
     });
     window.addEventListener('pagehide', () => this.save());
     window.addEventListener('resize', () => this.scene.resize());
+    onBackButton(() => {
+      const m = $('#modal');
+      if (!m.hidden) { m.hidden = true; return true; }
+      if (this.tab !== 'colony') { this.tab = 'colony'; this.panelKey = ''; this.renderPanel(); return true; }
+      this.save();
+      return false;
+    });
+    hideSplash();
   }
 
   load(): State {
@@ -150,7 +158,7 @@ class App {
   }
 
   vibrate(ms: number) {
-    if (this.s.settings.vibrate && navigator.vibrate) try { navigator.vibrate(ms); } catch { /* ignore */ }
+    if (this.s.settings.vibrate) hapticTap(ms);
   }
 
   // ---------- Loop ----------

@@ -11,7 +11,7 @@ try { tsc = require.resolve('typescript/bin/tsc'); } catch { tsc = '/opt/node22/
 execFileSync(process.execPath, [tsc, '-p', 'tsconfig.json'], { stdio: 'inherit' });
 
 const CORE = ['core/format', 'core/data', 'core/game'];
-const UI = ['ui/icons', 'ui/audio', 'ui/ads', 'ui/scene', 'ui/app'];
+const UI = ['ui/icons', 'ui/audio', 'ui/platform', 'ui/ads', 'ui/scene', 'ui/app'];
 const join = (names) => names.map((n) => `// ---- ${n}.ts\n` + readFileSync(`build/js/${n}.js`, 'utf8')).join('\n');
 
 mkdirSync('build', { recursive: true });

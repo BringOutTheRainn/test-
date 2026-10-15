@@ -1,0 +1,16 @@
+{
+  "appId": "com.bringouttherainn.fathom",
+  "appName": "Fathom",
+  "webDir": "www",
+  "backgroundColor": "#04182c",
+  "android": {
+    "backgroundColor": "#04182c"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#04182c",
+      "showSpinner": false
+    }
+  }
+}
