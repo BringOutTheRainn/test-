@@ -36,6 +36,8 @@ interface HeroDef {
   base: Stats;
   skills: string[];
   blurb: string;
+  /** Heroes who join later: the stage that unlocks them and their gold cost. */
+  recruit?: { after: string; cost: number };
 }
 
 interface EnemyDef {
@@ -131,6 +133,45 @@ const SKILLS: Record<string, SkillDef> = {
     effects: [{ t: 'status', kind: 'regen', turns: 3, mult: 0.7 }, { t: 'status', kind: 'atkUp', turns: 2 }],
   },
   revive: { id: 'revive', name: 'Resurrect', desc: 'Bring a fallen hero back with half health.', cd: 6, target: 'fallen', effects: [{ t: 'revive', frac: 0.5 }] },
+  // Duelist
+  lunge: { id: 'lunge', name: 'Lunge', desc: 'A quick thrust at one enemy.', cd: 0, target: 'enemy', effects: [{ t: 'dmg', mult: 1, crit: 0.05 }] },
+  flurry: {
+    id: 'flurry', name: 'Flurry', desc: 'Three fast cuts at one enemy.', cd: 2, target: 'enemy',
+    effects: [{ t: 'dmg', mult: 0.5 }, { t: 'dmg', mult: 0.5 }, { t: 'dmg', mult: 0.5 }],
+  },
+  parry: {
+    id: 'parry', name: 'Parry', desc: 'Take 40% less damage and gain Fury for 2 turns.', cd: 4, target: 'self',
+    effects: [{ t: 'status', kind: 'guard', turns: 2 }, { t: 'status', kind: 'atkUp', turns: 2 }],
+  },
+  finisher: { id: 'finisher', name: 'Finishing Blow', desc: 'A huge strike that often crits.', cd: 4, target: 'enemy', effects: [{ t: 'dmg', mult: 1.7, crit: 0.3 }] },
+  // Druid
+  thorn: {
+    id: 'thorn', name: 'Thorn Whip', desc: 'Hit one enemy and poison it for 2 turns.', cd: 0, target: 'enemy',
+    effects: [{ t: 'dmg', mult: 0.8 }, { t: 'status', kind: 'poison', turns: 2, mult: 0.35 }],
+  },
+  grove: { id: 'grove', name: 'Grove', desc: 'Every hero regenerates for 3 turns.', cd: 3, target: 'allies', effects: [{ t: 'status', kind: 'regen', turns: 3, mult: 0.8 }] },
+  bark: {
+    id: 'bark', name: 'Barkskin', desc: 'Shield one hero and cut the damage it takes for 2 turns.', cd: 3, target: 'ally',
+    effects: [{ t: 'status', kind: 'shield', turns: 3, mult: 1.8 }, { t: 'status', kind: 'guard', turns: 2 }],
+  },
+  roots: {
+    id: 'roots', name: 'Entangle', desc: 'Hit every enemy; each may be held for a turn.', cd: 5, target: 'enemies',
+    effects: [{ t: 'dmg', mult: 0.45 }, { t: 'status', kind: 'stun', turns: 1, chance: 0.4 }],
+  },
+  // Pyromancer
+  firebolt: {
+    id: 'firebolt', name: 'Firebolt', desc: 'Hit one enemy; may set it burning.', cd: 0, target: 'enemy',
+    effects: [{ t: 'dmg', mult: 1 }, { t: 'status', kind: 'burn', turns: 2, mult: 0.35, chance: 0.4 }],
+  },
+  ignite: {
+    id: 'ignite', name: 'Ignite', desc: 'Set one enemy burning hard for 3 turns.', cd: 2, target: 'enemy',
+    effects: [{ t: 'dmg', mult: 0.7 }, { t: 'status', kind: 'burn', turns: 3, mult: 0.7 }],
+  },
+  fireball: {
+    id: 'fireball', name: 'Fireball', desc: 'Hit and burn every enemy.', cd: 3, target: 'enemies',
+    effects: [{ t: 'dmg', mult: 0.65 }, { t: 'status', kind: 'burn', turns: 2, mult: 0.35 }],
+  },
+  inferno: { id: 'inferno', name: 'Inferno', desc: 'A wall of fire hits every enemy hard.', cd: 5, target: 'enemies', effects: [{ t: 'dmg', mult: 1.1 }] },
 
   // Enemies
   bite: { id: 'bite', name: 'Bite', desc: 'A quick bite.', cd: 0, target: 'enemy', effects: [{ t: 'dmg', mult: 1 }], pick: 'random' },
@@ -186,6 +227,27 @@ const HEROES: HeroDef[] = [
     skills: ['smite', 'heal', 'bless', 'revive'],
     blurb: 'Keeps everyone standing. Heals, blesses and resurrects.',
   },
+  {
+    id: 'duelist', name: 'Sera', cls: 'Duelist', art: 'heroes/duelist',
+    base: { hp: 100, atk: 15, def: 6, spd: 15, crit: 0.1 },
+    skills: ['lunge', 'flurry', 'parry', 'finisher'],
+    blurb: 'The fastest blade. Strikes often and finishes the wounded.',
+    recruit: { after: '1-5', cost: 150 },
+  },
+  {
+    id: 'druid', name: 'Tomas', cls: 'Druid', art: 'heroes/druid',
+    base: { hp: 125, atk: 12, def: 8, spd: 10, crit: 0.05 },
+    skills: ['thorn', 'grove', 'bark', 'roots'],
+    blurb: 'Heals over time, shields an ally and roots enemies in place.',
+    recruit: { after: '2-5', cost: 450 },
+  },
+  {
+    id: 'pyromancer', name: 'Lyra', cls: 'Pyromancer', art: 'heroes/pyromancer',
+    base: { hp: 85, atk: 18, def: 4, spd: 11, crit: 0.07 },
+    skills: ['firebolt', 'ignite', 'fireball', 'inferno'],
+    blurb: 'Fragile, but sets whole rooms on fire.',
+    recruit: { after: '3-5', cost: 500 },
+  },
 ];
 
 const ENEMIES: Record<string, EnemyDef> = {
@@ -218,15 +280,15 @@ const ENEMIES: Record<string, EnemyDef> = {
 };
 
 const ITEMS: Record<string, ItemDef> = {
-  rusty_sword: { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', art: 'items/rusty_sword', only: ['knight'], stats: { atk: 4 }, price: 60, tier: 1 },
-  iron_sword: { id: 'iron_sword', name: 'Iron Sword', slot: 'weapon', art: 'items/iron_sword', only: ['knight'], stats: { atk: 10, crit: 0.03 }, price: 420, tier: 2 },
+  rusty_sword: { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', art: 'items/rusty_sword', only: ['knight', 'duelist'], stats: { atk: 4 }, price: 60, tier: 1 },
+  iron_sword: { id: 'iron_sword', name: 'Iron Sword', slot: 'weapon', art: 'items/iron_sword', only: ['knight', 'duelist'], stats: { atk: 10, crit: 0.03 }, price: 420, tier: 2 },
   oak_bow: { id: 'oak_bow', name: 'Oak Bow', slot: 'weapon', art: 'items/oak_bow', only: ['ranger'], stats: { atk: 5 }, price: 70, tier: 1 },
   longbow: { id: 'longbow', name: 'Longbow', slot: 'weapon', art: 'items/longbow', only: ['ranger'], stats: { atk: 11, crit: 0.05 }, price: 460, tier: 2 },
-  blessed_mace: { id: 'blessed_mace', name: 'Blessed Mace', slot: 'weapon', art: 'items/blessed_mace', only: ['cleric'], stats: { atk: 4, def: 2 }, price: 65, tier: 1 },
-  holy_staff: { id: 'holy_staff', name: 'Holy Staff', slot: 'weapon', art: 'items/holy_staff', only: ['cleric'], stats: { atk: 10, hp: 20 }, price: 440, tier: 2 },
+  blessed_mace: { id: 'blessed_mace', name: 'Blessed Mace', slot: 'weapon', art: 'items/blessed_mace', only: ['cleric', 'druid', 'pyromancer'], stats: { atk: 4, def: 2 }, price: 65, tier: 1 },
+  holy_staff: { id: 'holy_staff', name: 'Holy Staff', slot: 'weapon', art: 'items/holy_staff', only: ['cleric', 'druid', 'pyromancer'], stats: { atk: 10, hp: 20 }, price: 440, tier: 2 },
   padded_vest: { id: 'padded_vest', name: 'Padded Vest', slot: 'armor', art: 'items/padded_vest', only: [], stats: { hp: 20, def: 2 }, price: 50, tier: 1 },
   leather_armor: { id: 'leather_armor', name: 'Leather Armor', slot: 'armor', art: 'items/leather_armor', only: [], stats: { hp: 32, def: 4, spd: 1 }, price: 180, tier: 2 },
-  silk_cloak: { id: 'silk_cloak', name: 'Silk Cloak', slot: 'armor', art: 'items/silk_cloak', only: ['ranger', 'cleric'], stats: { hp: 40, def: 4, spd: 3 }, price: 520, tier: 3 },
+  silk_cloak: { id: 'silk_cloak', name: 'Silk Cloak', slot: 'armor', art: 'items/silk_cloak', only: ['ranger', 'cleric', 'duelist', 'druid', 'pyromancer'], stats: { hp: 40, def: 4, spd: 3 }, price: 520, tier: 3 },
   chain_mail: { id: 'chain_mail', name: 'Chain Mail', slot: 'armor', art: 'items/chain_mail', only: [], stats: { hp: 60, def: 7 }, price: 560, tier: 3 },
   iron_plate: { id: 'iron_plate', name: 'Iron Plate', slot: 'armor', art: 'items/iron_plate', only: ['knight'], stats: { hp: 110, def: 13, spd: -1 }, price: 1300, tier: 4 },
   goblin_tooth: { id: 'goblin_tooth', name: 'Goblin Tooth', slot: 'charm', art: 'items/goblin_tooth', only: [], stats: { atk: 3, crit: 0.04 }, price: 150, tier: 2 },

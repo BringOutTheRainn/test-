@@ -474,6 +474,31 @@ function autoChoice(b: Battle, u: Unit): { skill: string; target: string | null 
     if (ok('venom') && unpoisoned.length) return pick('venom', biggest(unpoisoned));
     return pick('shot', killable(valid('shot')));
   }
+  if (u.key === 'duelist') {
+    const target = biggest(valid('finisher'));
+    if (ok('parry') && enemies.some((e) => e.intent && e.intent.target === u.uid) && u.hp < u.maxHp * 0.6) return pick('parry', null);
+    if (ok('finisher')) return pick('finisher', enemies.some((e) => e.boss) ? target : killable(valid('finisher')));
+    if (ok('flurry')) return pick('flurry', killable(valid('flurry')));
+    if (ok('parry') && enemies.some((e) => e.boss)) return pick('parry', null);
+    return pick('lunge', killable(valid('lunge')));
+  }
+  if (u.key === 'druid') {
+    const hurt = weakest(party);
+    const targeted = party.filter((h) => enemies.some((e) => e.intent && e.intent.target === h.uid));
+    if (ok('grove') && party.filter((h) => h.hp < h.maxHp * 0.75 && !has(h, 'regen')).length >= 2) return pick('grove', null);
+    if (ok('bark') && hurt.hp < hurt.maxHp * 0.5) return pick('bark', hurt);
+    if (ok('roots') && enemies.length >= 2) return pick('roots', null);
+    if (ok('bark') && targeted.length) return pick('bark', weakest(targeted));
+    const fresh = valid('thorn').filter((e) => !has(e, 'poison'));
+    return pick('thorn', fresh.length ? biggest(fresh) : killable(valid('thorn')));
+  }
+  if (u.key === 'pyromancer') {
+    if (ok('inferno') && enemies.length >= 2) return pick('inferno', null);
+    if (ok('fireball') && enemies.length >= 2) return pick('fireball', null);
+    const cold = valid('ignite').filter((e) => !has(e, 'burn') && e.hp > e.maxHp * 0.35);
+    if (ok('ignite') && cold.length) return pick('ignite', biggest(cold));
+    return pick('firebolt', killable(valid('firebolt')));
+  }
   const s = u.skills.find((x) => canUse(b, u, x)) ?? u.skills[0];
   return pick(s, valid(s)[0] ?? null);
 }

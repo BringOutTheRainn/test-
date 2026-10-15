@@ -6,7 +6,10 @@ interface HeroState { id: string; level: number; xp: number; gear: Record<Slot, 
 interface GameState {
   v: number;
   gold: number;
+  /** Recruited heroes. */
   heroes: HeroState[];
+  /** The three heroes who fight, front to back. */
+  party: string[];
   items: ItemInst[];
   nextItem: number;
   /** Best star count per stage id; present means cleared. */
@@ -37,12 +40,19 @@ interface Rewards {
 const SAVE_VERSION = 1;
 const MAX_PLUS = 5;
 const SLOTS: Slot[] = ['weapon', 'armor', 'charm'];
+const PARTY_SIZE = 3;
+/** Heroes on the bench still learn, at this share of the party's XP. */
+const BENCH_XP = 0.5;
+
+const freshHero = (id: string, level = 1): HeroState => ({ id, level, xp: 0, gear: { weapon: null, armor: null, charm: null } });
+const STARTERS = () => HEROES.filter((h) => !h.recruit).map((h) => h.id);
 
 function newState(seed = Date.now()): GameState {
   return {
     v: SAVE_VERSION,
     gold: 0,
-    heroes: HEROES.map((h) => ({ id: h.id, level: 1, xp: 0, gear: { weapon: null, armor: null, charm: null } })),
+    heroes: STARTERS().map((id) => freshHero(id)),
+    party: STARTERS().slice(0, PARTY_SIZE),
     items: [],
     nextItem: 1,
     stars: {},
@@ -103,7 +113,7 @@ function power(st: Stats): number {
 }
 
 function partyUnits(s: GameState): Unit[] {
-  return HEROES.map((d) => {
+  return s.party.map((id) => heroDef(id)).map((d) => {
     const st = heroStats(s, d.id);
     const h = heroState(s, d.id);
     return {
@@ -253,7 +263,7 @@ function addXp(s: GameState, amount: number): { id: string; level: number }[] {
   const ups: { id: string; level: number }[] = [];
   for (const h of s.heroes) {
     if (h.level >= MAX_LEVEL) continue;
-    h.xp += amount;
+    h.xp += s.party.includes(h.id) ? amount : Math.round(amount * BENCH_XP);
     while (h.level < MAX_LEVEL && h.xp >= xpToNext(h.level)) {
       h.xp -= xpToNext(h.level);
       h.level++;
@@ -295,6 +305,39 @@ function finishBattle(s: GameState, b: Battle, now = Date.now()): Rewards {
   if (first && stage.drop) item = giveItem(s, stage.drop);
   else if (gameRand(s) < (stage.boss ? 0.6 : 0.25)) item = giveItem(s, rollLoot(s, stage));
   return { result: 'win', stars, first, gold, xp: stage.xp, levelUps, item };
+}
+
+// ---- Recruiting and the party
+
+const owned = (s: GameState, id: string) => s.heroes.some((h) => h.id === id);
+
+/** Unlocked by clearing its stage, not yet hired. */
+function canRecruit(s: GameState, id: string): boolean {
+  const d = HEROES.find((h) => h.id === id);
+  return !!d && !!d.recruit && !owned(s, id) && s.stars[d.recruit.after] !== undefined;
+}
+
+/** Recruits join at the party's lowest level, so they're useful at once. */
+function recruitLevel(s: GameState): number {
+  return Math.max(1, Math.min(...s.party.map((id) => heroState(s, id).level)));
+}
+
+function recruitHero(s: GameState, id: string): boolean {
+  if (!canRecruit(s, id)) return false;
+  const cost = heroDef(id).recruit!.cost;
+  if (s.gold < cost) return false;
+  s.gold -= cost;
+  s.heroes.push(freshHero(id, recruitLevel(s)));
+  return true;
+}
+
+/** Puts a hero in the party slot, swapping places if they were already in it. */
+function setPartySlot(s: GameState, slot: number, id: string): boolean {
+  if (slot < 0 || slot >= PARTY_SIZE || !owned(s, id)) return false;
+  const at = s.party.indexOf(id);
+  if (at >= 0) s.party[at] = s.party[slot];
+  s.party[slot] = id;
+  return true;
 }
 
 // ---- Gear
@@ -388,8 +431,12 @@ function deserialize(text: string | null): GameState | null {
     s.settings = Object.assign(newState().settings, raw.settings ?? {});
     s.trial = Object.assign(newState().trial, raw.trial ?? {});
     s.ads = Object.assign(newState().ads, raw.ads ?? {});
-    // Heroes added in later versions join at level 1.
-    for (const d of HEROES) if (!s.heroes.some((h) => h.id === d.id)) s.heroes.push({ id: d.id, level: 1, xp: 0, gear: { weapon: null, armor: null, charm: null } });
+    s.heroes = s.heroes.filter((h) => HEROES.some((d) => d.id === h.id));
+    for (const id of STARTERS()) if (!owned(s, id)) s.heroes.push(freshHero(id));
+    // Saves from before recruiting have no party: start with the first heroes owned.
+    const party = (Array.isArray(raw.party) ? raw.party : []).filter((id: string, i: number, xs: string[]) => owned(s, id) && xs.indexOf(id) === i);
+    for (const h of s.heroes) if (party.length < PARTY_SIZE && !party.includes(h.id)) party.push(h.id);
+    s.party = party.slice(0, PARTY_SIZE);
     s.items = s.items.filter((i) => ITEMS[i.id]);
     for (const h of s.heroes) for (const sl of SLOTS) if (h.gear[sl] !== null && !itemInst(s, h.gear[sl])) h.gear[sl] = null;
     s.v = SAVE_VERSION;

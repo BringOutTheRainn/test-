@@ -91,6 +91,22 @@ await shot('11_forge');
 await page.click('[data-act="forgetab"][data-t="bag"]');
 await shot('12_bag');
 
+// Recruit Sera at the Tavern and swap her into the party.
+await page.click('[data-act="tab"][data-tab="heroes"]');
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await page.click('[data-act="recruit"][data-hero="duelist"]');
+await shot('21_recruited', 300);
+await page.waitForTimeout(3500);
+await page.click('.pslot[data-slot="1"]');
+await shot('22_party_pick');
+await page.click('.modal [data-act="setparty"][data-hero="duelist"]');
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await shot('23_party_new');
+await page.click('[data-act="tab"][data-tab="map"]');
+await page.click('.stage[data-id="3-2"]');
+await shot('24_stage_party');
+await page.click('.modal [data-act="close"]');
+
 // The Daily Trial, won on autopilot, with the rewarded-ad button.
 await page.click('[data-act="tab"][data-tab="map"]');
 await page.evaluate(() => document.getElementById('main').scrollTop = 0);

@@ -12,7 +12,7 @@ function shop(s) {
     let best = null;
     for (const d of g.shopStock(s)) {
       if (d.price > s.gold) continue;
-      for (const h of g.HEROES) {
+      for (const h of s.heroes.filter((x) => s.party.includes(x.id))) {
         if (!g.canEquip(h.id, d.id)) continue;
         const cur = s.items.find((i) => i.uid === g.heroState(s, h.id).gear[d.slot]);
         if (cur && g.ITEMS[cur.id].price >= d.price) continue;
@@ -31,7 +31,7 @@ function shop(s) {
   }
   // Equip drops that beat what's worn.
   for (const inst of s.items) {
-    for (const h of g.HEROES) {
+    for (const h of s.heroes.filter((x) => s.party.includes(x.id))) {
       const d = g.ITEMS[inst.id];
       if (!g.canEquip(h.id, inst.id)) continue;
       const cur = s.items.find((i) => i.uid === g.heroState(s, h.id).gear[d.slot]);
@@ -40,13 +40,15 @@ function shop(s) {
   }
 }
 
-function winRate(s, stageId, n = 200) {
+function winRate(s, stageId, n = 200, party = s.party) {
+  const saved = s.party; s.party = party;
   let wins = 0, stars = 0, turns = 0, hpLeft = 0;
   for (let i = 0; i < n; i++) {
     const b = g.startBattle(g.stageDef(stageId), g.partyUnits(s), 1000 + i * 7919);
     g.autoBattle(b);
     if (b.over === 'win') { wins++; stars += g.starsFor(b, g.stageDef(stageId)); turns += b.heroActions; hpLeft += b.heroes.reduce((a, h) => a + h.hp / h.maxHp, 0) / 3; }
   }
+  s.party = saved;
   return { rate: wins / n, stars: wins ? stars / wins : 0, turns: wins ? turns / wins : 0, hp: wins ? hpLeft / wins : 0 };
 }
 
@@ -63,7 +65,8 @@ for (const st of g.STAGES) {
     tries++; fights++;
     const r = g.finishBattle(s, b);
     if (r.result === 'win') {
-      const lv = s.heroes.map((h) => h.level).join('/');
+      for (const d of g.HEROES) if (g.canRecruit(s, d.id) && s.gold >= d.recruit.cost) { g.recruitHero(s, d.id); console.log(`       recruited ${d.name} the ${d.cls}`); }
+      const lv = s.party.map((id) => g.heroState(s, id).level).join('/');
       console.log(`${st.id.padEnd(6)} ${String(tries).padStart(5)}  ${lv.padEnd(8)} ${String(s.gold).padStart(5)}  ${(wr.rate * 100).toFixed(0).padStart(4)}  ${wr.stars.toFixed(1)}   ${(wr.hp * 100).toFixed(0).padStart(3)}%  ${wr.turns.toFixed(1)} (${g.parFor(st)})`);
       break;
     }
@@ -76,3 +79,23 @@ for (const st of g.STAGES) {
   }
 }
 console.log('total fights', fights, 'items', s.items.map((i) => i.id + '+' + i.plus).join(' '));
+
+// How every possible party does on the boss stages at the run's final level.
+// Everyone gets the same standard: the best shop item per slot at +2.
+for (const d of g.HEROES) if (d.recruit && !s.heroes.some((h) => h.id === d.id)) { s.gold += d.recruit.cost; g.recruitHero(s, d.id); }
+const ids = s.heroes.map((h) => h.id);
+{
+  for (const h of s.heroes) h.level = Math.max(...s.heroes.map((x) => x.level));
+  const stock = Object.values(g.ITEMS).filter((d) => d.tier <= 4 && d.id !== 'troll_heart');
+  for (const h of s.heroes) for (const slot of ['weapon', 'armor', 'charm']) {
+    const best = stock.filter((d) => d.slot === slot && g.canEquip(h.id, d.id)).sort((a, b) => b.price - a.price)[0];
+    if (best) { const inst = g.giveItem(s, best.id); inst.plus = 2; h.gear[slot] = inst.uid; }
+  }
+  const combos = [];
+  for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) for (let c = b + 1; c < ids.length; c++) combos.push([ids[a], ids[b], ids[c]]);
+  const bosses = g.STAGES.filter((st) => st.boss).map((st) => st.id);
+  console.log('\nparty win% at level', s.heroes[0].level, '  ' + bosses.join('   '));
+  const rows = combos.map((p) => ({ p, r: bosses.map((id) => winRate(s, id, 40, p).rate) }));
+  rows.sort((x, y) => y.r[y.r.length - 1] - x.r[x.r.length - 1]);
+  for (const { p, r } of rows) console.log(p.join('+').padEnd(28), r.map((x) => (x * 100).toFixed(0).padStart(4) + '% ').join(''));
+}

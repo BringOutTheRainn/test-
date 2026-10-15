@@ -41,12 +41,34 @@ down to find the Ember Gate and seal it:
   better stock as you reach deeper regions. Upgrades add 15% per level up to +5. Selling refunds
   part of the price.
 
+## Heroes and the party
+
+Six heroes, three in each fight. Aldric (Knight), Wren (Ranger) and Mira (Cleric) start in the
+party. Three more wait at the **Tavern** on the Heroes tab, each unlocked by a boss:
+
+| Hero | Unlocks | Cost | Role |
+| --- | --- | --- | --- |
+| Sera, Duelist | 1-5 | 150 | Fastest hero: Lunge, Flurry (three cuts), Parry (guard + fury), Finishing Blow |
+| Tomas, Druid | 2-5 | 450 | Support: Thorn Whip (poison), Grove (party regen), Barkskin (shield + guard), Entangle (hit all, may hold) |
+| Lyra, Pyromancer | 3-5 | 500 | Glass cannon: Firebolt, Ignite (heavy burn), Fireball (hit and burn all), Inferno |
+
+Recruits join at the party's lowest level, so a new hero is useful at once (AFK Arena's Resonating
+Crystal solves the same "new hero is level 1" problem). Benched heroes still get half the XP. Tap a
+party slot (on the Heroes tab, or in a stage's window) to swap a hero in. Swords also fit the
+Duelist; maces and staves fit the Druid and Pyromancer; the Silk Cloak fits everyone but the
+Knight. Sprites come from `art/raw/heroes2` (ponytail sword, curly wooden staff, ponytail sun staff,
+recoloured red) via `tools/pixelize.py --size 64`, and are kept in `rpg/art/heroes` so the shared
+`art/` folder stays untouched.
+
 ## Balance
 
 `npm run sim` plays the campaign with the autopilot, buying gear greedily, and prints the win rate,
 stars, remaining health and hero turns per stage. Current curve: the first region is gentle, the
 later regions win about 90–100% of first tries with sensible gear but with real damage taken, and
 the final boss needs a little farming. Difficulty knobs are at the top of `src/core/battle.ts`.
+The sim ends by testing all 20 possible parties on every boss with equal gear: at level 11 they
+range from about 55% to 100% against the final boss, and the starting trio sits in the middle
+(about 85%), so swapping one hero is a real answer to a wall.
 
 ## Daily Trial
 
@@ -67,8 +89,9 @@ rewarded video. No interstitials.
 
 1. ~~First playable: combat, 20 stages, levels, gear, forge, stars.~~
 2. ~~Daily Trial with streaks, and opt-in rewarded ads.~~
-3. More heroes to recruit (pick three of five or six for each fight), using the hero art in
-   `art/raw/heroes2`.
+3. ~~Three recruitable heroes at the Tavern and party picking.~~
+3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
+   Pyromancer "Wildfire"), shown on the party strip.
 4. An endless tower with a best-floor record, for players who finish the campaign.
 5. Music and more sound.
 6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
@@ -89,3 +112,14 @@ enemy patterns, which Emberdeep's intents already lean on
 reason to open the game every day, and new content against the wall at the final boss) and a capped,
 opt-in ad that doubles gold. Next: more heroes, so losing to a boss can be answered with a
 different party, not only grinding.
+
+**2026-10-15, morning.** Party building is the hook every comparable game leans on. Darkest
+Dungeon's stagecoach offers new recruits each week and players are told to grow the roster to about
+16 so a bad run never stalls them ([TheGamer](https://www.thegamer.com/darkest-dungeon-best-party-builds-guide/),
+[Steam discussion](https://steamcommunity.com/app/262060/discussions/0/1637536330480567955)), and a
+veteran who outgrows easy content needs a replacement, which keeps recruiting relevant. Gacha RPGs
+(AFK Arena, Epic Seven, Summoners War) keep rosters wide but are criticised for making a new hero
+start at level 1; AFK Arena's Resonating Crystal fixes that by syncing levels. Emberdeep keeps it
+small and fair: no gacha, three fixed recruits bought with gold, joining at party level. Built: the
+Tavern, three heroes and party swapping. Next: an endless tower for players who finish, then
+hero-pair synergies.

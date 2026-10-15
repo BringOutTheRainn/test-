@@ -121,7 +121,8 @@ function tabBtn(t: Tab, label: string, icon: string): string {
 
 /** True when an unworn item could fill an empty slot. */
 function hasUpgradeHint(): boolean {
-  return app.s.heroes.some((h) => SLOTS.some((slot) => h.gear[slot] === null &&
+  if (HEROES.some((d) => canRecruit(app.s, d.id) && app.s.gold >= d.recruit!.cost)) return true;
+  return app.s.heroes.some((h) => app.s.party.includes(h.id) && SLOTS.some((slot) => h.gear[slot] === null &&
     app.s.items.some((i) => ITEMS[i.id].slot === slot && canEquip(h.id, i.id) && !wornBy(app.s, i.uid))));
 }
 
@@ -132,7 +133,7 @@ function uniqueFoes(st: StageDef): string[] {
 }
 
 function partyLevel(): number {
-  return Math.round(app.s.heroes.reduce((a, h) => a + h.level, 0) / app.s.heroes.length);
+  return Math.round(app.s.party.reduce((a, id) => a + heroState(app.s, id).level, 0) / app.s.party.length);
 }
 
 function mapView(): string {
@@ -211,6 +212,7 @@ function openStage(id: string): void {
     <div class="foes">${foes}</div>
     <p class="muted">${st.waves.length} ${st.waves.length > 1 ? 'waves' : 'wave'} · enemy level ${Math.min(...lv)}${Math.max(...lv) > Math.min(...lv) ? '–' + Math.max(...lv) : ''}</p>
     ${warn}
+    ${app.s.heroes.length > PARTY_SIZE ? partyStrip(id) : ''}
     <div class="rewards"><span class="chip">${coin()}${st.gold * (first ? 2 : 1)}${first ? ' <small>first clear</small>' : ''}</span><span class="chip">✦ ${st.xp} XP</span>${drop}</div>
     <ul class="goals">
       <li>${starStr(1, 1)} Win</li>
@@ -220,8 +222,48 @@ function openStage(id: string): void {
     <div class="btns"><button data-act="close">Back</button><button class="primary" data-act="fight" data-id="${id}">Fight</button></div>`);
 }
 
+function partyStrip(stageId = ''): string {
+  const compact = !!stageId;
+  const slots = app.s.party.map((id, i) => {
+    const d = heroDef(id);
+    return `<button class="pslot" data-act="pslot" data-slot="${i}" data-id="${stageId}">${sprite(d.art)}<b>${d.name}</b><small>Lv ${heroState(app.s, id).level}</small></button>`;
+  }).join('');
+  const bench = app.s.heroes.length - PARTY_SIZE;
+  return `<div class="party ${compact ? 'compact' : ''}">${compact ? '' : `<h4>Party <small>${bench > 0 ? 'tap a hero to swap them' : 'recruit more heroes to swap them'}</small></h4>`}<div class="pslots">${slots}</div></div>`;
+}
+
+function openPartySlot(slot: number, stageId = ''): void {
+  const cur = app.s.party[slot];
+  const rows = app.s.heroes.filter((h) => h.id !== cur).map((h) => {
+    const d = heroDef(h.id);
+    const at = app.s.party.indexOf(h.id);
+    return `<div class="item">${sprite(d.art, 'ico')}
+      <div><b>${d.name} <small>${d.cls} · Lv ${h.level}</small></b><small class="muted">${at >= 0 ? `In the party, will swap with ${heroDef(cur).name}` : d.blurb}</small></div>
+      <button class="primary sm" data-act="setparty" data-slot="${slot}" data-hero="${h.id}" data-id="${stageId}">${at >= 0 ? 'Swap' : 'Pick'}</button></div>`;
+  }).join('');
+  openModal(`<h3><small>Party slot ${slot + 1}</small>Replace ${heroDef(cur).name}</h3>
+    ${rows || '<p class="muted">No other heroes yet. Recruits join at the Tavern below the party.</p>'}
+    <div class="btns">${stageId ? `<button data-act="stage" data-id="${stageId}">Back</button>` : '<button data-act="close">Back</button>'}</div>`);
+}
+
+function tavernView(): string {
+  const recruits = HEROES.filter((d) => d.recruit && !app.s.heroes.some((h) => h.id === d.id));
+  if (!recruits.length) return '';
+  const rows = recruits.map((d) => {
+    const open = canRecruit(app.s, d.id);
+    const cost = d.recruit!.cost;
+    return `<div class="item recruit ${open ? '' : 'locked'}">${sprite(d.art, 'ico')}
+      <div><b>${open ? d.name : '???'} <small>${d.cls}</small></b><small class="muted">${open ? d.blurb : `Clear stage ${d.recruit!.after} to meet them.`}</small></div>
+      ${open ? `<button class="primary sm" data-act="recruit" data-hero="${d.id}" ${app.s.gold < cost ? 'disabled' : ''}>${coin()}${cost}</button>` : '<span class="muted sm">Locked</span>'}
+    </div>`;
+  }).join('');
+  return `<section class="tavern"><h4>Tavern <small>recruits join at your party's level</small></h4>${rows}</section>`;
+}
+
 function heroesView(): string {
-  return app.s.heroes.map((h) => {
+  const order = [...app.s.party, ...app.s.heroes.map((h) => h.id).filter((id) => !app.s.party.includes(id))];
+  return partyStrip() + tavernView() + order.map((id) => heroState(app.s, id)).map((h) => {
+    const benched = !app.s.party.includes(h.id);
     const d = heroDef(h.id);
     const st = heroStats(app.s, h.id);
     const max = h.level >= MAX_LEVEL;
@@ -236,7 +278,7 @@ function heroesView(): string {
       <div class="hhead">
         <div class="portrait">${sprite(d.art)}</div>
         <div class="hinfo">
-          <h2>${d.name} <small>${d.cls}</small></h2>
+          <h2>${d.name} <small>${d.cls}</small>${benched ? '<em class="bench">Bench</em>' : ''}</h2>
           <div class="lvl">Level ${h.level}<span>Power ${power(st)}</span></div>
           <div class="xpbar"><i style="width:${max ? 100 : pct(h.xp / xpToNext(h.level))}"></i><span>${max ? 'Max level' : `${h.xp} / ${xpToNext(h.level)} XP`}</span></div>
           <p class="muted">${d.blurb}</p>
@@ -739,6 +781,7 @@ async function showResult(b: Battle): Promise<void> {
         </ul>
         <div class="rewards"><span class="chip">${coin()}+${r.gold}</span><span class="chip">✦ +${r.xp} XP</span></div>
         ${item}${ups}
+        ${r.first ? HEROES.filter((d) => d.recruit && d.recruit.after === st.id).map((d) => `<div class="loot newhero">${sprite(d.art, 'ico')}<div><small>New recruit at the Tavern</small><b>${d.name} the ${d.cls}</b><small>${d.blurb}</small></div></div>`).join('') : ''}
         ${adButton(r.gold)}
         ${lastStage ? '<p class="muted">You beat the first version of Emberdeep. Thank you for playing! Replay stages for stars and loot.</p>' : ''}
         <div class="btns">
@@ -758,7 +801,8 @@ async function showResult(b: Battle): Promise<void> {
         <ul class="tips">
           <li>Replay earlier stages for gold and experience.</li>
           <li>Buy or upgrade gear at the Forge.</li>
-          <li>Use Challenge when a big hit is aimed at Wren or Mira.</li>
+          ${app.s.heroes.length > PARTY_SIZE ? '<li>Try a different party on the Heroes tab.</li>' : ''}
+          <li>Use a taunt or shield when a big hit is aimed at a fragile hero.</li>
         </ul>
         <div class="btns"><button data-act="leave">Map</button><button data-act="goheroes">Heroes</button><button class="primary" data-act="fight" data-id="${b.stageId}">Retry</button></div>
       </div>`, 'center');
@@ -863,6 +907,19 @@ root.addEventListener('click', (ev) => {
     case 'goheroes': app.tab = 'heroes'; leaveBattle(); break;
     case 'goforge': app.tab = 'forge'; app.forgeTab = 'shop'; closeModal(); render(); break;
     case 'slot': openSlot(d.hero!, d.slot as Slot); break;
+    case 'pslot': openPartySlot(Number(d.slot), d.id); break;
+    case 'setparty':
+      if (setPartySlot(s, Number(d.slot), d.hero!)) { save(); playSfx('buff'); }
+      render();
+      if (d.id) openStage(d.id); else closeModal();
+      break;
+    case 'recruit':
+      if (recruitHero(s, d.hero!)) {
+        save(); playSfx('level');
+        toast(`${heroDef(d.hero!).name} joins at level ${heroState(s, d.hero!).level}! Tap a party slot to bring them along.`);
+      }
+      render();
+      break;
     case 'equip':
       equip(s, d.hero!, d.slot as Slot, Number(d.uid));
       save(); playSfx('buff'); closeModal(); render();

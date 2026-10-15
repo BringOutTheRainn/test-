@@ -302,3 +302,22 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .adlayer div { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #ddd; }
 .adlayer b { font-size: 24px; }
 .adlayer .count { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #666; display: grid; place-items: center; font-weight: 800; }
+
+/* ---- Party and tavern */
+.party { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px 12px; margin-bottom: 12px; }
+.party h4, .tavern h4 { font-size: 16px; margin-bottom: 8px; }
+.party h4 small, .tavern h4 small { font: 12px system-ui, sans-serif; color: var(--muted); margin-left: 6px; }
+.party.compact { padding: 6px; margin: 8px 0; background: #1a1424; }
+.pslots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pslot { display: flex; flex-direction: column; align-items: center; gap: 2px; background: radial-gradient(circle at 50% 60%, #3b2d52, #1a1424 75%); border: 1px solid var(--line); border-radius: 12px; padding: 8px 4px 6px; }
+.pslot img { height: 52px; }
+.party.compact .pslot { padding: 4px; flex-direction: row; gap: 6px; justify-content: center; }
+.party.compact .pslot img { height: 30px; }
+.party.compact .pslot small { display: none; }
+.pslot b { font-size: 13px; }
+.pslot small { font-size: 11px; color: var(--muted); }
+.tavern { margin-bottom: 12px; }
+.recruit.locked .ico { filter: brightness(0) opacity(0.55); }
+.recruit button { white-space: nowrap; }
+.bench { font: 600 11px system-ui, sans-serif; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 1px 6px; margin-left: 8px; vertical-align: 3px; font-style: normal; }
+.newhero { border-color: var(--ember); }

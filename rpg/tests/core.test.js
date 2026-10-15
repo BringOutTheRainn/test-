@@ -233,7 +233,7 @@ test('a geared party at the suggested level usually beats each stage on autopilo
       for (const h of s.heroes) h.level = g.suggestedLevel(st);
       // Gear a player could have bought by now: the best shop item per slot, upgraded twice.
       const stock = Object.values(g.ITEMS).filter((d) => d.tier <= ri + 1 && d.id !== 'troll_heart');
-      for (const h of g.HEROES) {
+      for (const h of s.heroes) {
         for (const slot of ['weapon', 'armor', 'charm']) {
           const best = stock.filter((d) => d.slot === slot && g.canEquip(h.id, d.id)).sort((a, b) => b.price - a.price)[0];
           if (!best) continue;
@@ -314,4 +314,105 @@ test('rewarded ads add gold up to a daily limit', () => {
   assert.ok(!g.claimAdBonus(s, 10, day));
   assert.equal(g.adsLeft(s, '2026-10-15'), 3, 'resets the next day');
   assert.equal(g.prevDay('2026-03-01'), '2026-02-28');
+});
+
+// ---- Recruiting and the party
+
+const gearUp = (s, tier, plus = 2) => {
+  const stock = Object.values(g.ITEMS).filter((d) => d.tier <= tier && d.id !== 'troll_heart');
+  for (const h of s.heroes) for (const slot of ['weapon', 'armor', 'charm']) {
+    const best = stock.filter((d) => d.slot === slot && g.canEquip(h.id, d.id)).sort((a, b) => b.price - a.price)[0];
+    if (!best) continue;
+    const inst = g.giveItem(s, best.id);
+    inst.plus = plus;
+    g.equip(s, h.id, slot, inst.uid);
+  }
+};
+
+const ownAll = (s, level) => {
+  for (const d of g.HEROES) if (d.recruit) { s.stars[d.recruit.after] = 1; s.gold += d.recruit.cost; assert.ok(g.recruitHero(s, d.id), d.id); }
+  for (const h of s.heroes) h.level = level;
+};
+
+test('recruits unlock after their stage, cost gold and join at the party level', () => {
+  const s = g.newState(1);
+  assert.deepEqual(s.party, ['knight', 'ranger', 'cleric']);
+  assert.equal(g.canRecruit(s, 'duelist'), false);
+  assert.equal(g.recruitHero(s, 'duelist'), false);
+  s.stars['1-5'] = 3;
+  assert.equal(g.canRecruit(s, 'duelist'), true);
+  const cost = g.heroDef('duelist').recruit.cost;
+  s.gold = cost - 1;
+  assert.equal(g.recruitHero(s, 'duelist'), false);
+  s.gold = cost + 10;
+  for (const h of s.heroes) h.level = 6;
+  g.heroState(s, 'cleric').level = 5;
+  assert.equal(g.recruitHero(s, 'duelist'), true);
+  assert.equal(s.gold, 10);
+  assert.equal(g.heroState(s, 'duelist').level, 5);
+  assert.equal(g.recruitHero(s, 'duelist'), false, 'only once');
+  assert.deepEqual(s.party, ['knight', 'ranger', 'cleric'], 'recruiting does not change the party');
+});
+
+test('party slots swap heroes and only the party fights', () => {
+  const s = g.newState(1);
+  assert.equal(g.setPartySlot(s, 0, 'duelist'), false, 'not owned');
+  ownAll(s, 3);
+  assert.equal(g.setPartySlot(s, 0, 'pyromancer'), true);
+  assert.deepEqual(s.party, ['pyromancer', 'ranger', 'cleric']);
+  assert.equal(g.setPartySlot(s, 1, 'cleric'), true, 'moving a party member swaps places');
+  assert.deepEqual(s.party, ['pyromancer', 'cleric', 'ranger']);
+  assert.equal(g.setPartySlot(s, 3, 'knight'), false);
+  assert.deepEqual(g.partyUnits(s).map((u) => u.key), ['pyromancer', 'cleric', 'ranger']);
+  assert.equal(new Set(s.party).size, 3);
+});
+
+test('heroes on the bench learn at half speed', () => {
+  const s = g.newState(1);
+  ownAll(s, 1);
+  g.addXp(s, 20);
+  assert.equal(g.heroState(s, 'knight').xp, 20);
+  assert.equal(g.heroState(s, 'duelist').xp, 10);
+});
+
+test('old saves without a party get the starting three', () => {
+  const s = g.newState(1);
+  const raw = JSON.parse(g.serialize(s));
+  delete raw.party;
+  const back = g.deserialize(JSON.stringify(raw));
+  assert.deepEqual(back.party, ['knight', 'ranger', 'cleric']);
+  raw.party = ['knight', 'knight', 'ghost'];
+  assert.deepEqual(g.deserialize(JSON.stringify(raw)).party, ['knight', 'ranger', 'cleric'], 'bad parties are repaired');
+});
+
+test('every new hero has working skills and an autopilot plan', () => {
+  const s = g.newState(1);
+  ownAll(s, 8);
+  s.party = ['duelist', 'druid', 'pyromancer'];
+  const used = new Set();
+  for (let seed = 70; seed < 80; seed++) {
+    const b = g.startBattle(stage('2-3'), g.partyUnits(s), seed);
+    for (let i = 0; i < 400 && !b.over; i++) {
+      g.advance(b);
+      const u = g.current(b);
+      if (!u) continue;
+      if (u.side === 'hero') { const c = g.autoChoice(b, u); used.add(c.skill); g.heroAct(b, c.skill, c.target); } else g.enemyAct(b);
+    }
+  }
+  for (const id of ['lunge', 'flurry', 'thorn', 'firebolt']) assert.ok(used.has(id), id);
+  assert.ok([...used].some((k) => ['fireball', 'inferno', 'roots', 'grove', 'bark'].includes(k)), 'uses its specials');
+});
+
+test('every party of three can win a geared mid-game stage', () => {
+  const ids = g.HEROES.map((h) => h.id);
+  const st = stage('3-3');
+  for (let a = 0; a < ids.length; a++) for (let b2 = a + 1; b2 < ids.length; b2++) for (let c = b2 + 1; c < ids.length; c++) {
+    const s = g.newState(1);
+    ownAll(s, g.suggestedLevel(st));
+    gearUp(s, 3);
+    s.party = [ids[a], ids[b2], ids[c]];
+    let wins = 0;
+    for (let i = 0; i < 12; i++) { const b = g.startBattle(st, g.partyUnits(s), 300 + i); g.autoBattle(b); if (b.over === 'win') wins++; }
+    assert.ok(wins >= 4, `${s.party.join('+')}: ${wins}/12`);
+  }
 });
