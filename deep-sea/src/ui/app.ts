@@ -145,7 +145,7 @@ class App {
         if (this.s.settings.sound) (res.kind === 'whale' ? playWhale : playChime)();
         this.vibrate(30);
         this.scene.announce(res.title, res.kind === 'whale' ? '#bfe3ff' : '#ffd84a');
-        this.toast(`<b>${res.title}</b> ${res.text}`);
+        this.toast(`<b>${res.title}</b> ${res.text} +${res.kind === 'whale' ? 3 : 1} ❤`);
       }
       return;
     }
@@ -330,6 +330,9 @@ class App {
     } else if (this.tab === 'depths' || this.tab === 'migrate') {
       const key = `${this.tab}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
+    } else if (this.tab === 'logbook') {
+      const key = `logbook|${s.hearts}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
+      if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'stats') {
       const key = `stats|${Math.floor(Date.now() / 1000)}`;
       if (key !== this.panelKey) { const p = $('#panel'); p.innerHTML = ''; this.renderStats(p); this.panelKey = key; }
@@ -366,6 +369,30 @@ class App {
 
   renderLogbook(p: HTMLElement) {
     const s = this.s;
+    p.appendChild(el('h3', 'rare-head', `Rare creatures <span>${s.hearts} ❤</span>`));
+    p.appendChild(el('p', 'lead', 'Golden fish leave a Heart when you catch them, whales leave three. Spend Hearts to adopt rare creatures. They stay with you forever, even through migrations.'));
+    const rares = el('div', 'rares');
+    RARES.forEach((r) => {
+      const got = !!s.rares[r.id];
+      const card = el('div', 'rare' + (got ? ' got' : ''));
+      card.innerHTML = `<span class="rdot" style="--c:${r.color}"></span><div class="gt"><b>${r.name}</b><small>${r.desc}</small></div>`;
+      if (got) card.appendChild(el('div', 'tick', '✓'));
+      else {
+        const b = el('button', 'act' + (s.hearts >= r.hearts ? '' : ' poor'), `${r.hearts} ❤`);
+        b.addEventListener('click', () => {
+          if (adoptRare(s, r.id)) {
+            if (s.settings.sound) playChime();
+            this.scene.announce(r.name, r.color);
+            this.toast(`<b>${r.name}</b> joined your colony. ${r.desc}`);
+            this.save();
+          }
+        });
+        card.appendChild(b);
+      }
+      rares.appendChild(card);
+    });
+    p.appendChild(rares);
+    p.appendChild(el('h3', '', 'Logbook'));
     const n = Object.keys(s.achievements).length;
     p.appendChild(el('p', 'lead', `${n} of ${ACHIEVEMENTS.length} entries. Each one gives +1% production (now +${n}%).`));
     const grid = el('div', 'logbook');

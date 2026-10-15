@@ -299,6 +299,21 @@ class Scene {
     const jx = [0.25, 0.75, 0.12, 0.88, 0.5];
     for (let i = 0; i < jellies; i++) this.drawJelly(w * jx[i] + Math.sin(t * 0.4 + i) * 10, h * (0.18 + (i % 3) * 0.12) + Math.sin(t * 0.9 + i * 1.3) * 14, t + i);
 
+    // Adopted rare creatures glide around the reef with a soft glow.
+    RARES.forEach((r, i) => {
+      if (!s.rares[r.id]) return;
+      const x = w * 0.5 + Math.sin(t * (0.18 + i * 0.03) + i * 1.7) * w * 0.42;
+      const y = h * (0.15 + i * 0.07) + Math.sin(t * 0.7 + i) * 8;
+      const dir = Math.cos(t * (0.18 + i * 0.03) + i * 1.7) > 0 ? 1 : -1;
+      g.save(); g.translate(x, y); g.scale(dir, 1);
+      g.shadowColor = r.color; g.shadowBlur = 16;
+      g.fillStyle = r.color;
+      g.globalAlpha = 0.85;
+      g.beginPath(); g.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(-11, 0); g.lineTo(-20, -6); g.lineTo(-20, 6); g.fill();
+      g.restore();
+    });
+
     // Anglerfish prowling.
     if (s.owned[6] > 0) {
       const x = w * 0.5 + Math.sin(t * 0.25) * w * 0.38, y = h * 0.5 + Math.sin(t * 0.6) * 10;

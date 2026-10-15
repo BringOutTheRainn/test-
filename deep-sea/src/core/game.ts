@@ -30,6 +30,8 @@ interface State {
   daily: Daily;
   geyser: { until: number; readyAt: number; acc: number; uses: number };
   ads: { day: string; surges: number; giftDoubled: string; watched: number };
+  hearts: number;
+  rares: Record<string, boolean>;
 }
 
 // Daily Tide Gift: earned by playing (taps today), not just by opening the app.
@@ -62,10 +64,13 @@ function newState(now: number): State {
     daily: { day: '', taps: 0, claimedDay: '', streak: 0 },
     geyser: { until: 0, readyAt: 0, acc: 0, uses: 0 },
     ads: { day: '', surges: 0, giftDoubled: '', watched: 0 },
+    hearts: 0,
+    rares: {},
   };
 }
 
 const has = (s: State, id: string) => !!s.upgrades[id];
+const rare = (s: State, id: string) => !!s.rares[id];
 const perk = (s: State, id: string) => s.perks[id] || 0;
 const totalOwned = (s: State) => s.owned.reduce((a, b) => a + b, 0);
 
@@ -181,6 +186,7 @@ function boostMult(s: State, kind: Boost['kind'], now: number): number {
 // Permanent multipliers (moonstones, logbook, zones, research), without temporary effects.
 function baseMult(s: State): number {
   let m = 1 + 0.02 * s.moonstones;
+  if (rare(s, 'narwhal')) m *= 1.1;
   m *= 1 + 0.01 * Object.keys(s.achievements).length;
   m *= Math.pow(ZONE_MULT, s.zone);
   UPGRADES.forEach((u) => { if (u.kind === 'research' && has(s, u.id)) m *= u.value!; });
@@ -200,7 +206,7 @@ function pps(s: State, now: number): number {
 }
 
 function comboCap(s: State): number {
-  let cap = 50 + perk(s, 'mastery') * 25;
+  let cap = 50 + perk(s, 'mastery') * 25 + (rare(s, 'moonjelly') ? 10 : 0);
   UPGRADES.forEach((u) => { if (u.kind === 'rhythm' && has(s, u.id)) cap += u.value!; });
   return cap;
 }
@@ -214,6 +220,7 @@ function tapValue(s: State, now: number): number {
   UPGRADES.forEach((u) => { if (u.kind === 'mop' && has(s, u.id)) mop += u.value!; });
   let v = (base + mop * pps(s, now)) * comboMult(s) * boostMult(s, 'burst', now);
   if (isHighTide(s, now)) v *= 3;
+  if (rare(s, 'dragon')) v *= 1.25;
   return v;
 }
 
@@ -245,7 +252,7 @@ function tap(s: State, now: number, auto = false): number {
 // ---------- Visitors ----------
 
 function visitorInterval(s: State, rand: () => number): number {
-  let m = Math.pow(0.85, perk(s, 'shoals'));
+  let m = Math.pow(0.85, perk(s, 'shoals')) * (rare(s, 'ray') ? 0.9 : 1);
   UPGRADES.forEach((u) => { if (u.kind === 'lure' && has(s, u.id)) m *= u.value!; });
   return (120e3 + rand() * 120e3) * m;
 }
@@ -273,10 +280,12 @@ function catchVisitor(s: State, now: number, rand: () => number): CatchResult | 
   s.visitor = null;
   if (v.kind === 'whale') {
     s.stats.whales += 1;
+    s.hearts += 3;
     s.boosts.push({ kind: 'whale', until: now + 120e3, mult: 4 });
     return { kind: 'whale', title: 'Whale Song', text: 'Production x4 for 2 minutes.' };
   }
   s.stats.fish += 1;
+  s.hearts += 1;
   const r = rand();
   if (r < 0.45) {
     s.boosts.push({ kind: 'rush', until: now + 60e3, mult: 7 });
@@ -305,7 +314,7 @@ const geyserReady = (s: State, now: number) => geyserUnlocked(s) && now >= s.gey
 function startGeyser(s: State, now: number): boolean {
   if (!geyserReady(s, now)) return false;
   s.geyser.until = now + GEYSER_LENGTH_MS;
-  s.geyser.readyAt = now + GEYSER_COOLDOWN_MS;
+  s.geyser.readyAt = now + GEYSER_COOLDOWN_MS * (rare(s, 'glasssquid') ? 0.8 : 1);
   s.geyser.acc = 0;
   s.geyser.uses += 1;
   return true;
@@ -445,6 +454,9 @@ function checkAchievements(s: State): AchDef[] {
   if (s.daily.claimedDay) give('daily_1');
   if (s.daily.streak >= 7) give('daily_7');
   [1, 25].forEach((n) => { if (s.geyser.uses >= n) give(`geyser_${n}`); });
+  const rares = Object.keys(s.rares).length;
+  if (rares >= 1) give('rare_1');
+  if (rares >= RARES.length) give('rare_6');
   return got;
 }
 
@@ -504,7 +516,17 @@ function buyPerk(s: State, id: string): boolean {
 
 // ---------- Offline and saving ----------
 
-const offlineRate = (s: State) => 0.25 + 0.25 * perk(s, 'warm');
+const offlineRate = (s: State) => 0.25 + 0.25 * perk(s, 'warm') + (rare(s, 'turtle') ? 0.1 : 0);
+
+// ---------- Rare creatures ----------
+
+function adoptRare(s: State, id: string): boolean {
+  const r = RARE_BY_ID[id];
+  if (!r || rare(s, id) || s.hearts < r.hearts) return false;
+  s.hearts -= r.hearts;
+  s.rares[id] = true;
+  return true;
+}
 
 function applyOffline(s: State, now: number): { seconds: number; pearls: number } {
   const away = Math.min(Math.max(0, now - s.lastSeen), OFFLINE_CAP_MS);
@@ -532,6 +554,8 @@ function deserialize(text: string, now: number): State {
   s.daily = Object.assign(newState(now).daily, data.daily || {});
   s.geyser = Object.assign(newState(now).geyser, data.geyser || {});
   s.ads = Object.assign(newState(now).ads, data.ads || {});
+  s.rares = data.rares || {};
+  s.hearts = data.hearts || 0;
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

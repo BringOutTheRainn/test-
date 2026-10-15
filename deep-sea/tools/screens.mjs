@@ -84,7 +84,7 @@ await shot('04_depths');
 // Late game in the Midnight Trench and deeper.
 await game(() => {
   const app = window.__fathom, s = app.s;
-  s.pearls = 4e12; s.earnedRun = 9e12; s.earnedLife = 4e13; s.zone = 3; s.moonstones = 12;
+  s.pearls = 4e12; s.earnedRun = 9e12; s.earnedLife = 4e13; s.zone = 3; s.moonstones = 12; s.hearts = 11; s.rares = { moonjelly: true, narwhal: true, glasssquid: true };
   s.owned = [120, 110, 100, 90, 80, 60, 40, 30, 20, 8, 2, 0, 0];
   s.visitor = { kind: 'whale', spawnedAt: Date.now() - 6000, until: Date.now() + 10000, y: 0.18, dir: 1 };
   app.tab = 'colony'; app.panelKey = ''; app.renderPanel();

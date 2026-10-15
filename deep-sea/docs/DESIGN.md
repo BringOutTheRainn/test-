@@ -130,6 +130,20 @@ five second stand-in countdown plays instead, so every flow can be tried. No int
 A soft wave soundscape (filtered noise with a slow swell) starts with the first tap. It sounds darker in
 deeper zones. It has its own switch in Settings.
 
+## Rare creatures (Hearts)
+
+Golden fish leave 1 Heart when caught, whales leave 3. Hearts adopt six rare creatures that glide around the
+reef and stay forever, through migrations: Moon Jelly (3, combo cap +10), Pearl Narwhal (6, production +10%),
+Glass Squid (10, geyser recharges 20% faster), Ghost Ray (15, visitors 10% more often), Golden Turtle (25,
+offline +10%), Leafy Sea Dragon (40, tap power +25%). Listed at the top of the Logbook tab.
+
+## Android build
+
+`.github/workflows/fathom.yml` runs the rule tests and pacing simulation and builds an installable debug APK
+(artifact `fathom-apk`) on every change under `deep-sea/`. Capacitor 7 with AdMob (Google's test ids until
+release), App (back button closes popups, then minimises), Haptics and Splash Screen. Icons and splash are
+rendered from SVG by `tools/make_icons.mjs`. Package id `com.bringouttherainn.fathom`, portrait only.
+
 ## Saving and offline
 
 Auto-save every 10 s and on hide, to local storage, as versioned JSON. Offline earnings for up to 8 hours
@@ -144,9 +158,10 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 ## Milestones
 
 1. **Playable first version** (this build): everything above in the browser, tests, screenshots.
-2. **Mobile release**: Capacitor Android build in CI, icon, splash, back button, safe areas.
+2. **Mobile release**: ~~Capacitor Android build in CI, icon, splash, back button, haptics~~ (built);
+   still to do: signed Play bundle, store listing, real AdMob ids, privacy policy.
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
-   missions, reminders, Hearts from visitors to unlock rare creatures.
+   ~~Hearts and rare creatures~~ (built), missions, reminders.
 4. **Depth content**: an expedition submarine, a reef garden minigame, weekend events.
 
 ## Research log
@@ -178,3 +193,12 @@ Park and Fishing Clicker; Android Central's review of Fishing Life; run 1's rewa
   Settings switch.
 - **Next:** the Android build in CI (Capacitor, installable APK) so the ads and haptics run on a phone, then
   Hearts and rare creatures.
+
+**Run 3 (Oct 15, evening).** Sources: run 1's AbyssRium notes (its fish give "Love" that unlocks rare fish),
+the Stardust Empire Android pipeline as the template for the phone build.
+- **Built: the Android app build.** Every change now builds an installable APK in GitHub Actions, with the
+  Fathom icon, splash, back button and haptics, so ads and vibration can be tried on a real phone.
+- AbyssRium keeps players collecting long after the main loop with rare fish bought with Love. **Built:
+  Hearts and rare creatures.** Six permanent adoptions with small bonuses, each visible in the scene, which
+  also gives catching visitors a lasting purpose.
+- **Next:** a signed Play Store bundle and listing, then missions (short rotating goals).

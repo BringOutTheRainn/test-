@@ -227,3 +227,27 @@ test('ads can double offline earnings and the Tide Gift (once a day)', () => {
   assert.equal(g.rewardGift(s), r.pearls);
   assert.equal(g.rewardGift(s), 0);
 });
+
+test('visitors leave Hearts that adopt permanent rare creatures', () => {
+  const s = g.newState(0);
+  s.owned[1] = 10;
+  g.spawnVisitor(s, 0, fixed(0.5), 'fish');
+  g.catchVisitor(s, 100, fixed(0.5));
+  g.spawnVisitor(s, 0, fixed(0.5), 'whale');
+  g.catchVisitor(s, 100, fixed(0.5));
+  assert.equal(s.hearts, 4);
+  assert.equal(g.adoptRare(s, 'narwhal'), false, 'needs 6 hearts');
+  const before = g.rawPPS(s);
+  s.hearts = 6;
+  assert.ok(g.adoptRare(s, 'narwhal'));
+  assert.equal(s.hearts, 0);
+  assert.ok(Math.abs(g.rawPPS(s) / before - 1.1) < 1e-9);
+  assert.equal(g.adoptRare(s, 'narwhal'), false, 'only once');
+  s.earnedLife = 1e13;
+  g.migrate(s, 0);
+  assert.equal(s.rares.narwhal, true, 'kept through migration');
+  s.hearts = 25;
+  const off = g.offlineRate(s);
+  g.adoptRare(s, 'turtle');
+  assert.ok(Math.abs(g.offlineRate(s) - off - 0.1) < 1e-9);
+});

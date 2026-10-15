@@ -122,6 +122,8 @@ function buildAchievements(): AchDef[] {
     list.push({ id: `daily_${n}`, name, desc: n === 1 ? 'Claim a Daily Tide Gift.' : 'Reach day 7 of the Tide Gift streak.' }));
   ([[1, 'Thar She Blows'], [25, 'Geyser Keeper']] as [number, string][]).forEach(([n, name]) =>
     list.push({ id: `geyser_${n}`, name, desc: `Erupt the geyser ${n} time${n > 1 ? 's' : ''}.` }));
+  ([[1, 'New Friend'], [6, 'Rare Collection']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `rare_${n}`, name, desc: n === 1 ? 'Adopt a rare creature.' : 'Adopt every rare creature.' }));
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();
@@ -142,3 +144,17 @@ const NEWS = [
   'Clam reports feeling "seen" after millionth tap.',
   'Whale song tops the reef charts for the 40th week.',
 ];
+
+// Rare creatures, adopted with Hearts that visitors leave behind. Kept forever, through migrations.
+interface RareDef { id: string; name: string; hearts: number; desc: string; color: string; }
+
+const RARES: RareDef[] = [
+  { id: 'moonjelly', name: 'Moon Jelly', hearts: 3, desc: 'Combo cap +10.', color: '#cfe3ff' },
+  { id: 'narwhal', name: 'Pearl Narwhal', hearts: 6, desc: 'All production +10%.', color: '#f3ecff' },
+  { id: 'glasssquid', name: 'Glass Squid', hearts: 10, desc: 'The geyser recharges 20% faster.', color: '#9ff7ff' },
+  { id: 'ray', name: 'Ghost Ray', hearts: 15, desc: 'Visitors come 10% more often.', color: '#b9a6d8' },
+  { id: 'turtle', name: 'Golden Turtle', hearts: 25, desc: 'Offline earnings +10%.', color: '#ffd84a' },
+  { id: 'dragon', name: 'Leafy Sea Dragon', hearts: 40, desc: 'Tap power +25%.', color: '#7fe08a' },
+];
+const RARE_BY_ID: Record<string, RareDef> = {};
+RARES.forEach((r) => (RARE_BY_ID[r.id] = r));
