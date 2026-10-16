@@ -413,7 +413,7 @@ test('tap frenzy multiplies taps, auto-taps, then recharges', async () => {
   const s = newState(0);
   const before = computeDerived(s, 0);
   assert.ok(frenzyReady(s));
-  grantFrenzy(s);
+  grantFrenzy(s, new Date(2026, 9, 14, 12).getTime()); // a Wednesday: no double-weekend boost
   const d = computeDerived(s, 0);
   assert.equal(d.tap, before.tap * 10);
   assert.equal(d.autoTap, before.autoTap + 20);
