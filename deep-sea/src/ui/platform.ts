@@ -30,3 +30,27 @@ function hideSplash() {
   const s = capPlugin('SplashScreen');
   if (s && typeof s.hide === 'function') s.hide().catch(() => undefined);
 }
+
+// Local notifications (phone only): a few gentle reminders while the app is closed.
+const REMINDER_IDS = [1, 2, 3, 4];
+
+function askReminderPermission() {
+  const ln = capPlugin('LocalNotifications');
+  if (ln && typeof ln.requestPermissions === 'function') ln.requestPermissions().catch(() => undefined);
+}
+
+function cancelReminders() {
+  const ln = capPlugin('LocalNotifications');
+  if (ln && typeof ln.cancel === 'function') ln.cancel({ notifications: REMINDER_IDS.map((id) => ({ id })) }).catch(() => undefined);
+}
+
+async function scheduleReminders(list: Reminder[]) {
+  const ln = capPlugin('LocalNotifications');
+  if (!ln || typeof ln.schedule !== 'function' || list.length === 0) return;
+  try {
+    const perm = await ln.checkPermissions();
+    if (perm.display !== 'granted') return;
+    await ln.cancel({ notifications: REMINDER_IDS.map((id) => ({ id })) });
+    await ln.schedule({ notifications: list.map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: new Date(r.at), allowWhileIdle: true } })) });
+  } catch { /* reminders are a nice-to-have */ }
+}

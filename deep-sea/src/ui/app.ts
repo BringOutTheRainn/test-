@@ -4,6 +4,14 @@ const SAVE_KEY = 'fathom.save';
 const rng = () => Math.random();
 
 // The player's local calendar date, YYYY-MM-DD.
+// The next 6 pm local time after now (for the gift reminder).
+function nextEvening(now: number): number {
+  const d = new Date(now);
+  d.setHours(18, 0, 0, 0);
+  if (d.getTime() <= now + 15 * 60e3) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+
 function localDay(now: number): string {
   const d = new Date(now);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -44,8 +52,9 @@ class App {
     requestAnimationFrame(() => this.frame());
     setInterval(() => this.save(), 10e3);
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this.save();
+      if (document.hidden) { this.save(); this.planReminders(); }
       else {
+        cancelReminders();
         const off = applyOffline(this.s, Date.now());
         if (off.pearls > 0) this.showOffline(off);
       }
@@ -60,6 +69,15 @@ class App {
       return false;
     });
     hideSplash();
+    cancelReminders();
+    if (spawningActive(Date.now())) setTimeout(() => this.toast('<b>The coral is spawning!</b> Visitors come twice as often and leave double Hearts.'), 1500);
+  }
+
+  planReminders() {
+    const s = this.s, now = Date.now();
+    if (!s.settings.reminders) return;
+    const evening = nextEvening(now);
+    scheduleReminders(reminderPlan(s, now, evening, localDay(evening)));
   }
 
   load(): State {
@@ -234,7 +252,8 @@ class App {
     if (gy.innerHTML !== gyHtml) gy.innerHTML = gyHtml;
     gy.className = 'geyser' + (gActive ? ' active' : gReady ? ' ready' : '');
     $('#depth-tag').textContent = `${ZONES[s.zone].name} · ${ZONES[s.zone].depth.toLocaleString('en-US')} m`;
-    const boosts = s.boosts.filter((b) => b.until > now).map((b) => {
+    const spawnPill = spawningActive(now) ? `<span class="boost spawn">🌕 Coral spawning · ${fmtTime((spawningEndsAt(now) - now) / 1000)}</span>` : '';
+    const boosts = spawnPill + s.boosts.filter((b) => b.until > now).map((b) => {
       const name = b.kind === 'rush' ? 'Pearl Rush' : b.kind === 'burst' ? 'Bubble Burst' : b.kind === 'surge' ? 'Current Surge' : 'Whale Song';
       return `<span class="boost ${b.kind}">${name} x${b.mult} · ${fmtTime((b.until - now) / 1000)}</span>`;
     }).join('');
@@ -481,6 +500,7 @@ class App {
       ['Upgrades bought', String(Object.keys(s.upgrades).length)],
       ['Golden fish caught', String(s.stats.fish)],
       ['Whales greeted', String(s.stats.whales)],
+      ['Coral spawning', spawningActive(now) ? `now, ${fmtTime((spawningEndsAt(now) - now) / 1000)} left` : `in ${fmtTime((nextSpawningAt(now) - now) / 1000)}`],
       ['Deepest zone', ZONES[s.zone].name],
       ['Migrations', String(s.stats.migrations)],
       ['This migration', fmtTime((now - s.stats.runStartedAt) / 1000)],
@@ -574,6 +594,7 @@ class App {
         if (s.settings.sound) (r.whale ? playWhale : playChime)();
         this.scene.announce(`Day ${r.streak} gift`, '#ffd84a');
         this.toast(`<b>Tide Gift:</b> +${fmt(r.pearls)} Pearls${r.whale ? ' and Whale Song' : ''}.`);
+        if (s.settings.reminders) askReminderPermission();
         this.save();
         this.offerGiftDouble();
       }]]);
@@ -641,14 +662,16 @@ class App {
       <div class="setting"><span>Sound</span><button data-k="sound">${on(s.settings.sound)}</button></div>
       <div class="setting"><span>Ocean ambience</span><button data-k="ambience">${on(s.settings.ambience)}</button></div>
       <div class="setting"><span>Vibration</span><button data-k="vibrate">${on(s.settings.vibrate)}</button></div>
+      <div class="setting"><span>Reminders</span><button data-k="reminders">${on(s.settings.reminders)}</button></div>
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
       <div class="setting"><span>Start over</span><button data-a="reset" class="danger">Reset</button></div>
-      <small>Fathom 0.1 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
+      <small>Fathom 0.3 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
       if (k) {
         s.settings[k] = !s.settings[k]; b.textContent = on(s.settings[k]);
+        if (k === 'reminders' && s.settings.reminders) askReminderPermission();
         if (s.settings.sound && s.settings.ambience) startAmbient(s.zone); else stopAmbient();
         return;
       }

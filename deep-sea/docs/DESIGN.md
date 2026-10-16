@@ -146,6 +146,21 @@ they also feed the rare creature collection. After a claim, new requests come in
 keeps them a bonus rather than the main income. Targets grow with the number finished, requests are redrawn
 after a migration, and two Logbook entries count them (10 and 50).
 
+## Coral spawning (real moon)
+
+Real reefs spawn a few nights after the full moon, so Fathom follows the real moon: from 2 to 6 days after each
+full moon (moon age 16.5 to 21 days, about four days a month) the water fills with drifting pink and cream spawn,
+visitors come twice as often and every catch leaves double Hearts. A pill at the top right counts down the
+nights, Stats shows when the next spawning starts, and the Logbook has "Spawning Night" for a catch during one.
+
+## Reminders
+
+On phones, when the app goes to the background it schedules up to four local notifications (no server):
+the geyser is recharged, the Tide Gift is waiting (6 pm local, only if that day is not claimed yet, naming the
+streak day), the coral starts spawning (if within three days), and the nets are full (8 hours, the offline cap).
+Nothing under 15 minutes away is scheduled, everything is cancelled when the app opens again, permission is
+asked after the first Tide Gift claim, and Settings has a Reminders switch.
+
 ## Android build
 
 `.github/workflows/fathom.yml` runs the rule tests and pacing simulation and builds an installable debug APK
@@ -174,8 +189,9 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
    ~~Play bundle in CI, store listing, privacy policy~~ (built); still to do: the upload key secrets, real
    AdMob ids, a feature graphic, and the Play Console setup (steps in `docs/store-listing.md`).
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
-   ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), reminders.
-4. **Depth content**: an expedition submarine, a reef garden minigame, weekend events.
+   ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), ~~reminders~~ (built).
+4. **Depth content**: ~~coral spawning on real full moons~~ (built), an expedition submarine, a reef garden
+   minigame.
 
 ## Research log
 
@@ -227,4 +243,17 @@ for progress felt dull).
 - **Built: the Play Store release kit.** CI now also builds the release bundle (signed once the upload key
   secrets exist), with a ready listing, data safety answers, privacy policy and a release checklist.
 - **Next:** gentle reminders (a local notification when the gift or geyser is ready), then a weekend event.
+
+**Run 5 (Oct 16, evening).** Sources: GameAnalytics on keeping idle players coming back, Mind Studios' idle
+design guide (an offline cap creates a reason to return), Pushwoosh on game notifications (only for meaningful
+moments), the 2021 PNAS study and Divers Alert Network on coral mass spawning (a few nights after the full moon).
+- Idle players return when something worthwhile is waiting, but notifications for small events feel like
+  nagging. **Built: reminders.** At most four local notifications, each for a real reward (geyser, gift, full
+  nets, spawning), never sooner than 15 minutes, with a Settings switch.
+- Other ocean games run calendar weekend events. Fathom's own twist is to follow nature instead: **Built: coral
+  spawning** on the real moon, about four days a month, with double visitors and Hearts and a new scene effect.
+  It does not change the 3 hour simulation (no spawning in its window), and adds about 4/30 x 2 to visitor
+  Hearts over a month.
+- **Next:** the expedition submarine (send a sub on timed dives for Pearls and Hearts while idle), and a feature
+  graphic for the store listing.
 

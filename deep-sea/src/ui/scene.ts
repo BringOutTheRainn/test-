@@ -26,6 +26,7 @@ class Scene {
   floaters: Floater[] = [];
   bubbles: Bubble[] = [];
   motes: Mote[] = [];
+  spawn: Mote[] = []; // coral spawn bundles rising during spawning nights
   squash = 0;
   depthShown = 0;
   t = 0;
@@ -138,6 +139,17 @@ class Scene {
         g.fillRect(m.x, m.y, m.r, m.r);
       }
     });
+
+    // Coral spawning: pink and cream egg bundles drift up from the reef.
+    if (spawningActive(now)) {
+      while (this.spawn.length < 70) this.spawn.push({ x: Math.random() * w, y: h * (0.6 + Math.random() * 0.4), r: 1.5 + Math.random() * 2.2, vy: -(10 + Math.random() * 22), glow: Math.random() < 0.5 });
+      this.spawn.forEach((m, i) => {
+        m.y += m.vy * dt; m.x += Math.sin(this.t * 0.8 + i) * 6 * dt;
+        if (m.y < -6) { m.y = h * (0.75 + Math.random() * 0.2); m.x = Math.random() * w; }
+        g.fillStyle = m.glow ? 'rgba(255,170,210,0.75)' : 'rgba(255,240,215,0.7)';
+        g.beginPath(); g.arc(m.x, m.y, m.r, 0, Math.PI * 2); g.fill();
+      });
+    } else if (this.spawn.length) this.spawn = [];
 
     this.drawSeabed(A, B, zt);
     this.drawReef(s);

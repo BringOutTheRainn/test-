@@ -25,6 +25,10 @@ MANIFEST=android/app/src/main/AndroidManifest.xml
 if ! grep -q 'android.permission.VIBRATE' "$MANIFEST"; then
   sed -i 's#</manifest>#    <uses-permission android:name="android.permission.VIBRATE" />\n</manifest>#' "$MANIFEST"
 fi
+# Reminders (local notifications) need this on Android 13 and later.
+if ! grep -q 'android.permission.POST_NOTIFICATIONS' "$MANIFEST"; then
+  sed -i 's#</manifest>#    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>#' "$MANIFEST"
+fi
 # AdMob app id (Google's test id unless ADMOB_APP_ID is set).
 ADMOB_APP_ID=${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}
 if ! grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$MANIFEST"; then

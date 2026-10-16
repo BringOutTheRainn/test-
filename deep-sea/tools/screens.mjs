@@ -117,6 +117,28 @@ await page.reload();
 await page.waitForTimeout(800);
 await shot('09_welcome_back');
 
+// Coral spawning: a fresh page with the clock moved to a spawning night (Oct 29, 2026).
+const spawnPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
+spawnPage.on('pageerror', (e) => errors.push(String(e)));
+await spawnPage.addInitScript(() => {
+  const shift = Date.UTC(2026, 9, 29, 20) - Date.now();
+  const realNow = Date.now.bind(Date);
+  Date.now = () => realNow() + shift;
+  localStorage.clear();
+});
+await spawnPage.goto(url);
+await spawnPage.waitForTimeout(600);
+await spawnPage.click('#modal .act');
+await spawnPage.evaluate(() => {
+  const app = window.__fathom, s = app.s;
+  s.pearls = 2.4e6; s.earnedRun = 9e6; s.earnedLife = 9e6; s.zone = 1;
+  s.owned = [32, 26, 18, 9, 3, 0, 0, 0, 0, 0, 0, 0, 0];
+  app.panelKey = ''; app.renderPanel();
+});
+await spawnPage.waitForTimeout(2500);
+await spawnPage.screenshot({ path: join(out, '20_coral_spawning.png') });
+console.log('saved 20_coral_spawning');
+
 await browser.close();
 server.close();
 if (errors.length) { console.error('Page errors:\n' + errors.join('\n')); process.exit(1); }

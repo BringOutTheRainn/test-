@@ -20,6 +20,7 @@
 > 🐟 Catch golden fish and greet passing whales for big boosts and Hearts.
 > ❤ Adopt rare creatures: a Moon Jelly, a Pearl Narwhal, a Leafy Sea Dragon and more.
 > 📜 Help your neighbours with Reef Requests, claim a Daily Tide Gift and erupt the geyser.
+> 🌕 On real full-moon weeks the coral spawns: visitors come twice as often and leave double Hearts.
 > 🌙 Lead a Great Migration to earn Moonstones and permanent Heritage perks.
 >
 > Your colony keeps gathering while you are away. Ads are always optional: watch one only when you want a

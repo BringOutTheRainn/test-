@@ -1,6 +1,6 @@
 {
   "name": "fathom",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "A deep sea idle clicker for phones.",
   "scripts": {
@@ -22,6 +22,7 @@
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/haptics": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0"
   }
 }

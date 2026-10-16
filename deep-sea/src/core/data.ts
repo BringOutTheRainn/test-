@@ -126,6 +126,7 @@ function buildAchievements(): AchDef[] {
     list.push({ id: `rare_${n}`, name, desc: n === 1 ? 'Adopt a rare creature.' : 'Adopt every rare creature.' }));
   ([[10, 'Helpful Neighbour'], [50, 'Pillar of the Reef']] as [number, string][]).forEach(([n, name]) =>
     list.push({ id: `req_${n}`, name, desc: `Finish ${n} Reef Requests.` }));
+  list.push({ id: 'spawn_1', name: 'Spawning Night', desc: 'Catch a visitor while the coral is spawning.' });
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();

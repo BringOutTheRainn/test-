@@ -1,6 +1,6 @@
 # Fathom privacy policy
 
-*Last updated: October 16, 2026*
+*Last updated: October 16, 2026 (reminders added)*
 
 Fathom is a single-player idle game. This policy explains what information the game uses.
 
@@ -15,7 +15,9 @@ personalised ads, in your device's settings.
 
 **Children.** Fathom is not directed at children under 13.
 
-**Vibration.** The game asks for permission to vibrate for tap feedback. It uses no other device features.
+**Vibration and reminders.** The game asks for permission to vibrate for tap feedback, and to show a few
+reminders (for example when the daily gift is waiting). Reminders are scheduled on the phone itself, never
+sent from a server, and can be turned off in Settings.
 
 **Changes.** If this policy changes, the new version will be posted here with a new date.
 

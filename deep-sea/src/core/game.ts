@@ -22,9 +22,9 @@ interface State {
   achievements: Record<string, boolean>;
   stats: {
     taps: number; tapsRun: number; fish: number; whales: number; migrations: number;
-    bestCombo: number; tapEarned: number; startedAt: number; runStartedAt: number;
+    bestCombo: number; tapEarned: number; startedAt: number; runStartedAt: number; spawnCatches: number;
   };
-  settings: { sound: boolean; vibrate: boolean; sci: boolean; ambience: boolean };
+  settings: { sound: boolean; vibrate: boolean; sci: boolean; ambience: boolean; reminders: boolean };
   buyAmount: number; // 1, 10, 100 or -1 for max
   lastSeen: number;
   daily: Daily;
@@ -61,8 +61,8 @@ function newState(now: number): State {
     moonstones: 0, moonstonesSpent: 0,
     perks: {},
     achievements: {},
-    stats: { taps: 0, tapsRun: 0, fish: 0, whales: 0, migrations: 0, bestCombo: 0, tapEarned: 0, startedAt: now, runStartedAt: now },
-    settings: { sound: true, vibrate: true, sci: false, ambience: true },
+    stats: { taps: 0, tapsRun: 0, fish: 0, whales: 0, migrations: 0, bestCombo: 0, tapEarned: 0, startedAt: now, runStartedAt: now, spawnCatches: 0 },
+    settings: { sound: true, vibrate: true, sci: false, ambience: true, reminders: true },
     buyAmount: 1,
     lastSeen: now,
     daily: { day: '', taps: 0, claimedDay: '', streak: 0 },
@@ -256,8 +256,8 @@ function tap(s: State, now: number, auto = false): number {
 
 // ---------- Visitors ----------
 
-function visitorInterval(s: State, rand: () => number): number {
-  let m = Math.pow(0.85, perk(s, 'shoals')) * (rare(s, 'ray') ? 0.9 : 1);
+function visitorInterval(s: State, rand: () => number, now = 0): number {
+  let m = Math.pow(0.85, perk(s, 'shoals')) * (rare(s, 'ray') ? 0.9 : 1) * (spawningActive(now) ? 0.5 : 1);
   UPGRADES.forEach((u) => { if (u.kind === 'lure' && has(s, u.id)) m *= u.value!; });
   return (120e3 + rand() * 120e3) * m;
 }
@@ -274,7 +274,7 @@ function spawnVisitor(s: State, now: number, rand: () => number, kind?: Visitor[
   }
   const life = kind === 'whale' ? visitorLife(s) * 1.4 : visitorLife(s);
   s.visitor = { kind, spawnedAt: now, until: now + life, y: kind === 'whale' ? 0.12 + rand() * 0.15 : 0.15 + rand() * 0.5, dir: rand() < 0.5 ? 1 : -1 };
-  s.nextVisitorAt = now + life + visitorInterval(s, rand);
+  s.nextVisitorAt = now + life + visitorInterval(s, rand, now);
 }
 
 interface CatchResult { kind: string; title: string; text: string; amount?: number; }
@@ -283,14 +283,17 @@ function catchVisitor(s: State, now: number, rand: () => number): CatchResult | 
   const v = s.visitor;
   if (!v || v.until <= now) return null;
   s.visitor = null;
+  // During coral spawning every visitor leaves twice the Hearts.
+  const spawn = spawningActive(now) ? 2 : 1;
+  if (spawn > 1) s.stats.spawnCatches += 1;
   if (v.kind === 'whale') {
     s.stats.whales += 1;
-    s.hearts += 3;
+    s.hearts += 3 * spawn;
     s.boosts.push({ kind: 'whale', until: now + 120e3, mult: 4 });
     return { kind: 'whale', title: 'Whale Song', text: 'Production x4 for 2 minutes.' };
   }
   s.stats.fish += 1;
-  s.hearts += 1;
+  s.hearts += spawn;
   const r = rand();
   if (r < 0.45) {
     s.boosts.push({ kind: 'rush', until: now + 60e3, mult: 7 });
@@ -303,6 +306,24 @@ function catchVisitor(s: State, now: number, rand: () => number): CatchResult | 
   }
   s.boosts.push({ kind: 'burst', until: now + 13e3, mult: 77 });
   return { kind: 'burst', title: 'Bubble Burst', text: 'Tap power x77 for 13 seconds.' };
+}
+
+// ---------- Coral spawning (real moon) ----------
+// Reefs spawn a few nights after the full moon. Fathom follows the real moon: from 2 to 6 days after each
+// full moon the water fills with spawn, visitors come twice as often and leave twice the Hearts.
+
+const SYNODIC_MS = 29.530588853 * 86400e3;
+const NEW_MOON_REF = Date.UTC(2000, 0, 6, 18, 14); // a known new moon
+const SPAWN_FROM = 16.5 * 86400e3; // moon age (full moon is about 14.77 days)
+const SPAWN_TO = 21 * 86400e3;
+
+const moonAge = (now: number) => (((now - NEW_MOON_REF) % SYNODIC_MS) + SYNODIC_MS) % SYNODIC_MS;
+const spawningActive = (now: number) => { const a = moonAge(now); return a >= SPAWN_FROM && a < SPAWN_TO; };
+const spawningEndsAt = (now: number) => now - moonAge(now) + SPAWN_TO;
+
+function nextSpawningAt(now: number): number {
+  const start = now - moonAge(now) + SPAWN_FROM;
+  return start > now ? start : start + SYNODIC_MS;
 }
 
 // ---------- Geyser (active skill) ----------
@@ -495,6 +516,25 @@ function requestText(r: ReefRequest): string {
   }
 }
 
+// ---------- Reminders (local notifications on phones) ----------
+
+interface Reminder { id: number; at: number; title: string; body: string; }
+const REMINDER_MIN_MS = 15 * 60e3; // never nag about something only minutes away
+
+// eveningAt: the next 6 pm local time, and eveningDay its day key (the UI knows the local calendar).
+function reminderPlan(s: State, now: number, eveningAt: number, eveningDay: string): Reminder[] {
+  const list: Reminder[] = [];
+  if (geyserUnlocked(s) && s.geyser.readyAt > now) list.push({ id: 1, at: s.geyser.readyAt, title: 'The geyser is ready', body: 'Erupt it for 20 seconds of free taps.' });
+  if (s.daily.claimedDay !== eveningDay) {
+    const day = s.daily.claimedDay === prevDayKey(eveningDay) ? s.daily.streak + 1 : 1;
+    list.push({ id: 2, at: eveningAt, title: 'Your Tide Gift is waiting', body: day > 1 ? `Day ${Math.min(day, 7)} of your streak: tap the clam to open it.` : 'Tap the clam to open today\'s gift.' });
+  }
+  const spawn = nextSpawningAt(now);
+  if (spawn - now < 3 * 86400e3) list.push({ id: 3, at: spawn, title: 'The coral is spawning', body: 'Visitors come twice as often and leave double Hearts.' });
+  if (rawPPS(s) > 0) list.push({ id: 4, at: now + OFFLINE_CAP_MS, title: 'Your colony\'s nets are full', body: 'Eight hours of Pearls are waiting for you.' });
+  return list.filter((r) => r.at - now >= REMINDER_MIN_MS).sort((a, b) => a.at - b.at);
+}
+
 // ---------- Tick ----------
 
 // Returns the pearls from geyser auto-taps this tick (so the scene can show them).
@@ -545,6 +585,7 @@ function checkAchievements(s: State): AchDef[] {
   if (rares >= 1) give('rare_1');
   if (rares >= RARES.length) give('rare_6');
   [10, 50].forEach((n) => { if (s.requests.done >= n) give(`req_${n}`); });
+  if (s.stats.spawnCatches >= 1) give('spawn_1');
   return got;
 }
 

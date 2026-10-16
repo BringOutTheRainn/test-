@@ -290,3 +290,44 @@ test('Reef Requests: three goals at a time that pay Pearls and a Heart', () => {
   delete old.requests;
   assert.deepEqual(g.deserialize(JSON.stringify(old), 0).requests, { list: [], done: 0, nextAt: 0 });
 });
+
+test('coral spawning follows the real moon and doubles visitors and Hearts', () => {
+  const day = 86400e3;
+  // Full moon 2024-04-23 23:49 UTC; new moon 2024-04-08 18:21 UTC.
+  assert.ok(g.moonAge(Date.UTC(2024, 3, 8, 18, 21)) < 0.5 * day || g.moonAge(Date.UTC(2024, 3, 8, 18, 21)) > 29 * day, "close to a real new moon (the mean month drifts a few hours)");
+  assert.equal(g.spawningActive(Date.UTC(2024, 3, 23, 23)), false, 'not on the full moon itself');
+  const mid = Date.UTC(2024, 3, 27, 12);
+  assert.equal(g.spawningActive(mid), true, 'a few nights after the full moon');
+  assert.equal(g.spawningActive(Date.UTC(2024, 4, 2)), false);
+  const next = g.nextSpawningAt(Date.UTC(2024, 3, 10));
+  assert.ok(next > Date.UTC(2024, 3, 25) && next < Date.UTC(2024, 3, 26, 12));
+  assert.ok(g.spawningEndsAt(mid) > mid && g.spawningEndsAt(mid) - next < 5 * day);
+  // Double Hearts while spawning.
+  const s = g.newState(mid);
+  g.spawnVisitor(s, mid, fixed(0.5), 'fish');
+  g.catchVisitor(s, mid + 100, fixed(0.5));
+  assert.equal(s.hearts, 2);
+  assert.equal(s.stats.spawnCatches, 1);
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'spawn_1'));
+});
+
+test('reminders plan the geyser, gift, spawning and full nets, never too soon', () => {
+  const now = Date.UTC(2024, 3, 10, 12);
+  const s = g.newState(now);
+  s.owned[1] = 5;
+  s.geyser.uses = 1;
+  s.geyser.readyAt = now + 10 * 60e3; // too soon
+  const evening = Date.UTC(2024, 3, 10, 18);
+  let plan = g.reminderPlan(s, now, evening, '2024-04-10');
+  assert.deepEqual(plan.map((r) => r.id), [2, 4], 'gift tonight, nets full in 8 h; no spawning yet, geyser too soon');
+  assert.ok(plan.every((r, i) => i === 0 || r.at >= plan[i - 1].at));
+  s.geyser.readyAt = now + 20 * 60e3;
+  s.daily.claimedDay = '2024-04-10';
+  s.daily.streak = 3;
+  plan = g.reminderPlan(s, now, evening, '2024-04-10');
+  assert.deepEqual(plan.map((r) => r.id), [1, 4], 'gift already claimed for that evening');
+  plan = g.reminderPlan(s, now, evening + 86400e3, '2024-04-11');
+  assert.match(plan.find((r) => r.id === 2).body, /Day 4/);
+  const before = g.nextSpawningAt(now) - 86400e3;
+  assert.ok(g.reminderPlan(s, before, evening, '2024-04-24').some((r) => r.id === 3));
+});
