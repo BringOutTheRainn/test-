@@ -1068,6 +1068,19 @@ root.addEventListener('click', (ev) => {
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 
+// Android's back button (in the Capacitor app): close the open window, pause a fight, go back to
+// the dungeon map, and only then send the app to the background.
+const capApp = (window as unknown as { Capacitor?: { Plugins?: { App?: { addListener(e: string, f: () => void): void; minimizeApp(): void } } } }).Capacitor?.Plugins?.App;
+if (capApp) {
+  capApp.addListener('backButton', () => {
+    const tap = (sel: string) => { const el = document.querySelector<HTMLElement>(sel); if (el) el.click(); return !!el; };
+    if (!modalEl.classList.contains('hidden')) { if (!tap('.modal [data-act="close"]')) tap('.modal [data-act="leave"]'); return; }
+    if (app.b) { tap('[data-act="pause"]'); return; }
+    if (app.tab !== 'map') { tap('[data-act="tab"][data-tab="map"]'); return; }
+    capApp.minimizeApp();
+  });
+}
+
 setSound(app.s.settings.sound);
 setMusic(app.s.settings.music);
 render();

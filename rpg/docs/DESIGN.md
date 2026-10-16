@@ -105,6 +105,13 @@ Everything is synthesized with Web Audio, so there are no audio files. Three loo
 drums and a seeded melody that repeats every loop. Music switches to the boss song when a boss is on
 the field, pauses when the app is hidden, and has its own toggle in Settings.
 
+## Android app
+
+The same web build runs inside a Capacitor 7 shell (`com.bringouttherainn.emberdeep`), portrait
+only, with a launcher icon and splash drawn from the game's own sprites (`npm run icons`). CI builds
+a debug APK on every change to `rpg/` and attaches it to the run as `emberdeep-apk`. The phone's back
+button closes the open window, pauses a fight, returns to the map, and otherwise minimizes the app.
+
 ## Ads
 
 Optional only. After a win that paid gold, a "Watch an ad" button doubles the gold, three times a
@@ -122,7 +129,8 @@ rewarded video. No interstitials.
 4b. ~~Spire tithe: idle gold per hour from the best floor.~~ Still to do: milestone chests every 10
    floors.
 5. ~~Music.~~
-6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
+6. ~~Android build in CI (Capacitor), icon, splash and back button.~~ Still to do: AdMob rewarded
+   ads, a signed release build, store listing.
 7. Hero skill upgrades and a fifth depth.
 
 ## Research log
@@ -174,3 +182,13 @@ gold only, capped at 12 hours and scaled by the best floor, so climbing is what 
 background music, the last missing piece of polish from the milestone list. Also fixed: the space
 game's merge deleted the shared `art/` folder, so Emberdeep now carries its own sprites in `rpg/art`.
 Next: Android build in CI (Capacitor), using the same approach the space game already ships with.
+
+**2026-10-16, evening.** Capacitor wraps the existing web game in a native shell, so one codebase
+covers the browser and Android ([Josh Morony](https://www.joshmorony.com/deploying-capacitor-applications-to-android-development-distribution/)).
+Two store facts shape the release plan: since November 2025 Google Play requires 16 KB page-size
+support for apps targeting Android 15+, which current Capacitor handles
+([Capawesome](https://capawesome.io/blog/support-16kb-page-sizes-with-capacitor/)), and new personal
+developer accounts must run a closed test with testers for 14 days before going to production
+([Ember.js showcase](https://discuss.emberjs.com/t/showcase-building-stroop-cascade-an-arcade-puzzle-game-built-with-ember-js-capacitor/21902)).
+Built: the Android project, launcher icon and splash from the game's art, a CI job that produces an
+installable APK, and back-button handling. Next: spire milestone chests, then hero-pair synergies.

@@ -1,0 +1,16 @@
+{
+  "appId": "com.bringouttherainn.emberdeep",
+  "appName": "Emberdeep",
+  "webDir": "www",
+  "backgroundColor": "#16121f",
+  "android": {
+    "backgroundColor": "#16121f"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#16121f",
+      "showSpinner": false
+    }
+  }
+}
