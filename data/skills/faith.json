@@ -1,0 +1,9 @@
+{
+  "id": "faith",
+  "name": "Faith",
+  "passive": true,
+  "stats": {
+    "atk": 2
+  },
+  "description": "+2 ATK per rank (healing uses ATK too)."
+}

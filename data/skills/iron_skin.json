@@ -1,0 +1,9 @@
+{
+  "id": "iron_skin",
+  "name": "Iron Skin",
+  "passive": true,
+  "stats": {
+    "def": 2
+  },
+  "description": "+2 DEF per rank."
+}

@@ -1,0 +1,17 @@
+{
+  "id": "prayer",
+  "name": "Prayer",
+  "cost": 3,
+  "target": "all_allies",
+  "weapons": [
+    "staff",
+    "mace"
+  ],
+  "effects": [
+    {
+      "type": "heal",
+      "power": 1.3
+    }
+  ],
+  "description": "Heals every ally. Needs a staff or mace."
+}

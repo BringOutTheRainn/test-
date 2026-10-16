@@ -8,5 +8,7 @@
     "spd": 1
   },
   "description": "A sturdy hunting bow.",
-  "order": 2
+  "order": 2,
+  "weapon_type": "bow",
+  "attack": "shoot"
 }

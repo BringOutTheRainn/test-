@@ -1,0 +1,14 @@
+{
+  "id": "rally",
+  "name": "Rally",
+  "cost": 3,
+  "target": "all_allies",
+  "effects": [
+    {
+      "type": "status",
+      "status": "shield",
+      "turns": 1
+    }
+  ],
+  "description": "Every ally takes half damage until their next turn."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "learn_skill",
+  "order": 5.5,
+  "text": "Teach a hero a skill",
+  "hint": "Open Heroes, pick a hero, then Skills. Each level gives a skill point.",
+  "goal": {
+    "type": "flag",
+    "flag": "learned_skill"
+  },
+  "reward": {
+    "gold": 100
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "recruit_heroes",
   "order": 5,
-  "text": "Recruit the Knight and the Cleric",
-  "hint": "Tap the Tavern to recruit. Both are free.",
+  "text": "Recruit two more heroes",
+  "hint": "Tap the Tavern. Your first two recruits are free.",
   "goal": {
     "type": "heroes",
     "count": 3

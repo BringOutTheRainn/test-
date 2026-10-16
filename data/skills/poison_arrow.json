@@ -1,0 +1,22 @@
+{
+  "id": "poison_arrow",
+  "name": "Poison Arrow",
+  "cost": 2,
+  "target": "enemy_any",
+  "weapons": [
+    "bow"
+  ],
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.8
+    },
+    {
+      "type": "status",
+      "status": "poison",
+      "turns": 3,
+      "power": 0.5
+    }
+  ],
+  "description": "Poisons for 3 turns. Needs a bow."
+}

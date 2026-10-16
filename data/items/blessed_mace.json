@@ -8,5 +8,7 @@
     "hp": 10
   },
   "description": "Hums faintly with holy light.",
-  "order": 3
+  "order": 3,
+  "weapon_type": "mace",
+  "attack": "bash"
 }

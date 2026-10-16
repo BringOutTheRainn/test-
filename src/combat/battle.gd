@@ -36,8 +36,10 @@ var damage_scale := 1.0
 var _queue: Array = []
 
 
-## heroes: Array of {id, row?, hp?, stats?, level?} (hp carries over between
-## rooms; stats, when given, replace the data file's, e.g. leveled and geared).
+## heroes: Array of {id, base?, name?, row?, hp?, stats?, level?, skills?, look?}
+## (see Heroes.battle_entry). "base" names the data/heroes entry the rest
+## fills in; hp carries over between rooms; stats, when given, replace the
+## data file's, e.g. leveled and geared.
 ## enemies: Array of {id, row}.
 func setup(content_db, heroes: Array, enemies: Array, seed_value: int = -1) -> void:
 	content = content_db
@@ -51,7 +53,11 @@ func setup(content_db, heroes: Array, enemies: Array, seed_value: int = -1) -> v
 	damage_scale = float(combat_cfg.get("damage_scale", 1.0))
 	units = []
 	for h in heroes:
-		var hero := make_unit(content.entry("heroes", str(h.id)), "hero", str(h.get("row", "")), h.get("stats", {}))
+		var def: Dictionary = content.entry("heroes", str(h.get("base", h.id))).duplicate()
+		if def.is_empty() and not content.list("heroes").is_empty():
+			def = content.list("heroes")[0].duplicate()
+		def.merge(h, true)
+		var hero := make_unit(def, "hero", str(h.get("row", "")), h.get("stats", {}))
 		hero.level = int(h.get("level", 1))
 		if h.has("hp"):
 			hero.hp = clampi(int(h.hp), 0, int(hero.max_hp))
@@ -68,6 +74,8 @@ func make_unit(def: Dictionary, team: String, row: String, stats_override: Dicti
 	return {
 		"uid": "%s%d" % [team[0], units.size() + 1],
 		"id": str(def.get("id", "")),
+		## The data entry a hero was built from ("adventurer"); the id for enemies.
+		"base": str(def.get("base", def.get("id", ""))),
 		"name": str(def.get("name", "?")),
 		"team": team,
 		"row": row if row != "" else str(def.get("row", "front")),
@@ -83,6 +91,8 @@ func make_unit(def: Dictionary, team: String, row: String, stats_override: Dicti
 		"energy": 0,
 		"skills": def.get("skills", []).duplicate(),
 		"statuses": {},
+		## Image layers for a hero's look (body, then gear); empty for enemies.
+		"look": def.get("look", []).duplicate(),
 	}
 
 

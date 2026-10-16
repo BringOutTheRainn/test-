@@ -4,5 +4,6 @@
   "short": "SPD",
   "description": "Faster units act earlier in each round.",
   "color": "#2ce8f5",
-  "order": 4
+  "order": 4,
+  "per_point": 1
 }

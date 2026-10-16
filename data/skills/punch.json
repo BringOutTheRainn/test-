@@ -1,0 +1,13 @@
+{
+  "id": "punch",
+  "name": "Punch",
+  "cost": 0,
+  "target": "enemy_melee",
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.7
+    }
+  ],
+  "description": "No weapon: a weak hit on the front row."
+}

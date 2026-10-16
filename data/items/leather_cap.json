@@ -1,0 +1,12 @@
+{
+  "id": "leather_cap",
+  "name": "Leather Cap",
+  "slot": "head",
+  "rarity": "common",
+  "stats": {
+    "def": 1,
+    "hp": 5
+  },
+  "description": "Better than nothing.",
+  "order": 5
+}

@@ -1,0 +1,36 @@
+{
+  "id": "ranger",
+  "name": "Ranger",
+  "role": "Damage",
+  "color": "#27ae60",
+  "order": 2,
+  "description": "Fights from the back row and takes enemies down fast.",
+  "nodes": [
+    {
+      "skill": "aimed_shot",
+      "tier": 1
+    },
+    {
+      "skill": "quick_feet",
+      "tier": 1,
+      "ranks": 3
+    },
+    {
+      "skill": "volley",
+      "tier": 2
+    },
+    {
+      "skill": "sharp_eye",
+      "tier": 2,
+      "ranks": 3
+    },
+    {
+      "skill": "poison_arrow",
+      "tier": 3
+    },
+    {
+      "skill": "execute",
+      "tier": 3
+    }
+  ]
+}

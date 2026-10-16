@@ -1,0 +1,36 @@
+{
+  "id": "priest",
+  "name": "Priest",
+  "role": "Healer",
+  "color": "#f1c40f",
+  "order": 3,
+  "description": "Keeps the party standing with heals and blessings.",
+  "nodes": [
+    {
+      "skill": "mend",
+      "tier": 1
+    },
+    {
+      "skill": "devotion",
+      "tier": 1,
+      "ranks": 3
+    },
+    {
+      "skill": "bless",
+      "tier": 2
+    },
+    {
+      "skill": "faith",
+      "tier": 2,
+      "ranks": 3
+    },
+    {
+      "skill": "prayer",
+      "tier": 3
+    },
+    {
+      "skill": "smite_light",
+      "tier": 3
+    }
+  ]
+}

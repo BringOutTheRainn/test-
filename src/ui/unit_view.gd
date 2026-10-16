@@ -53,8 +53,8 @@ func setup(u: Dictionary, max_energy: int) -> void:
 	_body.pivot_offset = Vector2(_sprite_h / 2.0, _sprite_h)
 	add_child(_body)
 	var type := "heroes" if team == "hero" else "enemies"
-	var def: Dictionary = Content.entry(type, u.id)
-	var tex := Sprites.for_entry(type, def)
+	var def: Dictionary = Content.entry(type, str(u.get("base", u.id)) if team == "hero" else u.id)
+	var tex := Sprites.for_unit(u, Content)
 	if tex != null:
 		_sprite = UI.icon_rect(tex, int(_sprite_h))
 		_sprite.size = Vector2(_sprite_h, _sprite_h)

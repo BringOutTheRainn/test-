@@ -1,0 +1,17 @@
+{
+  "id": "cleave",
+  "name": "Cleave",
+  "cost": 2,
+  "target": "enemy_front_row",
+  "weapons": [
+    "sword",
+    "mace"
+  ],
+  "effects": [
+    {
+      "type": "damage",
+      "power": 0.9
+    }
+  ],
+  "description": "Hits the whole front row. Needs a sword or mace."
+}

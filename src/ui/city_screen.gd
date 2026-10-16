@@ -22,6 +22,7 @@ var _skip_button: Button
 var _craft_label: Label
 var _craft_bar: ProgressBar
 var _craft_skip: Button
+var _heroes_button: Button
 var _daily_button: Button
 
 
@@ -68,7 +69,8 @@ func _ready() -> void:
 	row.add_theme_constant_override("separation", 12)
 	add_child(row)
 	_daily_button = _bar_button("Daily", "daily")
-	row.add_child(_bar_button("Heroes", "heroes"))
+	_heroes_button = _bar_button("Heroes", "heroes")
+	row.add_child(_heroes_button)
 	row.add_child(_daily_button)
 	row.add_child(_bar_button("Menu", "settings"))
 
@@ -117,6 +119,14 @@ func _update_daily_badge() -> void:
 	var ready: bool = Game.daily.ready_count(Game.counters) > 0 or Game.shop.can_claim_card(Game.daily.today())
 	_daily_button.text = "Daily !" if ready else "Daily"
 	UI.style_button(_daily_button, "primary" if ready else "button")
+	# Heroes turns green when someone has points to spend.
+	var unspent := false
+	for id in Game.roster.heroes:
+		if Game.roster.skill_points_left(id) + Game.roster.stat_points_left(id) > 0:
+			unspent = true
+			break
+	_heroes_button.text = "Heroes !" if unspent else "Heroes"
+	UI.style_button(_heroes_button, "primary" if unspent else "button")
 
 
 func _on_tile_tapped(cell: Vector2i) -> void:
@@ -428,26 +438,25 @@ func _show_dungeons() -> void:
 		about.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		column.add_child(about)
 		_panel_body.add_child(b)
-	var party: Array = Game.party.slice(0, Game.party_size()).map(func(id): return Content.entry("heroes", id).get("name", id))
+	var party: Array = Game.party.slice(0, Game.party_size()).map(func(id): return Game.roster.hero_name(id))
 	_panel_body.add_child(UI.label("Party: " + ", ".join(party), UI.SMALL, UI.MUTED))
 
 
 func _show_recruits() -> void:
-	var offers: Array = Game.recruitable()
 	_panel_body.add_child(UI.label("Recruit heroes", UI.FONT_SIZE, UI.ACCENT))
-	if offers.is_empty():
-		_panel_body.add_child(UI.label("Everyone here has joined you.", UI.SMALL, UI.MUTED))
-	for h in offers:
-		var hero_id: String = h.id
-		var reason: String = Game.can_recruit(hero_id)
-		var card := _build_card({"name": "%s  (%s)" % [h.name, h.get("role", "")]}, {"cost": h.recruit.get("cost", {})}, reason, func(): Game.recruit(hero_id))
-		var tex := Sprites.for_entry("heroes", h)
-		if tex != null:
-			var row: HBoxContainer = card.get_child(0)
-			var icon := UI.icon_rect(tex, 80)
-			row.add_child(icon)
-			row.move_child(icon, 0)
-		_panel_body.add_child(card)
+	_panel_body.add_child(UI.label("Every recruit starts the same. Gear, stat points and skills decide what they become.", UI.SMALL, UI.MUTED))
+	var cost = Game.recruit_cost()
+	if cost == null:
+		_panel_body.add_child(UI.label("Your roster is full (%d heroes)." % Game.max_heroes(), UI.SMALL, UI.MUTED))
+		return
+	var card := _build_card({"name": "New recruit%s  (%d / %d)" % ["  -  free" if cost.is_empty() else "", Game.roster.heroes.size(), Game.max_heroes()]}, {"cost": cost}, Game.can_recruit(), func(): Game.recruit())
+	var tex := Sprites.for_entry("heroes", Content.entry("heroes", Game.roster.default_base()))
+	if tex != null:
+		var row: HBoxContainer = card.get_child(0)
+		var icon := UI.icon_rect(tex, 80)
+		row.add_child(icon)
+		row.move_child(icon, 0)
+	_panel_body.add_child(card)
 
 
 ## The current goal above the town, with its progress or a Claim button.

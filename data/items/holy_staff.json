@@ -8,5 +8,7 @@
     "hp": 15
   },
   "description": "Its light makes healing stronger.",
-  "order": 13
+  "order": 13,
+  "weapon_type": "staff",
+  "attack": "smite"
 }

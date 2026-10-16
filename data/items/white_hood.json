@@ -1,0 +1,12 @@
+{
+  "id": "white_hood",
+  "name": "White Hood",
+  "slot": "head",
+  "rarity": "rare",
+  "stats": {
+    "atk": 2,
+    "hp": 10
+  },
+  "description": "Worn by temple healers.",
+  "order": 15
+}

@@ -1,0 +1,10 @@
+{
+  "id": "iron_helm",
+  "item": "iron_helm",
+  "blacksmith_level": 1,
+  "cost": {
+    "iron": 80,
+    "gold": 250
+  },
+  "seconds": 240
+}

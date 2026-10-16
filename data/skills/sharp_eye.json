@@ -1,0 +1,9 @@
+{
+  "id": "sharp_eye",
+  "name": "Sharp Eye",
+  "passive": true,
+  "stats": {
+    "atk": 2
+  },
+  "description": "+2 ATK per rank."
+}

@@ -4,5 +4,6 @@
   "short": "DEF",
   "description": "Reduces damage taken.",
   "color": "#8b9bb4",
-  "order": 3
+  "order": 3,
+  "per_point": 1
 }

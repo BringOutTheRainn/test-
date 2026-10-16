@@ -49,6 +49,9 @@
       },
       "items": [
         "goblin_tooth"
+      ],
+      "first_clear_items": [
+        "blessed_mace"
       ]
     }
   ]

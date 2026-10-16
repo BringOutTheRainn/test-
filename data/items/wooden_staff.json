@@ -1,0 +1,14 @@
+{
+  "id": "wooden_staff",
+  "name": "Wooden Staff",
+  "slot": "weapon",
+  "rarity": "common",
+  "weapon_type": "staff",
+  "attack": "smite",
+  "stats": {
+    "atk": 3,
+    "hp": 10
+  },
+  "description": "A walking stick that helps prayers along.",
+  "order": 3
+}

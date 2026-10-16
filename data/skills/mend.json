@@ -12,5 +12,9 @@
       "type": "cleanse"
     }
   ],
-  "description": "Heals one ally and removes debuffs."
+  "description": "Heals one ally and removes debuffs. Needs a staff or mace.",
+  "weapons": [
+    "staff",
+    "mace"
+  ]
 }
