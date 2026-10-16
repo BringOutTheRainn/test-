@@ -88,6 +88,7 @@ function closeModal(): void {
 
 function render(): void {
   if (app.b) { renderBattle(); return; }
+  playMusic('town');
   const main = document.getElementById('main');
   const scroll = main ? main.scrollTop : -1;
   const body = app.tab === 'map' ? mapView() : app.tab === 'heroes' ? heroesView() : forgeView();
@@ -187,8 +188,18 @@ function towerCard(): string {
   const t = towerFloor(f);
   return `<button class="trial tower" data-act="tower">
     <div><small>The Ember Spire · endless</small><b>Floor ${f}${t.stage.boss ? ' <em>BOSS</em>' : ''}</b><span>${s.tower.best ? `Your best: floor ${s.tower.best}` : 'Climb as high as you can. Every floor pays once.'}</span></div>
-    <div class="tside"><em>${coin()}${t.stage.gold}</em><small>enemy Lv ${towerLevel(f)}</small></div>
+    <div class="tside"><em>${coin()}${t.stage.gold}</em><small>enemy Lv ${towerLevel(f)}</small>${titheReady(s, Date.now()) >= 10 ? `<small class="tithe-ready">💰 ${titheReady(s, Date.now())} tithe</small>` : ''}</div>
   </button>`;
+}
+
+function titheHtml(): string {
+  const s = app.s;
+  if (!s.tower.best) return '';
+  const now = Date.now();
+  const ready = titheReady(s, now);
+  const full = titheFullIn(s, now);
+  return `<div class="item tithe"><div><b>Spire tithe</b><small>${titheRate(s.tower.best)} gold an hour from floor ${s.tower.best}, up to ${TITHE_CAP_HOURS} hours. ${full > 0 ? `Full in ${Math.ceil(full)}h.` : 'Full!'}</small></div>
+    <button class="primary sm" data-act="tithe" ${ready < 1 ? 'disabled' : ''}>${coin()}${ready}</button></div>`;
 }
 
 function openTower(): void {
@@ -204,6 +215,7 @@ function openTower(): void {
     ${towerLevel(f) > partyLevel() + 1 ? `<p class="warn">Your heroes are level ${partyLevel()}. This floor will be tough.</p>` : ''}
     ${s.heroes.length > PARTY_SIZE ? partyStrip('tower') : ''}
     <div class="rewards"><span class="chip">${coin()}${t.stage.gold}</span><span class="chip">✦ ${t.stage.xp} XP</span>${t.stage.boss ? '<span class="chip">🎁 gear</span>' : ''}</div>
+    ${titheHtml()}
     <p class="muted center">${t.stage.boss ? 'A boss guards this floor. Beat it for a piece of gear.' : `Boss on floor ${nextBoss} guards a piece of gear.`} Losing costs nothing.</p>
     <div class="btns"><button data-act="close">Back</button><button class="primary" data-act="fight" data-id="tower">Climb</button></div>`);
 }
@@ -375,6 +387,7 @@ function openSettings(): void {
   openModal(`
     <h3>Settings</h3>
     <div class="item"><div><b>Sound</b></div><button class="sm ${s.sound ? 'primary' : ''}" data-act="sound">${s.sound ? 'On' : 'Off'}</button></div>
+    <div class="item"><div><b>Music</b><small>${s.sound ? '' : 'Needs sound on.'}</small></div><button class="sm ${s.music ? 'primary' : ''}" data-act="music">${s.music ? 'On' : 'Off'}</button></div>
     <div class="item"><div><b>Battles fought</b><small>${app.s.battles} fought, ${app.s.wins} won</small></div></div>
     <div class="item"><div><b>Start over</b><small>Erases your heroes, gear and progress.</small></div><button class="sm danger" data-act="reset">Reset</button></div>
     <p class="muted center">Emberdeep v0.1 · a first playable build</p>
@@ -384,7 +397,7 @@ function openSettings(): void {
 function showIntro(): void {
   openModal(`
     <div class="intro">
-      <div class="trio">${HEROES.map((d) => sprite(d.art)).join('')}</div>
+      <div class="trio">${HEROES.filter((d) => !d.recruit).map((d) => sprite(d.art)).join('')}</div>
       <h3>Emberdeep</h3>
       <p>Something has been knocking under the old keep. Last night the cellar floor split open and a warm red glow came up through the crack.</p>
       <p>Aldric, Wren and Mira are going down to find the Ember Gate and seal it.</p>
@@ -487,8 +500,13 @@ function battleSubtitle(b: Battle): string {
   return b.mod ? `${wave} · ${TRIAL_MODS[b.mod].name}` : `${wave} · Turn ${b.heroActions}/${parFor(b.stage)}`;
 }
 
+function battleMusic(b: Battle): void {
+  playMusic(b.enemies.some((e) => e.boss && e.hp > 0) ? 'boss' : 'battle');
+}
+
 function renderBattle(): void {
   const b = app.b!;
+  battleMusic(b);
   const st = b.stage;
   const s = app.s.settings;
   screenEl.innerHTML = `
@@ -672,6 +690,7 @@ async function play(evs: Ev[]): Promise<void> {
       case 'wave':
         await sleep(dur(300));
         refreshBattle();
+        battleMusic(b);
         banner(`Wave ${e.n + 1}`);
         playSfx('wave');
         await sleep(dur(900));
@@ -956,6 +975,17 @@ root.addEventListener('click', (ev) => {
     case 'leave': leaveBattle(); break;
     case 'trial': playSfx('tap'); openTrial(); break;
     case 'tower': playSfx('tap'); openTower(); break;
+    case 'tithe': {
+      const got = claimTithe(s, Date.now());
+      if (!got) break;
+      save(); playSfx('coin'); render();
+      openModal(`<div class="result win"><h3>Tithe collected</h3>
+        <div class="rewards"><span class="chip">${coin()}+${got}</span></div>
+        <p class="muted">The spire keeps paying while you're away, more the higher you climb.</p>
+        ${adButton(got)}
+        <div class="btns"><button data-act="tower">Spire</button><button class="primary" data-act="close">Done</button></div></div>`, 'center');
+      break;
+    }
     case 'ad': {
       const gold = Number(d.gold);
       el.setAttribute('disabled', '');
@@ -1011,6 +1041,7 @@ root.addEventListener('click', (ev) => {
     }
     case 'settings': openSettings(); break;
     case 'sound': s.settings.sound = !s.settings.sound; setSound(s.settings.sound); save(); openSettings(); break;
+    case 'music': s.settings.music = !s.settings.music; setMusic(s.settings.music); save(); openSettings(); break;
     case 'reset':
       if (!el.classList.contains('confirm')) { el.classList.add('confirm'); el.textContent = 'Really?'; break; }
       app.s = newState(); save(); closeModal(); app.tab = 'map'; render(); showIntro();
@@ -1038,5 +1069,6 @@ root.addEventListener('click', (ev) => {
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 
 setSound(app.s.settings.sound);
+setMusic(app.s.settings.music);
 render();
 if (!app.s.seenIntro) showIntro();

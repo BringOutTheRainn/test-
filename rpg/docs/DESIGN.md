@@ -94,6 +94,17 @@ heroes level up from the spire alone. Every fifth floor is a boss floor (Acolyte
 Troll, then round again) that also drops a piece of gear, and those are the natural walls. Foes come
 from deeper regions as the floors rise.
 
+**Spire tithe.** Once a floor is cleared, the spire pays `2 × best floor` gold an hour while you're
+away, filling for up to 12 hours. Collect it from the spire's window; the result offers the usual
+optional ad to double it.
+
+## Music and sound
+
+Everything is synthesized with Web Audio, so there are no audio files. Three looping chiptune songs
+(the map, ordinary fights, bosses) are generated from an eight-bar chord loop each: bass, arpeggio,
+drums and a seeded melody that repeats every loop. Music switches to the boss song when a boss is on
+the field, pauses when the app is hidden, and has its own toggle in Settings.
+
 ## Ads
 
 Optional only. After a win that paid gold, a "Watch an ad" button doubles the gold, three times a
@@ -108,9 +119,9 @@ rewarded video. No interstitials.
 3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
    Pyromancer "Wildfire"), shown on the party strip.
 4. ~~The Ember Spire: an endless climb with boss floors and a best-floor record.~~
-4b. Spire milestones every 10 floors (a bigger chest), and an idle "spire tithe" of gold per hour
-   based on the best floor, like AFK Arena's tower-linked AFK rewards.
-5. Music and more sound.
+4b. ~~Spire tithe: idle gold per hour from the best floor.~~ Still to do: milestone chests every 10
+   floors.
+5. ~~Music.~~
 6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
 7. Hero skill upgrades and a fifth depth.
 
@@ -151,3 +162,15 @@ raised in patches over time ([afk.guide patch notes](https://afk.guide/?p=12557)
 is cheap, lasting content. Built: the Ember Spire, unlocking after the first boss so most players
 see it, with boss floors that drop gear. Kept Emberdeep's identity: same intents, turn order and
 three-hero party. Next: spire milestone chests and idle gold tied to the best floor.
+
+**2026-10-16, morning.** AFK Arena builds its whole session rhythm around a resource chest on the
+main screen that fills while you're away, with timers sized so two check-ins a day empty it
+([Game Developer](https://www.gamedeveloper.com/design/flexible-time-session-design-in-afk-arena));
+offline gains cover gold, hero XP and some gear
+([BlueStacks](https://www.bluestacks.com/de/blog/game-guides/afk-arena/afka-beste-guides-und-tipps-sammlung-de.html)),
+and the idle angle carries its marketing ([Udonis](https://blog.udonis.co/mobile-marketing/mobile-games/afk-arena-analysis)).
+The usual caution is to cap idle gains so they never outpace active play. Built: the spire tithe,
+gold only, capped at 12 hours and scaled by the best floor, so climbing is what raises it; plus
+background music, the last missing piece of polish from the milestone list. Also fixed: the space
+game's merge deleted the shared `art/` folder, so Emberdeep now carries its own sprites in `rpg/art`.
+Next: Android build in CI (Capacitor), using the same approach the space game already ships with.

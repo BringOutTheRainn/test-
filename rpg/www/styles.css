@@ -327,3 +327,5 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .trial.tower small { color: #b6a6ff; }
 .trial.tower b em { font: 800 11px system-ui, sans-serif; color: var(--bad); letter-spacing: 0.08em; vertical-align: 3px; margin-left: 4px; font-style: normal; }
 .trial.tower.locked { background: var(--panel); border: 1px dashed var(--line); box-shadow: none; }
+.trial .tside small.tithe-ready { color: var(--gold); }
+.item.tithe { border-color: #6b5420; }

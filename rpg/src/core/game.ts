@@ -17,14 +17,14 @@ interface GameState {
   seed: number;
   battles: number;
   wins: number;
-  settings: { sound: boolean; fast: boolean; auto: boolean };
+  settings: { sound: boolean; music: boolean; fast: boolean; auto: boolean };
   seenIntro: boolean;
   /** Daily Trial progress: the last day it was won and the run of consecutive days. */
   trial: { lastWon: string; streak: number };
   /** Rewarded ads watched today. */
   ads: { day: string; used: number };
-  /** The Ember Spire: the highest floor cleared. */
-  tower: { best: number };
+  /** The Ember Spire: the highest floor cleared, and when its tithe was last collected (ms). */
+  tower: { best: number; since: number };
 }
 
 interface Rewards {
@@ -63,11 +63,11 @@ function newState(seed = Date.now()): GameState {
     seed: seed | 0,
     battles: 0,
     wins: 0,
-    settings: { sound: true, fast: false, auto: false },
+    settings: { sound: true, music: true, fast: false, auto: false },
     seenIntro: false,
     trial: { lastWon: '', streak: 0 },
     ads: { day: '', used: 0 },
-    tower: { best: 0 },
+    tower: { best: 0, since: 0 },
   };
 }
 
@@ -290,7 +290,7 @@ function beginTower(s: GameState): Battle {
   return startBattle(t.stage, partyUnits(s), nextSeed(s), t.region.id);
 }
 
-function finishTower(s: GameState, b: Battle): Rewards {
+function finishTower(s: GameState, b: Battle, now: number): Rewards {
   s.battles++;
   const floor = towerNext(s);
   const stage = b.stage;
@@ -300,6 +300,7 @@ function finishTower(s: GameState, b: Battle): Rewards {
   }
   s.wins++;
   s.tower.best = floor;
+  if (!s.tower.since) s.tower.since = now;
   s.gold += stage.gold;
   const levelUps = addXp(s, stage.xp);
   let item: ItemInst | null = null;
@@ -308,6 +309,30 @@ function finishTower(s: GameState, b: Battle): Rewards {
     item = giveItem(s, loot[Math.floor(gameRand(s) * loot.length)]);
   }
   return { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, tower: { floor, record: true } };
+}
+
+// The spire's tithe: gold that piles up while you're away, more the higher your best floor.
+const TITHE_CAP_HOURS = 12;
+
+function titheRate(best: number): number { return best * 2; }
+
+function titheReady(s: GameState, now: number): number {
+  if (!s.tower.best || !s.tower.since) return 0;
+  const hours = Math.min(TITHE_CAP_HOURS, Math.max(0, now - s.tower.since) / 3600e3);
+  return Math.floor(hours * titheRate(s.tower.best));
+}
+
+/** Hours until the tithe stops filling. */
+function titheFullIn(s: GameState, now: number): number {
+  return Math.max(0, TITHE_CAP_HOURS - (now - s.tower.since) / 3600e3);
+}
+
+function claimTithe(s: GameState, now: number): number {
+  const gold = titheReady(s, now);
+  if (gold <= 0) return 0;
+  s.gold += gold;
+  s.tower.since = now;
+  return gold;
 }
 
 // ---- Rewarded ads: optional, a few a day, double the gold from a win.
@@ -354,7 +379,7 @@ function rollLoot(s: GameState, stage: StageDef): string {
 /** Applies the outcome of a finished battle to the save and says what the player got. */
 function finishBattle(s: GameState, b: Battle, now = Date.now()): Rewards {
   if (b.stageId === 'trial') return finishTrial(s, b, dayKey(now));
-  if (b.stageId === 'tower') return finishTower(s, b);
+  if (b.stageId === 'tower') return finishTower(s, b, now);
   const stage = b.stage;
   s.battles++;
   if (b.over !== 'win') {

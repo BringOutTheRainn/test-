@@ -478,5 +478,32 @@ test('spire floors are fixed, rise in level, and every fifth holds a boss with l
 test('old saves get an empty spire record', () => {
   const raw = JSON.parse(g.serialize(g.newState(1)));
   delete raw.tower;
-  assert.deepEqual(g.deserialize(JSON.stringify(raw)).tower, { best: 0 });
+  assert.deepEqual(g.deserialize(JSON.stringify(raw)).tower, { best: 0, since: 0 });
+});
+
+test('the spire tithe fills by the hour from the best floor, up to a cap', () => {
+  const s = g.newState(1);
+  const h = 3600e3;
+  assert.equal(g.titheReady(s, 10 * h), 0, 'nothing before a floor is cleared');
+  s.stars['1-5'] = 3;
+  for (const x of s.heroes) x.level = 12;
+  gearUp(s, 4, 3);
+  const b = g.beginTower(s);
+  g.autoBattle(b);
+  g.finishBattle(s, b, 100 * h);
+  assert.equal(s.tower.since, 100 * h, 'the clock starts at the first clear');
+  assert.equal(g.titheReady(s, 103 * h), 3 * g.titheRate(1));
+  s.tower.best = 10;
+  assert.equal(g.titheReady(s, 200 * h), g.TITHE_CAP_HOURS * g.titheRate(10), 'capped');
+  const gold = s.gold;
+  const got = g.claimTithe(s, 200 * h);
+  assert.equal(s.gold, gold + got);
+  assert.equal(g.titheReady(s, 200 * h), 0);
+  assert.equal(g.claimTithe(s, 200 * h), 0);
+});
+
+test('old saves get music switched on', () => {
+  const raw = JSON.parse(g.serialize(g.newState(1)));
+  delete raw.settings.music;
+  assert.equal(g.deserialize(JSON.stringify(raw)).settings.music, true);
 });
