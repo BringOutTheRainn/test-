@@ -251,3 +251,42 @@ test('visitors leave Hearts that adopt permanent rare creatures', () => {
   g.adoptRare(s, 'turtle');
   assert.ok(Math.abs(g.offlineRate(s) - off - 0.1) < 1e-9);
 });
+
+test('Reef Requests: three goals at a time that pay Pearls and a Heart', () => {
+  const s = g.newState(0);
+  g.fillRequests(s, 0, fixed(0));
+  assert.equal(s.requests.list.length, 3);
+  assert.equal(new Set(s.requests.list.map((r) => r.kind)).size, 3, 'no two of the same kind');
+  s.requests.list.forEach((r) => assert.ok(g.requestText(r).length > 0));
+  // Force a taps request and finish it.
+  s.requests.list[0] = { kind: 'taps', target: 50, base: s.stats.taps };
+  assert.equal(g.claimRequest(s, 0, 0, fixed(0)), null, 'not done yet');
+  for (let i = 0; i < 50; i++) g.tap(s, i * 100);
+  assert.ok(g.requestDone(s, s.requests.list[0]));
+  assert.equal(g.requestsReady(s) >= 1, true);
+  const pearls = s.pearls;
+  const r = g.claimRequest(s, 0, 0, fixed(0));
+  assert.ok(r && r.pearls >= 25);
+  assert.equal(s.pearls, pearls + r.pearls);
+  assert.equal(s.hearts, 1);
+  assert.equal(s.requests.done, 1);
+  assert.equal(s.requests.list.length, 2, 'the slot waits');
+  g.fillRequests(s, 60e3, fixed(0));
+  assert.equal(s.requests.list.length, 2);
+  g.fillRequests(s, 300e3, fixed(0));
+  assert.equal(s.requests.list.length, 3, 'refilled after 5 minutes');
+  // A combo request is latched by tick even after the combo drains.
+  s.requests.list[1] = { kind: 'combo', target: 5, base: 0 };
+  s.combo = 6;
+  g.tick(s, 5000, 16, fixed(0.99));
+  s.combo = 0;
+  assert.ok(g.requestDone(s, s.requests.list[1]));
+  // Migration draws fresh requests; old saves load without them.
+  s.earnedLife = 1e12;
+  g.migrate(s, 0);
+  assert.equal(s.requests.list.length, 0);
+  assert.equal(s.requests.done, 1, 'count kept');
+  const old = JSON.parse(g.serialize(g.newState(0)));
+  delete old.requests;
+  assert.deepEqual(g.deserialize(JSON.stringify(old), 0).requests, { list: [], done: 0, nextAt: 0 });
+});

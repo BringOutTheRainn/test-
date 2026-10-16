@@ -28,6 +28,7 @@ class App {
   lastSave = Date.now();
   lastRefresh = 0;
   shownPearls = 0;
+  readyRequests = 0;
   newsIdx = 0;
   newsAt = 0;
   offline: { seconds: number; pearls: number } | null = null;
@@ -91,6 +92,7 @@ class App {
         <canvas id="scene"></canvas>
         <div id="depth-tag"></div>
         <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
+        <button id="requests" class="requests" aria-label="Reef Requests"></button>
         <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
         <button id="surge" class="surge" aria-label="Current Surge" hidden></button>
         <div id="boosts"></div>
@@ -118,6 +120,7 @@ class App {
     }));
     $('#gear').addEventListener('click', () => this.showSettings());
     $('#gift').addEventListener('click', () => this.showGift());
+    $('#requests').addEventListener('click', () => this.showRequests());
     $('#surge').addEventListener('click', () => this.showSurge());
     $('#geyser').addEventListener('click', () => {
       const now = Date.now();
@@ -182,6 +185,9 @@ class App {
       this.lastRefresh = t;
       const got = checkAchievements(this.s);
       got.forEach((a) => this.toast(`<b>Logbook:</b> ${a.name}`));
+      const ready = requestsReady(this.s);
+      if (ready > this.readyRequests) this.toast('<b>Reef Request done!</b> Tap 📜 to claim it.');
+      this.readyRequests = ready;
       this.refreshPanel();
     }
     requestAnimationFrame(() => this.frame());
@@ -210,6 +216,11 @@ class App {
     if (gift.innerHTML !== giftHtml) gift.innerHTML = giftHtml;
     gift.classList.toggle('ready', dailyReady(s));
     gift.classList.toggle('done', claimed);
+    const rq = $('#requests');
+    const ready = requestsReady(s);
+    const rqHtml = ready > 0 ? `📜 ${ready} request${ready > 1 ? 's' : ''} done!` : `📜 Requests ${s.requests.done}`;
+    if (rq.innerHTML !== rqHtml) rq.innerHTML = rqHtml;
+    rq.classList.toggle('ready', ready > 0);
     const su = $('#surge');
     su.hidden = !surgeUnlocked(s);
     const suHtml = surgesLeft(s) > 0 ? `<b>x2 ▶</b><small>${surgesLeft(s)} left today</small>` : '<b>x2</b><small>back tomorrow</small>';
@@ -516,6 +527,32 @@ class App {
       <p>Spend Pearls on creatures that gather for you, then <b>descend</b> into deeper, stranger waters.</p>
       <p>Watch the <b>tide</b>: high tide triples your taps. And catch any golden fish that swims by.</p>`,
     [['Dive in', () => {}]]);
+  }
+
+  showRequests() {
+    const s = this.s, sci = s.settings.sci;
+    fillRequests(s, Date.now(), Math.random);
+    const rows = s.requests.list.map((r, i) => {
+      const done = requestDone(s, r);
+      const prog = Math.min(r.target, Math.max(0, requestProgress(s, r)));
+      const shown = r.kind === 'combo' ? '' : `<small>${fmt(prog, sci)} / ${fmt(r.target, sci)}</small>`;
+      return `<div class="req${done ? ' done' : ''}"><div class="rt"><b>${requestText(r)}</b>${shown}
+        <div class="bar"><i style="width:${done ? 100 : (prog / r.target) * 100}%"></i></div></div>
+        ${done ? `<button class="act claim" data-i="${i}">Claim</button>` : '<span class="rw">❤ +1</span>'}</div>`;
+    }).join('');
+    this.modal(`<h2>Reef Requests</h2><p>Your neighbours need a hand. Each request pays about ${fmt(requestReward(s), sci)} Pearls and a Heart ❤. New ones come in five minutes after you claim.</p>
+      <div class="reqs">${rows}${s.requests.list.length < 3 ? `<div class="req wait">New requests arrive in ${fmtTime(Math.max(0, s.requests.nextAt - Date.now()) / 1000)}.</div>` : ''}</div>
+      <p class="note">Finished so far: ${s.requests.done}</p>`, [['Close', () => {}]]);
+    document.querySelectorAll<HTMLElement>('#modal .claim').forEach((b) => b.addEventListener('click', () => {
+      const r = claimRequest(s, Number(b.dataset.i), Date.now(), Math.random);
+      if (!r) return;
+      if (s.settings.sound) playChime();
+      this.scene.announce('Request done', '#ffd84a');
+      this.toast(`<b>Reef Request:</b> +${fmt(r.pearls, sci)} Pearls and +1 ❤.`);
+      this.readyRequests = requestsReady(s);
+      this.save();
+      this.showRequests();
+    }));
   }
 
   showGift() {

@@ -1,7 +1,8 @@
 name: Fathom
 
 # Tests the deep sea clicker and builds an installable debug APK
-# ("fathom-apk"). Download it from the run's Summary page.
+# ("fathom-apk") and a Play Store bundle ("fathom-aab", signed when the
+# FATHOM_KEYSTORE_* secrets are set). Download them from the run's Summary page.
 on:
   push:
     paths: ["deep-sea/**", ".github/workflows/fathom.yml"]
@@ -45,9 +46,19 @@ jobs:
         env:
           VERSION_CODE: ${{ github.run_number }}
           ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+          BUILD_BUNDLE: "1"
+          FATHOM_KEYSTORE_B64: ${{ secrets.FATHOM_KEYSTORE_B64 }}
+          FATHOM_KEYSTORE_PASSWORD: ${{ secrets.FATHOM_KEYSTORE_PASSWORD }}
+          FATHOM_KEY_ALIAS: ${{ secrets.FATHOM_KEY_ALIAS }}
+          FATHOM_KEY_PASSWORD: ${{ secrets.FATHOM_KEY_PASSWORD }}
         run: bash tools/android.sh
       - uses: actions/upload-artifact@v4
         with:
           name: fathom-apk
           path: deep-sea/build/fathom.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fathom-aab
+          path: deep-sea/build/*.aab
           if-no-files-found: error

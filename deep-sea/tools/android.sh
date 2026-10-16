@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Creates the Capacitor Android project (if needed), applies the icon, splash,
-# portrait lock and permissions, and builds a debug APK at build/fathom.apk.
+# portrait lock and permissions, and builds a debug APK at build/fathom.apk
+# (plus a Play Store bundle with BUILD_BUNDLE=1).
 # Needs: npm install done, www/game.js built, JDK 21 and the Android SDK.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -41,3 +42,21 @@ sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/; s/versionName \"[^\"]*\
 mkdir -p build
 cp android/app/build/outputs/apk/debug/app-debug.apk build/fathom.apk
 ls -la build/fathom.apk
+
+# Release bundle for Google Play. Signed with the upload key when the
+# FATHOM_KEYSTORE_B64 secret (a base64 .jks) and its passwords are set,
+# otherwise left unsigned so CI still proves the release build works.
+if [ "${BUILD_BUNDLE:-0}" = "1" ]; then
+  (cd android && ./gradlew bundleRelease --no-daemon)
+  AAB=android/app/build/outputs/bundle/release/app-release.aab
+  if [ -n "${FATHOM_KEYSTORE_B64:-}" ]; then
+    echo "$FATHOM_KEYSTORE_B64" | base64 -d > build/upload.jks
+    jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore build/upload.jks \
+      -storepass "$FATHOM_KEYSTORE_PASSWORD" -keypass "${FATHOM_KEY_PASSWORD:-$FATHOM_KEYSTORE_PASSWORD}" \
+      -signedjar build/fathom.aab "$AAB" "${FATHOM_KEY_ALIAS:-upload}"
+    rm -f build/upload.jks
+  else
+    cp "$AAB" build/fathom-unsigned.aab
+  fi
+  ls -la build/*.aab
+fi

@@ -32,7 +32,11 @@ interface State {
   ads: { day: string; surges: number; giftDoubled: string; watched: number };
   hearts: number;
   rares: Record<string, boolean>;
+  requests: { list: ReefRequest[]; done: number; nextAt: number };
 }
+
+// Reef Requests: three short goals at a time, each paying Pearls and a Heart.
+interface ReefRequest { kind: 'taps' | 'fish' | 'own' | 'earn' | 'geyser' | 'combo' | 'descend'; target: number; base: number; gen?: number; got?: boolean; }
 
 // Daily Tide Gift: earned by playing (taps today), not just by opening the app.
 interface Daily { day: string; taps: number; claimedDay: string; streak: number; }
@@ -66,6 +70,7 @@ function newState(now: number): State {
     ads: { day: '', surges: 0, giftDoubled: '', watched: 0 },
     hearts: 0,
     rares: {},
+    requests: { list: [], done: 0, nextAt: 0 },
   };
 }
 
@@ -410,6 +415,86 @@ function rewardGift(s: State): number {
   return pearls;
 }
 
+// ---------- Reef Requests (missions) ----------
+
+const REQUEST_SLOTS = 3;
+const REQUEST_COOLDOWN_MS = 5 * 60e3; // after a claim, new requests come in after this
+
+// Two significant digits, so targets read as round numbers.
+function roundNice(n: number): number {
+  if (n < 10) return Math.ceil(n);
+  const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
+  return Math.ceil(n / p) * p;
+}
+
+function requestProgress(s: State, r: ReefRequest): number {
+  switch (r.kind) {
+    case 'taps': return s.stats.taps - r.base;
+    case 'fish': return s.stats.fish + s.stats.whales - r.base;
+    case 'own': return s.owned[r.gen!] || 0;
+    case 'earn': return s.earnedRun - r.base;
+    case 'geyser': return s.geyser.uses - r.base;
+    case 'combo': return s.combo;
+    case 'descend': return s.zone;
+  }
+}
+
+const requestDone = (s: State, r: ReefRequest) => !!r.got || requestProgress(s, r) >= r.target;
+const requestsReady = (s: State) => s.requests.list.filter((r) => requestDone(s, r)).length;
+
+function makeRequest(s: State, now: number, rand: () => number, taken: string[]): ReefRequest {
+  const lvl = Math.min(s.requests.done, 10);
+  const options: ReefRequest[] = [];
+  options.push({ kind: 'taps', target: 50 + 25 * lvl, base: s.stats.taps });
+  options.push({ kind: 'earn', target: roundNice(Math.max(300, rawPPS(s) * 600 + tapValue(s, now) * 150)), base: s.earnedRun });
+  // Own more of one of the last few creatures you have found.
+  const found = GENS.map((_, i) => i).filter((i) => genUnlocked(s, i)).slice(-3);
+  const gi = found[Math.floor(rand() * found.length)];
+  const owned = s.owned[gi];
+  options.push({ kind: 'own', gen: gi, target: owned === 0 ? 1 : Math.ceil((owned + 1) / 5) * 5, base: 0 });
+  if (s.earnedRun >= 50) options.push({ kind: 'fish', target: s.requests.done >= 8 ? 2 : 1, base: s.stats.fish + s.stats.whales });
+  if (geyserUnlocked(s)) options.push({ kind: 'geyser', target: 1, base: s.geyser.uses });
+  if (s.stats.taps >= 30) options.push({ kind: 'combo', target: Math.min(comboCap(s), 15 + 5 * Math.min(lvl, 5)), base: 0 });
+  if (s.zone < ZONES.length - 1 && s.earnedRun >= descendCost(s) * 0.1) options.push({ kind: 'descend', target: s.zone + 1, base: 0 });
+  const free = options.filter((o) => !taken.includes(o.kind) && requestProgress(s, o) < o.target);
+  const pool = free.length ? free : options;
+  return pool[Math.floor(rand() * pool.length)];
+}
+
+function fillRequests(s: State, now: number, rand: () => number) {
+  if (now < s.requests.nextAt) return;
+  while (s.requests.list.length < REQUEST_SLOTS) {
+    s.requests.list.push(makeRequest(s, now, rand, s.requests.list.map((r) => r.kind)));
+  }
+}
+
+// Worth a minute of production, with a floor that grows as you finish more.
+const requestReward = (s: State) => Math.max(rawPPS(s) * 60, 25 * (s.requests.done + 1));
+
+function claimRequest(s: State, index: number, now: number, rand: () => number): { pearls: number; hearts: number } | null {
+  const r = s.requests.list[index];
+  if (!r || !requestDone(s, r)) return null;
+  const pearls = requestReward(s);
+  earn(s, pearls);
+  s.hearts += 1;
+  s.requests.done += 1;
+  s.requests.list.splice(index, 1);
+  s.requests.nextAt = now + REQUEST_COOLDOWN_MS;
+  return { pearls, hearts: 1 };
+}
+
+function requestText(r: ReefRequest): string {
+  switch (r.kind) {
+    case 'taps': return `Tap the clam ${fmt(r.target)} times`;
+    case 'fish': return r.target > 1 ? `Catch ${r.target} visitors` : 'Catch a visitor';
+    case 'own': return `Own ${r.target} ${GENS[r.gen!].name}${r.target > 1 ? 's' : ''}`;
+    case 'earn': return `Gather ${fmt(r.target)} Pearls`;
+    case 'geyser': return 'Erupt the geyser';
+    case 'combo': return `Reach a x${(1 + r.target * 0.02).toFixed(2)} combo`;
+    case 'descend': return `Descend to the ${ZONES[r.target].name}`;
+  }
+}
+
 // ---------- Tick ----------
 
 // Returns the pearls from geyser auto-taps this tick (so the scene can show them).
@@ -428,6 +513,8 @@ function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTa
   s.boosts = s.boosts.filter((b) => b.until > now);
   if (s.visitor && s.visitor.until <= now) s.visitor = null;
   if (!s.visitor && now >= s.nextVisitorAt) spawnVisitor(s, now, rand);
+  fillRequests(s, now, rand);
+  s.requests.list.forEach((r) => { if (!r.got && requestProgress(s, r) >= r.target) r.got = true; });
   s.lastSeen = now;
   return { autoTaps, autoPearls };
 }
@@ -457,6 +544,7 @@ function checkAchievements(s: State): AchDef[] {
   const rares = Object.keys(s.rares).length;
   if (rares >= 1) give('rare_1');
   if (rares >= RARES.length) give('rare_6');
+  [10, 50].forEach((n) => { if (s.requests.done >= n) give(`req_${n}`); });
   return got;
 }
 
@@ -494,6 +582,8 @@ function migrate(s: State, now: number): number {
   s.boosts = [];
   s.visitor = null;
   s.nextVisitorAt = now + 60e3;
+  s.requests.list = [];
+  s.requests.nextAt = 0;
   s.stats.migrations += 1;
   s.stats.tapsRun = 0;
   s.stats.runStartedAt = now;
@@ -556,6 +646,7 @@ function deserialize(text: string, now: number): State {
   s.ads = Object.assign(newState(now).ads, data.ads || {});
   s.rares = data.rares || {};
   s.hearts = data.hearts || 0;
+  s.requests = Object.assign(newState(now).requests, data.requests || {});
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

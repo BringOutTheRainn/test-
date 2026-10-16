@@ -9,6 +9,8 @@ const hours = Number(process.argv[2] ?? 3);
 const tps = Number(process.argv[3] ?? 4);
 let seed = 7;
 const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+let seed2 = 11;
+const rand2 = () => ((seed2 = (seed2 * 16807) % 2147483647) / 2147483647);
 
 const s = g.newState(0);
 s.settings.sound = false;
@@ -18,9 +20,10 @@ const step = 250;
 for (let t = 0; t < hours * 3600e3; t += step) {
   // Taps, spread over the second.
   if ((t / step) % Math.max(1, Math.round(1000 / step / tps)) === 0) for (let k = 0; k < Math.max(1, tps * step / 1000); k++) g.tap(s, t);
-  g.tick(s, t, step, rand);
+  g.tick(s, t, step, rand); g.fillRequests(s, t, rand2);
   if (s.visitor && t - s.visitor.spawnedAt > 3000) g.catchVisitor(s, t, rand);
   g.startGeyser(s, t);
+  for (let i = 0; i < s.requests.list.length; i++) if (g.requestDone(s, s.requests.list[i])) g.claimRequest(s, i, t, rand2);
   if (t % 1000 !== 0) continue;
   for (const u of g.visibleUpgrades(s)) if (s.pearls >= u.cost) g.buyUpgrade(s, u.id);
   // Descend when the cost is under a few minutes of production or the next generator is the zone's.

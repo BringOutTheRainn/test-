@@ -137,12 +137,24 @@ reef and stay forever, through migrations: Moon Jelly (3, combo cap +10), Pearl 
 Glass Squid (10, geyser recharges 20% faster), Ghost Ray (15, visitors 10% more often), Golden Turtle (25,
 offline +10%), Leafy Sea Dragon (40, tap power +25%). Listed at the top of the Logbook tab.
 
+## Reef Requests (missions)
+
+Three short goals at a time, shown by the 📜 chip under the gift chip, which glows when one is done: tap the clam
+N times, gather N Pearls, own N of a creature, catch a visitor, reach a combo, erupt the geyser or descend.
+Each one pays about a minute of production (at least 25 Pearls per request finished so far) and a Heart, so
+they also feed the rare creature collection. After a claim, new requests come in five minutes later, which
+keeps them a bonus rather than the main income. Targets grow with the number finished, requests are redrawn
+after a migration, and two Logbook entries count them (10 and 50).
+
 ## Android build
 
 `.github/workflows/fathom.yml` runs the rule tests and pacing simulation and builds an installable debug APK
 (artifact `fathom-apk`) on every change under `deep-sea/`. Capacitor 7 with AdMob (Google's test ids until
 release), App (back button closes popups, then minimises), Haptics and Splash Screen. Icons and splash are
 rendered from SVG by `tools/make_icons.mjs`. Package id `com.bringouttherainn.fathom`, portrait only.
+The same job builds the Play Store bundle (artifact `fathom-aab`), signed with the upload key when the
+`FATHOM_KEYSTORE_*` secrets are set. The listing text, data safety answers and release checklist are in
+`docs/store-listing.md`; the privacy policy is `docs/privacy.md`.
 
 ## Saving and offline
 
@@ -158,10 +170,11 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 ## Milestones
 
 1. **Playable first version** (this build): everything above in the browser, tests, screenshots.
-2. **Mobile release**: ~~Capacitor Android build in CI, icon, splash, back button, haptics~~ (built);
-   still to do: signed Play bundle, store listing, real AdMob ids, privacy policy.
+2. **Mobile release**: ~~Capacitor Android build in CI, icon, splash, back button, haptics~~ (built),
+   ~~Play bundle in CI, store listing, privacy policy~~ (built); still to do: the upload key secrets, real
+   AdMob ids, a feature graphic, and the Play Console setup (steps in `docs/store-listing.md`).
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
-   ~~Hearts and rare creatures~~ (built), missions, reminders.
+   ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), reminders.
 4. **Depth content**: an expedition submarine, a reef garden minigame, weekend events.
 
 ## Research log
@@ -202,3 +215,16 @@ the Stardust Empire Android pipeline as the template for the phone build.
   Hearts and rare creatures.** Six permanent adoptions with small bonuses, each visible in the scene, which
   also gives catching visitors a lasting purpose.
 - **Next:** a signed Play Store bundle and listing, then missions (short rotating goals).
+
+**Run 4 (Oct 16, morning).** Sources: TouchTapPlay's Egg, Inc. guide (three evolving missions that ease new
+players in), PocketGamer.biz on Egg, Inc. as the idle-game gold standard (small side tasks keep a simple core
+engaging), AdVenture Capitalist's 7.1 notes (task-based goals) and Pocket Gamer's review (rewards too small
+for progress felt dull).
+- Egg, Inc. always shows three missions that point the player at the next useful step. **Built: Reef
+  Requests.** Three rotating goals drawn from what the player can do right now, paying Pearls and a Heart.
+  The first pacing run showed instant claims cut the time to 1T by about a fifth, so rewards are a minute of
+  production and new requests wait five minutes after a claim; the simulation is back to about 104 minutes.
+- **Built: the Play Store release kit.** CI now also builds the release bundle (signed once the upload key
+  secrets exist), with a ready listing, data safety answers, privacy policy and a release checklist.
+- **Next:** gentle reminders (a local notification when the gift or geyser is ready), then a weekend event.
+

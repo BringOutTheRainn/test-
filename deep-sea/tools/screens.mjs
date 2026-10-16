@@ -78,6 +78,17 @@ await shot('15_ad_standin');
 await page.waitForTimeout(5000);
 await shot('16_surge_active');
 
+// Reef Requests: one finished and ready to claim, then claimed.
+await game(() => { const s = window.__fathom.s; s.requests.list[0].got = true; });
+await page.waitForTimeout(400);
+await shot('17_request_ready');
+await page.click('#requests');
+await shot('18_requests');
+await page.click('#modal .claim');
+await page.waitForTimeout(300);
+await shot('19_request_claimed');
+await page.click('#modal .btns .act');
+
 await page.click('#tabs button[data-tab="depths"]');
 await shot('04_depths');
 
