@@ -4,9 +4,9 @@ name: Emberdeep tests
 on:
   push:
     branches: [main]
-    paths: ['rpg/**', 'art/**', '.github/workflows/rpg.yml']
+    paths: ['rpg/**', '.github/workflows/rpg.yml']
   pull_request:
-    paths: ['rpg/**', 'art/**', '.github/workflows/rpg.yml']
+    paths: ['rpg/**', '.github/workflows/rpg.yml']
 
 jobs:
   test:

@@ -56,9 +56,12 @@ Recruits join at the party's lowest level, so a new hero is useful at once (AFK 
 Crystal solves the same "new hero is level 1" problem). Benched heroes still get half the XP. Tap a
 party slot (on the Heroes tab, or in a stage's window) to swap a hero in. Swords also fit the
 Duelist; maces and staves fit the Druid and Pyromancer; the Silk Cloak fits everyone but the
-Knight. Sprites come from `art/raw/heroes2` (ponytail sword, curly wooden staff, ponytail sun staff,
-recoloured red) via `tools/pixelize.py --size 64`, and are kept in `rpg/art/heroes` so the shared
-`art/` folder stays untouched.
+Knight. Sprites come from the project's `art/raw/heroes2` (ponytail sword, curly wooden staff,
+ponytail sun staff, recoloured red) via `tools/pixelize.py --size 64`.
+
+All of Emberdeep's sprites now live in `rpg/art/`. The repo's shared `art/` folder was removed when
+the city builder was replaced by Stardust Empire, so the sprites Emberdeep uses were copied from
+before that change, along with `palette.hex`, `sources.json` and `pixelize.py`.
 
 ## Balance
 

@@ -2,7 +2,7 @@
 // www/game.js (the game, with its pixel art inlined) and build/core.js (rules only, for tests and tools).
 // The sources are plain scripts that share one global scope, so no bundler is needed.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -10,15 +10,9 @@ let tsc;
 try { tsc = require.resolve('typescript/bin/tsc'); } catch { tsc = '/opt/node22/lib/node_modules/typescript/bin/tsc'; }
 execFileSync(process.execPath, [tsc, '-p', 'tsconfig.json'], { stdio: 'inherit' });
 
-// The sprites are shared with the Godot city builder in ../art.
+// The sprites live in ./art (copied from the old shared art folder, plus Emberdeep's own heroes).
 const art = {};
 for (const dir of ['heroes', 'enemies', 'items', 'backgrounds', 'resources']) {
-  for (const f of readdirSync(`../art/${dir}`).filter((n) => n.endsWith('.png')).sort()) {
-    art[`${dir}/${f.slice(0, -4)}`] = 'data:image/png;base64,' + readFileSync(`../art/${dir}/${f}`).toString('base64');
-  }
-}
-// Emberdeep's own sprites (the recruitable heroes) live in ./art and take the same keys.
-for (const dir of existsSync('art') ? readdirSync('art') : []) {
   for (const f of readdirSync(`art/${dir}`).filter((n) => n.endsWith('.png')).sort()) {
     art[`${dir}/${f.slice(0, -4)}`] = 'data:image/png;base64,' + readFileSync(`art/${dir}/${f}`).toString('base64');
   }

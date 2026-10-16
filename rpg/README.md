@@ -3,7 +3,7 @@
 A turn-based dungeon RPG for phones. A party of three heroes, picked from six, fights its way down through
 four depths under an old keep to seal the Ember Gate. The design is in [docs/DESIGN.md](docs/DESIGN.md).
 
-It reuses the pixel art in `../art` (heroes, enemies, items and dungeon backgrounds) from the city builder.
+Its pixel art (heroes, enemies, items and dungeon backgrounds) lives in `art/`, first drawn for the old city builder.
 
 ## Running it
 
