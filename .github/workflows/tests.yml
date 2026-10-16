@@ -6,28 +6,15 @@ on:
   pull_request:
 
 jobs:
-  godot-tests:
+  test:
     runs-on: ubuntu-latest
-    env:
-      GODOT_VERSION: 4.3-stable
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download Godot
-        run: |
-          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
-          unzip -q godot.zip
-          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
-          chmod +x godot
-
-      - name: Import project
-        run: ./godot --headless --import || true
-
-      - name: Logic tests
-        run: ./godot --headless --script res://tests/run_tests.gd
-
-      - name: First session playthrough
-        run: ./godot --headless --script res://tests/first_session.gd
-
-      - name: UI smoke test
-        run: ./godot --headless --script res://tests/ui_smoke.gd
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Build and run the rule tests
+        run: npm test
+      - name: Pacing simulation (three hours of play)
+        run: node tools/simulate.mjs 3 3

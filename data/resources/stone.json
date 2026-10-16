@@ -1,8 +1,0 @@
-{
-  "id": "stone",
-  "name": "Stone",
-  "color": "#9e9e9e",
-  "hud": true,
-  "order": 3,
-  "base_cap": 1000
-}

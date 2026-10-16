@@ -1,8 +1,0 @@
-{
-  "id": "gold",
-  "name": "Gold",
-  "color": "#f2c94c",
-  "hud": true,
-  "order": 1,
-  "base_cap": 1000
-}

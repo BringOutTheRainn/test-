@@ -1,10 +1,8 @@
-# Godot
-.godot/
-*.import
-export.cfg
-export_credentials.cfg
-android/
+node_modules/
+www/js/
+/android/
+/ios/
+/build/
 *.apk
 *.aab
-*.ipa
-build/
+.DS_Store

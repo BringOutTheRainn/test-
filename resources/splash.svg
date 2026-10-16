@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
+  <defs><radialGradient id="bg" cx="0.5" cy="0.45" r="0.6"><stop offset="0" stop-color="#22145a"/><stop offset="1" stop-color="#05060f"/></radialGradient></defs>
+  <rect width="2732" height="2732" fill="url(#bg)"/>
+  <image href="ICON" x="1066" y="966" width="600" height="600"/>
+  <text x="1366" y="1720" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="110" letter-spacing="12" fill="#e9edff">STARDUST EMPIRE</text>
+</svg>
