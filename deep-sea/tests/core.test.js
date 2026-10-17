@@ -331,3 +331,36 @@ test('reminders plan the geyser, gift, spawning and full nets, never too soon', 
   const before = g.nextSpawningAt(now) - 86400e3;
   assert.ok(g.reminderPlan(s, before, evening, '2024-04-24').some((r) => r.id === 3));
 });
+
+test('the expedition submarine dives in real time and brings back Pearls and Hearts', () => {
+  const s = g.newState(0);
+  s.owned[1] = 10;
+  assert.equal(g.launchDive(s, 0, 0), false, 'locked in the shallows');
+  s.zone = 1;
+  assert.ok(g.launchDive(s, 1, 0));
+  assert.equal(g.launchDive(s, 0, 0), false, 'one dive at a time');
+  assert.equal(g.collectDive(s, 30 * 60e3), null, 'still diving');
+  const expect = g.diveReward(s, 1);
+  assert.ok(Math.abs(expect.pearls - g.rawPPS(s) * 3600 * 0.2) < 1e-6 || expect.pearls === 50);
+  const r = g.collectDive(s, 60 * 60e3);
+  assert.deepEqual(r, expect);
+  assert.equal(s.hearts, 2);
+  assert.equal(s.sub.dives, 1);
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'dive_1'));
+  // An ad can bring it back early, three times a day, and not in the last five minutes.
+  g.launchDive(s, 2, 0);
+  assert.ok(g.speedUpDive(s, 60e3, '2026-10-17'));
+  assert.ok(g.subBack(s, 60e3));
+  g.collectDive(s, 60e3);
+  g.launchDive(s, 0, 0);
+  assert.equal(g.speedUpDive(s, 11 * 60e3, '2026-10-17'), false, 'under five minutes left');
+  g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0); g.launchDive(s, 0, 0); g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0);
+  g.launchDive(s, 0, 0);
+  assert.equal(g.subSpeedsLeft(s, '2026-10-17'), 0);
+  assert.equal(g.speedUpDive(s, 0, '2026-10-17'), false, 'three a day');
+  assert.equal(g.subSpeedsLeft(s, '2026-10-18'), 3);
+  // A save from before the submarine loads with it docked.
+  const old = JSON.parse(g.serialize(g.newState(0)));
+  delete old.sub;
+  assert.equal(g.deserialize(JSON.stringify(old), 0).sub.dive, -1);
+});

@@ -32,7 +32,7 @@ function hideSplash() {
 }
 
 // Local notifications (phone only): a few gentle reminders while the app is closed.
-const REMINDER_IDS = [1, 2, 3, 4];
+const REMINDER_IDS = [1, 2, 3, 4, 5];
 
 function askReminderPermission() {
   const ln = capPlugin('LocalNotifications');

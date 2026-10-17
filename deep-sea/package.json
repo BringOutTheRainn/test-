@@ -10,7 +10,8 @@
     "screens": "node tools/build.mjs && node tools/screens.mjs screens",
     "single": "node tools/build.mjs && node tools/single.mjs",
     "icons": "node tools/make_icons.mjs",
-    "android": "node tools/build.mjs && bash tools/android.sh"
+    "android": "node tools/build.mjs && bash tools/android.sh",
+    "feature": "node tools/screens.mjs build/screens && node tools/feature_graphic.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",

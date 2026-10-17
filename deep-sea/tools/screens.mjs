@@ -91,6 +91,14 @@ await page.click('#modal .btns .act');
 
 await page.click('#tabs button[data-tab="depths"]');
 await shot('04_depths');
+// Expedition submarine: launch a trench dive, then bring it home.
+await page.click('#panel .act.dive >> nth=1');
+await page.waitForTimeout(300);
+await shot('21_sub_diving');
+await game(() => { window.__fathom.s.sub.until = Date.now() - 1000; });
+await page.waitForTimeout(600);
+await shot('22_sub_back');
+await page.click('#panel .act.dive');
 
 // Late game in the Midnight Trench and deeper.
 await game(() => {

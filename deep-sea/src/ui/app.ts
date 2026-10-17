@@ -111,6 +111,7 @@ class App {
         <div id="depth-tag"></div>
         <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
         <button id="requests" class="requests" aria-label="Reef Requests"></button>
+        <button id="subchip" class="subchip" aria-label="Submarine" hidden></button>
         <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
         <button id="surge" class="surge" aria-label="Current Surge" hidden></button>
         <div id="boosts"></div>
@@ -139,6 +140,7 @@ class App {
     $('#gear').addEventListener('click', () => this.showSettings());
     $('#gift').addEventListener('click', () => this.showGift());
     $('#requests').addEventListener('click', () => this.showRequests());
+    $('#subchip').addEventListener('click', () => { this.tab = 'depths'; this.panelKey = ''; this.renderPanel(); });
     $('#surge').addEventListener('click', () => this.showSurge());
     $('#geyser').addEventListener('click', () => {
       const now = Date.now();
@@ -239,6 +241,12 @@ class App {
     const rqHtml = ready > 0 ? `📜 ${ready} request${ready > 1 ? 's' : ''} done!` : `📜 Requests ${s.requests.done}`;
     if (rq.innerHTML !== rqHtml) rq.innerHTML = rqHtml;
     rq.classList.toggle('ready', ready > 0);
+    const sc = $('#subchip');
+    sc.hidden = !subUnlocked(s);
+    const back = subBack(s, now);
+    const scHtml = back ? '🚢 Sub is back!' : s.sub.dive >= 0 ? `🚢 Diving ${fmtTime((s.sub.until - now) / 1000)}` : '🚢 Sub docked';
+    if (sc.innerHTML !== scHtml) sc.innerHTML = scHtml;
+    sc.classList.toggle('ready', back);
     const su = $('#surge');
     su.hidden = !surgeUnlocked(s);
     const suHtml = surgesLeft(s) > 0 ? `<b>x2 ▶</b><small>${surgesLeft(s)} left today</small>` : '<b>x2</b><small>back tomorrow</small>';
@@ -358,7 +366,15 @@ class App {
         b.classList.toggle('poor', s.pearls < u.cost);
       });
     } else if (this.tab === 'depths' || this.tab === 'migrate') {
-      const key = `${this.tab}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
+      const now = Date.now();
+      const subKey = s.sub.dive < 0 ? 'docked' : subBack(s, now) ? 'back' : `diving${s.sub.until - now >= 5 * 60e3}`;
+      const left = document.querySelector<HTMLElement>('#panel .subleft');
+      if (left && s.sub.dive >= 0 && !subBack(s, now)) {
+        left.textContent = fmtTime((s.sub.until - now) / 1000) + ' left';
+        const bar = document.querySelector<HTMLElement>('#panel .subcard .bar i');
+        if (bar) bar.style.width = `${Math.min(100, ((now - s.sub.startedAt) / (s.sub.until - s.sub.startedAt || 1)) * 100)}%`;
+      }
+      const key = `${this.tab}|${subKey}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'logbook') {
       const key = `logbook|${s.hearts}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
@@ -369,8 +385,61 @@ class App {
     }
   }
 
+  renderSub(p: HTMLElement) {
+    const s = this.s, now = Date.now();
+    const card = el('div', 'subcard');
+    if (!subUnlocked(s)) {
+      card.innerHTML = '<b>🚢 Expedition submarine</b><small>Reach the Twilight Reef to launch dives.</small>';
+      p.appendChild(card);
+      return;
+    }
+    if (s.sub.dive < 0) {
+      card.innerHTML = '<b>🚢 Expedition submarine</b><small>Send the sub on a dive. It keeps going while you are away and brings back Pearls and Hearts.</small>';
+      const row = el('div', 'dives');
+      DIVES.forEach((d, i) => {
+        const r = diveReward(s, i);
+        const len = d.ms < 3600e3 ? `${d.ms / 60e3} min` : `${d.ms / 3600e3} hour${d.ms > 3600e3 ? 's' : ''}`;
+        const b = el('button', 'act dive', `${d.name}<span>${len}</span><span>${fmt(r.pearls)} · ${r.hearts} ❤</span>`);
+        b.addEventListener('click', () => {
+          if (launchDive(s, i, Date.now())) { if (s.settings.sound) playBubble(0.5); this.save(); this.panelKey = ''; this.renderPanel(); }
+        });
+        row.appendChild(b);
+      });
+      card.appendChild(row);
+    } else {
+      const d = DIVES[s.sub.dive];
+      const back = subBack(s, now);
+      const pct = Math.min(100, ((now - s.sub.startedAt) / (s.sub.until - s.sub.startedAt || 1)) * 100);
+      card.innerHTML = `<b>🚢 ${d.name}</b><small class="subleft">${back ? 'Back at the colony!' : fmtTime((s.sub.until - now) / 1000) + ' left'}</small>
+        <div class="bar"><i style="width:${back ? 100 : pct}%"></i></div>`;
+      const row = el('div', 'dives');
+      if (back) {
+        const r = diveReward(s, s.sub.dive);
+        const b = el('button', 'act dive', `Collect<span>${fmt(r.pearls)} + ${r.hearts} ❤</span>`);
+        b.addEventListener('click', () => {
+          const got = collectDive(s, Date.now());
+          if (!got) return;
+          if (s.settings.sound) playChime();
+          this.scene.announce('Sub is back', '#ffd84a');
+          this.toast(`<b>Submarine:</b> +${fmt(got.pearls)} Pearls and +${got.hearts} ❤.`);
+          this.save(); this.panelKey = ''; this.renderPanel();
+        });
+        row.appendChild(b);
+      } else if (s.sub.until - now >= 5 * 60e3 && subSpeedsLeft(s, localDay(now)) > 0) {
+        const b = el('button', 'act dive ghost', `▶ Ad: bring it back now<span>${subSpeedsLeft(s, localDay(now))} left today</span>`);
+        b.addEventListener('click', async () => {
+          if (await showRewardedAd() && speedUpDive(s, Date.now(), localDay(Date.now()))) { this.save(); this.panelKey = ''; this.renderPanel(); }
+        });
+        row.appendChild(b);
+      }
+      card.appendChild(row);
+    }
+    p.appendChild(card);
+  }
+
   renderDepths(p: HTMLElement) {
     const s = this.s;
+    this.renderSub(p);
     p.appendChild(el('p', 'lead', 'Each zone you reach unlocks new creatures and multiplies all production by x1.5 for this migration.'));
     const list = el('div', 'zones');
     ZONES.forEach((z, i) => {

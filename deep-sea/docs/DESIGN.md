@@ -153,9 +153,18 @@ full moon (moon age 16.5 to 21 days, about four days a month) the water fills wi
 visitors come twice as often and every catch leaves double Hearts. A pill at the top right counts down the
 nights, Stats shows when the next spawning starts, and the Logbook has "Spawning Night" for a catch during one.
 
+## Expedition submarine
+
+Unlocks in the Twilight Reef (or after a migration). One submarine, sent from the top of the Depths tab on a Reef
+dive (15 min, 1 Heart), a Trench dive (1 hour, 2 Hearts) or an Abyss expedition (4 hours, 5 Hearts). It keeps
+diving while the app is closed and brings back Pearls worth 20% of the production during the dive. A 🚢 chip in
+the scene shows the countdown and glows when it is back; a reminder fires when it docks. A rewarded ad can bring it
+straight back (only with 5+ minutes left, 3 a day). Logbook: first dive and 25 dives.
+
 ## Reminders
 
-On phones, when the app goes to the background it schedules up to four local notifications (no server):
+On phones, when the app goes to the background it schedules up to five local notifications (no server):
+the submarine is back,
 the geyser is recharged, the Tide Gift is waiting (6 pm local, only if that day is not claimed yet, naming the
 streak day), the coral starts spawning (if within three days), and the nets are full (8 hours, the offline cap).
 Nothing under 15 minutes away is scheduled, everything is cancelled when the app opens again, permission is
@@ -187,11 +196,11 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 1. **Playable first version** (this build): everything above in the browser, tests, screenshots.
 2. **Mobile release**: ~~Capacitor Android build in CI, icon, splash, back button, haptics~~ (built),
    ~~Play bundle in CI, store listing, privacy policy~~ (built); still to do: the upload key secrets, real
-   AdMob ids, a feature graphic, and the Play Console setup (steps in `docs/store-listing.md`).
+   AdMob ids and the Play Console setup (steps in `docs/store-listing.md`); ~~feature graphic~~ (built).
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
    ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), ~~reminders~~ (built).
-4. **Depth content**: ~~coral spawning on real full moons~~ (built), an expedition submarine, a reef garden
-   minigame.
+4. **Depth content**: ~~coral spawning on real full moons~~ (built), ~~expedition submarine~~ (built), a reef
+   garden minigame, sunken relics for the submarine to find.
 
 ## Research log
 
@@ -256,4 +265,14 @@ moments), the 2021 PNAS study and Divers Alert Network on coral mass spawning (a
   Hearts over a month.
 - **Next:** the expedition submarine (send a sub on timed dives for Pearls and Hearts while idle), and a feature
   graphic for the store listing.
+
+**Run 6 (Oct 17, morning).** Sources: Egg, Inc.'s spaceship expeditions (timed launches that return with artifacts,
+running while the game is closed; release notes for 1.20 and 1.27), run 5's notes on offline earnings as the
+reason to come back.
+- An idle game's best "before bed" action is one that pays off overnight. **Built: the expedition submarine.**
+  Three dive lengths up to 4 hours, Pearls (20% of the dive's production) plus Hearts, a chip in the scene, a
+  reminder when it docks, and a capped rewarded ad to bring it back early (a natural ad moment, like Egg, Inc.'s
+  ship boosts). With the simulated player always sending 1 hour dives, 1T comes at 97 minutes instead of 104.
+- **Built: the store feature graphic** (`tools/feature_graphic.mjs`), the last listing asset.
+- **Next:** sunken relics that the deep dives find (a small permanent collection, like Egg, Inc.'s artifacts).
 

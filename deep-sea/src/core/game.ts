@@ -33,6 +33,7 @@ interface State {
   hearts: number;
   rares: Record<string, boolean>;
   requests: { list: ReefRequest[]; done: number; nextAt: number };
+  sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
 }
 
 // Reef Requests: three short goals at a time, each paying Pearls and a Heart.
@@ -71,6 +72,7 @@ function newState(now: number): State {
     hearts: 0,
     rares: {},
     requests: { list: [], done: 0, nextAt: 0 },
+    sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
   };
 }
 
@@ -516,6 +518,56 @@ function requestText(r: ReefRequest): string {
   }
 }
 
+// ---------- Expedition submarine ----------
+// One submarine, sent on a timed dive that keeps going while the app is closed. It brings back Pearls worth a
+// share of the dive's production and Hearts, so a dive before bed is always worth it.
+
+interface DiveDef { id: string; name: string; ms: number; hearts: number; }
+const DIVES: DiveDef[] = [
+  { id: 'short', name: 'Reef dive', ms: 15 * 60e3, hearts: 1 },
+  { id: 'long', name: 'Trench dive', ms: 60 * 60e3, hearts: 2 },
+  { id: 'deep', name: 'Abyss expedition', ms: 4 * 3600e3, hearts: 5 },
+];
+const DIVE_SHARE = 0.2; // Pearls = 20% of the production during the dive
+const SUB_SPEEDS_PER_DAY = 3;
+
+const subUnlocked = (s: State) => s.zone >= 1 || s.stats.migrations > 0 || s.sub.dives > 0;
+const subDiving = (s: State) => s.sub.dive >= 0;
+const subBack = (s: State, now: number) => subDiving(s) && now >= s.sub.until;
+const diveReward = (s: State, i: number) => ({ pearls: Math.max(50, rawPPS(s) * (DIVES[i].ms / 1000) * DIVE_SHARE), hearts: DIVES[i].hearts });
+
+function launchDive(s: State, i: number, now: number): boolean {
+  if (!subUnlocked(s) || subDiving(s) || !DIVES[i]) return false;
+  s.sub.dive = i;
+  s.sub.startedAt = now;
+  s.sub.until = now + DIVES[i].ms;
+  return true;
+}
+
+function collectDive(s: State, now: number): { pearls: number; hearts: number } | null {
+  if (!subBack(s, now)) return null;
+  const r = diveReward(s, s.sub.dive);
+  earn(s, r.pearls);
+  s.hearts += r.hearts;
+  s.sub.dive = -1;
+  s.sub.dives += 1;
+  return r;
+}
+
+function subSpeedsLeft(s: State, day: string): number {
+  return s.sub.speedDay === day ? Math.max(0, SUB_SPEEDS_PER_DAY - s.sub.speeds) : SUB_SPEEDS_PER_DAY;
+}
+
+// Rewarded ad: bring the submarine straight back (only worth it with 5+ minutes left).
+function speedUpDive(s: State, now: number, day: string): boolean {
+  if (!subDiving(s) || s.sub.until - now < 5 * 60e3 || subSpeedsLeft(s, day) <= 0) return false;
+  if (s.sub.speedDay !== day) { s.sub.speedDay = day; s.sub.speeds = 0; }
+  s.sub.speeds += 1;
+  s.sub.until = now;
+  s.ads.watched += 1;
+  return true;
+}
+
 // ---------- Reminders (local notifications on phones) ----------
 
 interface Reminder { id: number; at: number; title: string; body: string; }
@@ -531,6 +583,7 @@ function reminderPlan(s: State, now: number, eveningAt: number, eveningDay: stri
   }
   const spawn = nextSpawningAt(now);
   if (spawn - now < 3 * 86400e3) list.push({ id: 3, at: spawn, title: 'The coral is spawning', body: 'Visitors come twice as often and leave double Hearts.' });
+  if (subDiving(s) && s.sub.until > now) list.push({ id: 5, at: s.sub.until, title: 'Your submarine is back', body: `The ${DIVES[s.sub.dive].name.toLowerCase()} brought back Pearls and Hearts.` });
   if (rawPPS(s) > 0) list.push({ id: 4, at: now + OFFLINE_CAP_MS, title: 'Your colony\'s nets are full', body: 'Eight hours of Pearls are waiting for you.' });
   return list.filter((r) => r.at - now >= REMINDER_MIN_MS).sort((a, b) => a.at - b.at);
 }
@@ -586,6 +639,7 @@ function checkAchievements(s: State): AchDef[] {
   if (rares >= RARES.length) give('rare_6');
   [10, 50].forEach((n) => { if (s.requests.done >= n) give(`req_${n}`); });
   if (s.stats.spawnCatches >= 1) give('spawn_1');
+  [1, 25].forEach((n) => { if (s.sub.dives >= n) give(`dive_${n}`); });
   return got;
 }
 
@@ -688,6 +742,7 @@ function deserialize(text: string, now: number): State {
   s.rares = data.rares || {};
   s.hearts = data.hearts || 0;
   s.requests = Object.assign(newState(now).requests, data.requests || {});
+  s.sub = Object.assign(newState(now).sub, data.sub || {});
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;
