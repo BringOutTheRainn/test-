@@ -1,0 +1,29 @@
+{
+  "name": "fathom",
+  "version": "0.3.0",
+  "private": true,
+  "description": "A deep sea idle clicker for phones.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tools/build.mjs && node --test tests/*.test.js",
+    "sim": "node tools/build.mjs && node tools/simulate.mjs",
+    "screens": "node tools/build.mjs && node tools/screens.mjs screens",
+    "single": "node tools/build.mjs && node tools/single.mjs",
+    "icons": "node tools/make_icons.mjs",
+    "android": "node tools/build.mjs && bash tools/android.sh",
+    "feature": "node tools/screens.mjs build/screens && node tools/feature_graphic.mjs"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0"
+  }
+}
