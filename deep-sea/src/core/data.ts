@@ -129,6 +129,8 @@ function buildAchievements(): AchDef[] {
   list.push({ id: 'spawn_1', name: 'Spawning Night', desc: 'Catch a visitor while the coral is spawning.' });
   ([[1, 'Up Periscope'], [25, 'Old Salt']] as [number, string][]).forEach(([n, name]) =>
     list.push({ id: `dive_${n}`, name, desc: `Bring the submarine back from ${n} dive${n > 1 ? 's' : ''}.` }));
+  list.push({ id: 'relic_1', name: 'Treasure Hunter', desc: 'Find a sunken relic.' });
+  list.push({ id: 'relic_8', name: 'Museum of the Deep', desc: 'Find every sunken relic.' });
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();
@@ -163,3 +165,19 @@ const RARES: RareDef[] = [
 ];
 const RARE_BY_ID: Record<string, RareDef> = {};
 RARES.forEach((r) => (RARE_BY_ID[r.id] = r));
+
+// Sunken relics, found now and then by the expedition submarine. Kept forever, through migrations.
+interface RelicDef { id: string; icon: string; name: string; desc: string; }
+
+const RELICS: RelicDef[] = [
+  { id: 'doubloon', icon: '🪙', name: 'Pirate Doubloon', desc: 'All production +5%.' },
+  { id: 'helmet', icon: '🤿', name: 'Brass Diving Helmet', desc: 'Tap power +10%.' },
+  { id: 'compass', icon: '🧭', name: "Captain's Compass", desc: 'Submarine dives are 10% shorter.' },
+  { id: 'bell', icon: '🔔', name: "Ship's Bell", desc: 'Visitors stay 25% longer.' },
+  { id: 'amphora', icon: '🏺', name: 'Ancient Amphora', desc: 'Offline earnings +5%.' },
+  { id: 'tooth', icon: '🦷', name: 'Kraken Tooth', desc: 'The geyser erupts 5 seconds longer.' },
+  { id: 'comb', icon: '🪮', name: "Mermaid's Comb", desc: 'Reef Requests pay 50% more.' },
+  { id: 'moonpearl', icon: '🌕', name: 'Moon Pearl', desc: 'The Daily Tide Gift is 25% bigger.' },
+];
+const RELIC_BY_ID: Record<string, RelicDef> = {};
+RELICS.forEach((r) => (RELIC_BY_ID[r.id] = r));

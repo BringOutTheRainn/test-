@@ -98,7 +98,15 @@ await shot('21_sub_diving');
 await game(() => { window.__fathom.s.sub.until = Date.now() - 1000; });
 await page.waitForTimeout(600);
 await shot('22_sub_back');
+// Force the relic roll so the found-relic modal shows.
+await game(() => { window.__realRandom = Math.random; Math.random = () => 0.01; });
 await page.click('#panel .act.dive');
+await page.waitForTimeout(400);
+await game(() => { Math.random = window.__realRandom; });
+await shot('23_relic_found');
+await page.click('#modal .btns .act');
+await page.waitForTimeout(300);
+await shot('24_relic_strip');
 
 // Late game in the Midnight Trench and deeper.
 await game(() => {

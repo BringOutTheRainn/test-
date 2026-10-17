@@ -161,6 +161,15 @@ diving while the app is closed and brings back Pearls worth 20% of the productio
 the scene shows the countdown and glows when it is back; a reminder fires when it docks. A rewarded ad can bring it
 straight back (only with 5+ minutes left, 3 a day). Logbook: first dive and 25 dives.
 
+## Sunken relics
+
+Eight permanent relics the submarine can bring back: a 10% chance on a Reef dive, 30% on a Trench dive and 75% on
+an Abyss expedition, always one you do not have yet. Each gives a small bonus that survives migrations: Pirate
+Doubloon (all production +5%), Brass Diving Helmet (taps +10%), Captain's Compass (dives 10% shorter), Ship's Bell
+(visitors stay 25% longer), Ancient Amphora (offline earnings +5%), Kraken Tooth (geyser +5 s), Mermaid's Comb
+(Reef Request rewards x1.5) and Moon Pearl (Tide Gifts x1.25). A find opens a reveal card; the sub card shows the
+collection and the Logbook has a Sunken relics page. Logbook: first relic and all eight.
+
 ## Reminders
 
 On phones, when the app goes to the background it schedules up to five local notifications (no server):
@@ -199,8 +208,8 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
    AdMob ids and the Play Console setup (steps in `docs/store-listing.md`); ~~feature graphic~~ (built).
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
    ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), ~~reminders~~ (built).
-4. **Depth content**: ~~coral spawning on real full moons~~ (built), ~~expedition submarine~~ (built), a reef
-   garden minigame, sunken relics for the submarine to find.
+4. **Depth content**: ~~coral spawning on real full moons~~ (built), ~~expedition submarine~~ (built), ~~sunken
+   relics for the submarine to find~~ (built), a reef garden minigame.
 
 ## Research log
 
@@ -276,3 +285,10 @@ reason to come back.
 - **Built: the store feature graphic** (`tools/feature_graphic.mjs`), the last listing asset.
 - **Next:** sunken relics that the deep dives find (a small permanent collection, like Egg, Inc.'s artifacts).
 
+**Run 7 (Oct 17, evening).** Sources: Egg, Inc.'s artifact collection (ships return with artifacts that give
+permanent boosts; deeper missions find rarer ones), run 6's plan.
+- A timed launch feels better when the return can hold a surprise. **Built: sunken relics.** Eight relics with
+  small permanent bonuses, a higher chance on longer dives, a reveal card, a collection strip on the sub card and a
+  Logbook page. Every find is new, so the set completes in a few weeks of overnight expeditions. With relics, the
+  simulated player reaches 1T at 98.7 minutes (97 before; the run's luck changed which relics came first).
+- This was the last run of the research week.

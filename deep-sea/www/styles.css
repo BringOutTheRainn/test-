@@ -204,3 +204,11 @@ h3 { margin: 18px 4px 8px; font-size: 15px; }
 .dives { display: flex; gap: 6px; margin-top: 4px; }
 .dives .act.dive { flex: 1; font-size: 13px; padding: 8px 6px; }
 .dives .act.dive span { display: block; font-weight: 600; font-size: 11px; opacity: 0.85; }
+.relics { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.relics small { font-size: 12px; color: var(--muted); margin-right: 6px; }
+.relics span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: rgba(255, 255, 255, 0.06); font-size: 15px; color: var(--muted); }
+.relics span.got { background: rgba(255, 216, 74, 0.18); }
+.ricon { width: 34px; text-align: center; font-size: 22px; opacity: 0.5; }
+.rare.got .ricon { opacity: 1; }
+.relic-big { font-size: 64px; text-align: center; }
+h3 .muted { color: var(--muted); font-weight: 600; }

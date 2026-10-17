@@ -34,6 +34,7 @@ interface State {
   rares: Record<string, boolean>;
   requests: { list: ReefRequest[]; done: number; nextAt: number };
   sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
+  relics: Record<string, boolean>;
 }
 
 // Reef Requests: three short goals at a time, each paying Pearls and a Heart.
@@ -73,11 +74,13 @@ function newState(now: number): State {
     rares: {},
     requests: { list: [], done: 0, nextAt: 0 },
     sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
+    relics: {},
   };
 }
 
 const has = (s: State, id: string) => !!s.upgrades[id];
 const rare = (s: State, id: string) => !!s.rares[id];
+const relic = (s: State, id: string) => !!s.relics[id];
 const perk = (s: State, id: string) => s.perks[id] || 0;
 const totalOwned = (s: State) => s.owned.reduce((a, b) => a + b, 0);
 
@@ -194,6 +197,7 @@ function boostMult(s: State, kind: Boost['kind'], now: number): number {
 function baseMult(s: State): number {
   let m = 1 + 0.02 * s.moonstones;
   if (rare(s, 'narwhal')) m *= 1.1;
+  if (relic(s, 'doubloon')) m *= 1.05;
   m *= 1 + 0.01 * Object.keys(s.achievements).length;
   m *= Math.pow(ZONE_MULT, s.zone);
   UPGRADES.forEach((u) => { if (u.kind === 'research' && has(s, u.id)) m *= u.value!; });
@@ -228,6 +232,7 @@ function tapValue(s: State, now: number): number {
   let v = (base + mop * pps(s, now)) * comboMult(s) * boostMult(s, 'burst', now);
   if (isHighTide(s, now)) v *= 3;
   if (rare(s, 'dragon')) v *= 1.25;
+  if (relic(s, 'helmet')) v *= 1.1;
   return v;
 }
 
@@ -265,7 +270,7 @@ function visitorInterval(s: State, rand: () => number, now = 0): number {
 }
 
 function visitorLife(s: State): number {
-  return has(s, 'slow_0') ? VISITOR_LIFE_MS * 1.5 : VISITOR_LIFE_MS;
+  return (has(s, 'slow_0') ? VISITOR_LIFE_MS * 1.5 : VISITOR_LIFE_MS) * (relic(s, 'bell') ? 1.25 : 1);
 }
 
 function spawnVisitor(s: State, now: number, rand: () => number, kind?: Visitor['kind']) {
@@ -341,7 +346,7 @@ const geyserReady = (s: State, now: number) => geyserUnlocked(s) && now >= s.gey
 
 function startGeyser(s: State, now: number): boolean {
   if (!geyserReady(s, now)) return false;
-  s.geyser.until = now + GEYSER_LENGTH_MS;
+  s.geyser.until = now + GEYSER_LENGTH_MS + (relic(s, 'tooth') ? 5e3 : 0);
   s.geyser.readyAt = now + GEYSER_COOLDOWN_MS * (rare(s, 'glasssquid') ? 0.8 : 1);
   s.geyser.acc = 0;
   s.geyser.uses += 1;
@@ -376,7 +381,7 @@ function nextStreak(s: State): number {
 }
 
 function dailyReward(s: State, streak: number): number {
-  return Math.max(rawPPS(s) * 60 * DAILY_MINUTES[streak - 1], 100 * streak);
+  return Math.max(rawPPS(s) * 60 * DAILY_MINUTES[streak - 1], 100 * streak) * (relic(s, 'moonpearl') ? 1.25 : 1);
 }
 
 function claimDaily(s: State, now: number): { streak: number; pearls: number; whale: boolean } | null {
@@ -492,7 +497,7 @@ function fillRequests(s: State, now: number, rand: () => number) {
 }
 
 // Worth a minute of production, with a floor that grows as you finish more.
-const requestReward = (s: State) => Math.max(rawPPS(s) * 60, 25 * (s.requests.done + 1));
+const requestReward = (s: State) => Math.max(rawPPS(s) * 60, 25 * (s.requests.done + 1)) * (relic(s, 'comb') ? 1.5 : 1);
 
 function claimRequest(s: State, index: number, now: number, rand: () => number): { pearls: number; hearts: number } | null {
   const r = s.requests.list[index];
@@ -534,21 +539,30 @@ const SUB_SPEEDS_PER_DAY = 3;
 const subUnlocked = (s: State) => s.zone >= 1 || s.stats.migrations > 0 || s.sub.dives > 0;
 const subDiving = (s: State) => s.sub.dive >= 0;
 const subBack = (s: State, now: number) => subDiving(s) && now >= s.sub.until;
+const RELIC_CHANCE = [0.1, 0.3, 0.75]; // per dive length
+const diveLength = (s: State, i: number) => DIVES[i].ms * (relic(s, 'compass') ? 0.9 : 1);
 const diveReward = (s: State, i: number) => ({ pearls: Math.max(50, rawPPS(s) * (DIVES[i].ms / 1000) * DIVE_SHARE), hearts: DIVES[i].hearts });
 
 function launchDive(s: State, i: number, now: number): boolean {
   if (!subUnlocked(s) || subDiving(s) || !DIVES[i]) return false;
   s.sub.dive = i;
   s.sub.startedAt = now;
-  s.sub.until = now + DIVES[i].ms;
+  s.sub.until = now + diveLength(s, i);
   return true;
 }
 
-function collectDive(s: State, now: number): { pearls: number; hearts: number } | null {
+// Returns what the dive brought back; deeper dives often find a sunken relic not yet found.
+function collectDive(s: State, now: number, rand: () => number = Math.random): { pearls: number; hearts: number; relic?: string } | null {
   if (!subBack(s, now)) return null;
-  const r = diveReward(s, s.sub.dive);
+  const r: { pearls: number; hearts: number; relic?: string } = diveReward(s, s.sub.dive);
   earn(s, r.pearls);
   s.hearts += r.hearts;
+  const missing = RELICS.filter((x) => !relic(s, x.id));
+  if (missing.length && rand() < RELIC_CHANCE[s.sub.dive]) {
+    const found = missing[Math.floor(rand() * missing.length)];
+    s.relics[found.id] = true;
+    r.relic = found.id;
+  }
   s.sub.dive = -1;
   s.sub.dives += 1;
   return r;
@@ -640,6 +654,9 @@ function checkAchievements(s: State): AchDef[] {
   [10, 50].forEach((n) => { if (s.requests.done >= n) give(`req_${n}`); });
   if (s.stats.spawnCatches >= 1) give('spawn_1');
   [1, 25].forEach((n) => { if (s.sub.dives >= n) give(`dive_${n}`); });
+  const relics = Object.keys(s.relics).length;
+  if (relics >= 1) give('relic_1');
+  if (relics >= RELICS.length) give('relic_8');
   return got;
 }
 
@@ -701,7 +718,7 @@ function buyPerk(s: State, id: string): boolean {
 
 // ---------- Offline and saving ----------
 
-const offlineRate = (s: State) => 0.25 + 0.25 * perk(s, 'warm') + (rare(s, 'turtle') ? 0.1 : 0);
+const offlineRate = (s: State) => 0.25 + 0.25 * perk(s, 'warm') + (rare(s, 'turtle') ? 0.1 : 0) + (relic(s, 'amphora') ? 0.05 : 0);
 
 // ---------- Rare creatures ----------
 
@@ -743,6 +760,7 @@ function deserialize(text: string, now: number): State {
   s.hearts = data.hearts || 0;
   s.requests = Object.assign(newState(now).requests, data.requests || {});
   s.sub = Object.assign(newState(now).sub, data.sub || {});
+  s.relics = data.relics || {};
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

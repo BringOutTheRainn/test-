@@ -377,7 +377,7 @@ class App {
       const key = `${this.tab}|${subKey}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'logbook') {
-      const key = `logbook|${s.hearts}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
+      const key = `logbook|${s.hearts}|${Object.keys(s.relics).length}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'stats') {
       const key = `stats|${Math.floor(Date.now() / 1000)}`;
@@ -417,11 +417,15 @@ class App {
         const r = diveReward(s, s.sub.dive);
         const b = el('button', 'act dive', `Collect<span>${fmt(r.pearls)} + ${r.hearts} ❤</span>`);
         b.addEventListener('click', () => {
-          const got = collectDive(s, Date.now());
+          const got = collectDive(s, Date.now(), Math.random);
           if (!got) return;
           if (s.settings.sound) playChime();
-          this.scene.announce('Sub is back', '#ffd84a');
           this.toast(`<b>Submarine:</b> +${fmt(got.pearls)} Pearls and +${got.hearts} ❤.`);
+          if (got.relic) {
+            const rl = RELIC_BY_ID[got.relic];
+            this.scene.announce(rl.name, '#ffd84a');
+            this.modal(`<div class="relic-big">${rl.icon}</div><h2>${rl.name}</h2><p>The submarine found a sunken relic! ${rl.desc} It stays with you forever.</p>`, [['Wonderful', () => {}]]);
+          } else this.scene.announce('Sub is back', '#ffd84a');
           this.save(); this.panelKey = ''; this.renderPanel();
         });
         row.appendChild(b);
@@ -434,6 +438,10 @@ class App {
       }
       card.appendChild(row);
     }
+    const found = RELICS.filter((r) => s.relics[r.id]).length;
+    const strip = el('div', 'relics');
+    strip.innerHTML = `<small>Sunken relics ${found}/${RELICS.length}</small>` + RELICS.map((r) => `<span class="${s.relics[r.id] ? 'got' : ''}" title="${s.relics[r.id] ? r.name : '?'}">${s.relics[r.id] ? r.icon : '?'}</span>`).join('');
+    card.appendChild(strip);
     p.appendChild(card);
   }
 
@@ -491,6 +499,14 @@ class App {
       rares.appendChild(card);
     });
     p.appendChild(rares);
+    p.appendChild(el('h3', '', `Sunken relics <span class="muted">${RELICS.filter((r) => s.relics[r.id]).length}/${RELICS.length}</span>`));
+    p.appendChild(el('p', 'lead', 'The expedition submarine sometimes finds a relic, more often on long dives. Relics stay forever.'));
+    const relics = el('div', 'rares');
+    RELICS.forEach((r) => {
+      const got = !!s.relics[r.id];
+      relics.appendChild(el('div', 'rare' + (got ? ' got' : ''), `<span class="ricon">${got ? r.icon : '?'}</span><div class="gt"><b>${got ? r.name : 'Undiscovered relic'}</b><small>${got ? r.desc : 'Still somewhere in the deep.'}</small></div>`));
+    });
+    p.appendChild(relics);
     p.appendChild(el('h3', '', 'Logbook'));
     const n = Object.keys(s.achievements).length;
     p.appendChild(el('p', 'lead', `${n} of ${ACHIEVEMENTS.length} entries. Each one gives +1% production (now +${n}%).`));

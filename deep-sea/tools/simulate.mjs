@@ -23,7 +23,7 @@ for (let t = 0; t < hours * 3600e3; t += step) {
   g.tick(s, t, step, rand); g.fillRequests(s, t, rand2);
   if (s.visitor && t - s.visitor.spawnedAt > 3000) g.catchVisitor(s, t, rand);
   g.startGeyser(s, t);
-  if (g.subBack(s, t)) g.collectDive(s, t);
+  if (g.subBack(s, t)) g.collectDive(s, t, rand2);
   g.launchDive(s, 1, t);
   for (let i = 0; i < s.requests.list.length; i++) if (g.requestDone(s, s.requests.list[i])) g.claimRequest(s, i, t, rand2);
   if (t % 1000 !== 0) continue;

@@ -364,3 +364,33 @@ test('the expedition submarine dives in real time and brings back Pearls and Hea
   delete old.sub;
   assert.equal(g.deserialize(JSON.stringify(old), 0).sub.dive, -1);
 });
+
+test('deep dives find sunken relics that last forever and each bend one rule', () => {
+  const s = g.newState(0);
+  s.zone = 1; s.owned[1] = 10;
+  assert.equal(g.RELICS.length, 8);
+  g.launchDive(s, 0, 0);
+  let r = g.collectDive(s, 15 * 60e3, fixed(0.5));
+  assert.equal(r.relic, undefined, 'a reef dive finds one 10% of the time');
+  g.launchDive(s, 2, 0);
+  r = g.collectDive(s, 4 * 3600e3, fixed(0));
+  assert.equal(r.relic, g.RELICS[0].id, 'an abyss expedition usually does');
+  assert.equal(s.relics.doubloon, true);
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'relic_1'));
+  // Effects.
+  const before = { pps: g.rawPPS(s) / 1.05, tap: g.tapValue(s, 1), life: g.visitorLife(s) };
+  s.relics.helmet = true; s.relics.bell = true; s.relics.compass = true;
+  assert.ok(Math.abs(g.tapValue(s, 1) / before.tap - 1.1) < 1e-9);
+  assert.ok(Math.abs(g.visitorLife(s) / before.life - 1.25) < 1e-9);
+  g.launchDive(s, 1, 0);
+  assert.equal(s.sub.until, 54 * 60e3, 'compass: 10% shorter');
+  // Kept through migration; every relic found means none left to find.
+  s.earnedLife = 1e12;
+  g.migrate(s, 0);
+  assert.equal(Object.keys(s.relics).length, 4);
+  g.RELICS.forEach((x) => (s.relics[x.id] = true));
+  s.sub.until = 0;
+  r = g.collectDive(s, 1, fixed(0));
+  assert.equal(r.relic, undefined);
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'relic_8'));
+});
