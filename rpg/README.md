@@ -3,19 +3,24 @@
 A turn-based dungeon RPG for phones. A party of three heroes, picked from six, fights its way down through
 four depths under an old keep to seal the Ember Gate. The design is in [docs/DESIGN.md](docs/DESIGN.md).
 
-It reuses the pixel art in `../art` (heroes, enemies, items and dungeon backgrounds) from the city builder.
+Its pixel art (heroes, enemies, items and dungeon backgrounds) lives in `art/`, first drawn for the old city builder.
 
 ## Running it
 
 ```sh
 cd rpg
-npm install          # only TypeScript
+npm install          # TypeScript, plus Capacitor for the Android build
 npm run build        # writes www/game.js; open www/index.html in a browser
 npm test             # rules tests
 npm run sim          # plays the whole campaign on autopilot and prints the difficulty curve
 npm run screens      # phone-sized screenshots into screens/ (needs Playwright)
 npm run single       # one self-contained file, build/emberdeep.html
+npm run icons        # redraws the launcher icon and splash in resources/ (needs Playwright)
+npm run android      # debug APK at build/emberdeep.apk (needs JDK 21 and the Android SDK)
 ```
+
+CI builds the APK on every change to `rpg/`; download `emberdeep-apk` from the
+"Emberdeep Android build" run's Summary page and install it on a phone.
 
 ## How it is organised
 

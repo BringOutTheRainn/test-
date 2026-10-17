@@ -56,9 +56,20 @@ Recruits join at the party's lowest level, so a new hero is useful at once (AFK 
 Crystal solves the same "new hero is level 1" problem). Benched heroes still get half the XP. Tap a
 party slot (on the Heroes tab, or in a stage's window) to swap a hero in. Swords also fit the
 Duelist; maces and staves fit the Druid and Pyromancer; the Silk Cloak fits everyone but the
-Knight. Sprites come from `art/raw/heroes2` (ponytail sword, curly wooden staff, ponytail sun staff,
-recoloured red) via `tools/pixelize.py --size 64`, and are kept in `rpg/art/heroes` so the shared
-`art/` folder stays untouched.
+Knight. Sprites come from the project's `art/raw/heroes2` (ponytail sword, curly wooden staff,
+ponytail sun staff, recoloured red) via `tools/pixelize.py --size 64`.
+
+All of Emberdeep's sprites now live in `rpg/art/`. The repo's shared `art/` folder was removed when
+the city builder was replaced by Stardust Empire, so the sprites Emberdeep uses were copied from
+before that change, along with `palette.hex`, `sources.json` and `pixelize.py`.
+
+### Synergies
+
+Five hero pairs give the whole party a small bonus while both are in it: Oathbound (Knight +
+Cleric, +10% defence), Hunt Pact (Ranger + Duelist, +8% attack), Wildfire (Druid + Pyromancer, +8%
+attack), Sanctuary (Cleric + Druid, +8% health) and Quickfire (Ranger + Pyromancer, +6% speed).
+Every hero is in at least one pair, the starting trio is Oathbound, and the slot picker shows which
+pair a swap would switch on. Bonuses stay small, so any three heroes still beat the campaign.
 
 ## Balance
 
@@ -91,6 +102,28 @@ heroes level up from the spire alone. Every fifth floor is a boss floor (Acolyte
 Troll, then round again) that also drops a piece of gear, and those are the natural walls. Foes come
 from deeper regions as the floors rise.
 
+**Spire tithe.** Once a floor is cleared, the spire pays `2 × best floor` gold an hour while you're
+away, filling for up to 12 hours. Collect it from the spire's window; the result offers the usual
+optional ad to double it.
+
+**Milestone chests.** Every tenth floor pays a one-time chest on top of its boss gear: 30 gold per
+floor and a piece of gear from a deeper region, already upgraded (+1 at floor 10, up to +5 at floor
+50). The spire card always shows the next chest floor, so there is a bigger goal between boss floors.
+
+## Music and sound
+
+Everything is synthesized with Web Audio, so there are no audio files. Three looping chiptune songs
+(the map, ordinary fights, bosses) are generated from an eight-bar chord loop each: bass, arpeggio,
+drums and a seeded melody that repeats every loop. Music switches to the boss song when a boss is on
+the field, pauses when the app is hidden, and has its own toggle in Settings.
+
+## Android app
+
+The same web build runs inside a Capacitor 7 shell (`com.bringouttherainn.emberdeep`), portrait
+only, with a launcher icon and splash drawn from the game's own sprites (`npm run icons`). CI builds
+a debug APK on every change to `rpg/` and attaches it to the run as `emberdeep-apk`. The phone's back
+button closes the open window, pauses a fight, returns to the map, and otherwise minimizes the app.
+
 ## Ads
 
 Optional only. After a win that paid gold, a "Watch an ad" button doubles the gold, three times a
@@ -102,13 +135,12 @@ rewarded video. No interstitials.
 1. ~~First playable: combat, 20 stages, levels, gear, forge, stars.~~
 2. ~~Daily Trial with streaks, and opt-in rewarded ads.~~
 3. ~~Three recruitable heroes at the Tavern and party picking.~~
-3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
-   Pyromancer "Wildfire"), shown on the party strip.
+3b. ~~Hero synergies: a small party bonus for five hero pairs, shown on the party strip.~~
 4. ~~The Ember Spire: an endless climb with boss floors and a best-floor record.~~
-4b. Spire milestones every 10 floors (a bigger chest), and an idle "spire tithe" of gold per hour
-   based on the best floor, like AFK Arena's tower-linked AFK rewards.
-5. Music and more sound.
-6. Android build in CI (Capacitor), AdMob rewarded ads, store listing.
+4b. ~~Spire tithe: idle gold per hour from the best floor, and milestone chests every 10 floors.~~
+5. ~~Music.~~
+6. ~~Android build in CI (Capacitor), icon, splash and back button.~~ Still to do: AdMob rewarded
+   ads, a signed release build, store listing.
 7. Hero skill upgrades and a fifth depth.
 
 ## Research log
@@ -148,3 +180,44 @@ raised in patches over time ([afk.guide patch notes](https://afk.guide/?p=12557)
 is cheap, lasting content. Built: the Ember Spire, unlocking after the first boss so most players
 see it, with boss floors that drop gear. Kept Emberdeep's identity: same intents, turn order and
 three-hero party. Next: spire milestone chests and idle gold tied to the best floor.
+
+**2026-10-16, morning.** AFK Arena builds its whole session rhythm around a resource chest on the
+main screen that fills while you're away, with timers sized so two check-ins a day empty it
+([Game Developer](https://www.gamedeveloper.com/design/flexible-time-session-design-in-afk-arena));
+offline gains cover gold, hero XP and some gear
+([BlueStacks](https://www.bluestacks.com/de/blog/game-guides/afk-arena/afka-beste-guides-und-tipps-sammlung-de.html)),
+and the idle angle carries its marketing ([Udonis](https://blog.udonis.co/mobile-marketing/mobile-games/afk-arena-analysis)).
+The usual caution is to cap idle gains so they never outpace active play. Built: the spire tithe,
+gold only, capped at 12 hours and scaled by the best floor, so climbing is what raises it; plus
+background music, the last missing piece of polish from the milestone list. Also fixed: the space
+game's merge deleted the shared `art/` folder, so Emberdeep now carries its own sprites in `rpg/art`.
+Next: Android build in CI (Capacitor), using the same approach the space game already ships with.
+
+**2026-10-16, evening.** Capacitor wraps the existing web game in a native shell, so one codebase
+covers the browser and Android ([Josh Morony](https://www.joshmorony.com/deploying-capacitor-applications-to-android-development-distribution/)).
+Two store facts shape the release plan: since November 2025 Google Play requires 16 KB page-size
+support for apps targeting Android 15+, which current Capacitor handles
+([Capawesome](https://capawesome.io/blog/support-16kb-page-sizes-with-capacitor/)), and new personal
+developer accounts must run a closed test with testers for 14 days before going to production
+([Ember.js showcase](https://discuss.emberjs.com/t/showcase-building-stroop-cascade-an-arcade-puzzle-game-built-with-ember-js-capacitor/21902)).
+Built: the Android project, launcher icon and splash from the game's art, a CI job that produces an
+installable APK, and back-button handling. Next: spire milestone chests, then hero-pair synergies.
+
+**2026-10-17, morning.** Endless towers in current mobile RPGs layer their rewards: Olympus's
+Celestial Tower drops special chests on floors ending in 5 and a different reward on floors ending
+in 0 ([Olympus wiki](https://wiki.olympusgg.com/guides/features/celestial-tower)), Nikke's Tribe
+Towers step rewards up every 5 and 10 floors ([Prydwen](https://www.prydwen.gg/nikke/guides/game-modes-tribe-towers)),
+and AFK Arena's King's Tower does the same (see Oct 15). The shared idea is a visible, bigger goal a
+few fights away. Built: milestone chests every tenth floor with upgraded gear, shown on the spire
+card. Also shipped: the Android APK now builds green in CI. Next: hero-pair synergies.
+
+**2026-10-17, evening.** AFK Arena rewards team composition with faction bonuses that start at
++10% attack and health and rise with more matching heroes, while guides point out that stacking one
+faction is rarely best late in the game, so the bonus nudges rather than dictates
+([AFK Arena wiki](https://afk-arena.fandom.com/wiki/Faction),
+[Gamer Empire](https://gamerempire.net/afk-arena-faction-advantages-guide/)). With only three
+slots, Emberdeep uses pairs instead of factions. Built: five hero-pair synergies (6–10% party
+bonuses), shown on the party strip and in the slot picker. They were tuned down after the
+simulator showed the final boss getting too easy. This closes the research week. Ideas left for
+later: AdMob rewarded video in the Android build, a signed release and store listing, hero skill
+upgrades, and a fifth depth.

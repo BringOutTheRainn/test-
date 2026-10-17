@@ -146,6 +146,32 @@ await shot('28_spire_result', 1200);
 await page.click('.modal [data-act="leave"]');
 await page.evaluate(() => { const s = window.__emberdeep.s; s.settings.auto = false; s.settings.fast = false; window.__emberdeep.save(); });
 
+// Six hours later: the spire tithe has filled.
+await game(() => { const s = window.__emberdeep.s; s.tower.since = Date.now() - 6 * 3600e3; window.__emberdeep.save(); window.__emberdeep.render(); });
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await page.click('.trial.tower');
+await shot('29_spire_tithe');
+await page.click('.modal [data-act="tithe"]');
+await shot('30_tithe_collected');
+await page.click('.modal [data-act="close"]');
+await page.click('[data-act="settings"]');
+await shot('31_settings_music');
+await page.click('.modal [data-act="close"]');
+
+// Floor 10: the first milestone chest. Heroes are boosted for the climb, then put back.
+await game(() => { const s = window.__emberdeep.s; window.__lv = s.heroes.map((h) => h.level); for (const h of s.heroes) h.level = 20; s.tower.best = 9; window.__emberdeep.save(); window.__emberdeep.render(); });
+await page.evaluate(() => document.getElementById('main').scrollTop = 0);
+await page.click('.trial.tower');
+await shot('32_spire_chest_floor');
+await page.click('.modal [data-act="fight"]');
+await page.waitForSelector('.skill:not([disabled])', { timeout: 20000 });
+await page.click('[data-act="auto"]');
+await page.click('[data-act="fast"]');
+await page.waitForSelector('.result', { timeout: 180000 });
+await shot('33_spire_chest', 1200);
+await page.click('.modal [data-act="leave"]');
+await game(() => { const s = window.__emberdeep.s; s.heroes.forEach((h, i) => { h.level = window.__lv[i]; }); s.settings.auto = false; s.settings.fast = false; window.__emberdeep.save(); window.__emberdeep.render(); });
+
 // A boss fight.
 await page.click('[data-act="tab"][data-tab="map"]');
 await game(() => { const s = window.__emberdeep.s; for (const id of ['3-2', '3-3', '3-4']) s.stars[id] = 2; window.__emberdeep.render(); });

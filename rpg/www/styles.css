@@ -149,6 +149,7 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .loot .ico { width: 44px; height: 44px; }
 .loot div { display: flex; flex-direction: column; }
 .loot small { font-size: 12px; color: var(--muted); }
+.loot.chest { background: linear-gradient(90deg, #3a2a10, #2a2016); border-color: #e0b040; box-shadow: 0 0 12px #e0b04055; }
 .ups { display: flex; flex-direction: column; gap: 4px; align-items: center; color: #c9a7ff; font-weight: 700; margin: 6px 0; }
 
 /* ---- Intro and results */
@@ -327,3 +328,10 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .trial.tower small { color: #b6a6ff; }
 .trial.tower b em { font: 800 11px system-ui, sans-serif; color: var(--bad); letter-spacing: 0.08em; vertical-align: 3px; margin-left: 4px; font-style: normal; }
 .trial.tower.locked { background: var(--panel); border: 1px dashed var(--line); box-shadow: none; }
+.trial .tside small.tithe-ready { color: var(--gold); }
+.item.tithe { border-color: #6b5420; }
+.synergies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
+.syn { font-size: 12px; color: var(--muted); }
+.syn.on { color: #f3d27a; background: #2a2016; border: 1px solid #7a5a22; border-radius: 999px; padding: 3px 10px; }
+.syn.on small { color: var(--muted); margin-left: 4px; }
+.syn-gain { color: #f3d27a !important; }

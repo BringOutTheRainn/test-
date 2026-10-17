@@ -475,8 +475,77 @@ test('spire floors are fixed, rise in level, and every fifth holds a boss with l
   assert.equal(s.items.length, before + 1);
 });
 
+test('every tenth spire floor pays a one-time milestone chest with upgraded gear', () => {
+  assert.equal(g.towerChest(9), null);
+  assert.equal(g.towerChest(15), null);
+  assert.deepEqual([10, 20, 60].map((f) => g.towerChest(f).plus), [1, 2, 5]);
+  assert.ok(g.towerChest(20).gold > g.towerChest(10).gold);
+  const s = g.newState(1);
+  s.stars['1-5'] = 3;
+  assert.equal(g.towerNextChest(s), 10);
+  s.tower.best = 9;
+  const gold = s.gold;
+  const items = s.items.length;
+  const b = g.beginTower(s);
+  b.over = 'win';
+  const r = g.finishBattle(s, b);
+  assert.ok(r.chest, 'floor 10 opens a chest');
+  assert.equal(r.chest.item.plus, 1);
+  assert.equal(s.items.length, items + 2, 'boss gear plus the chest item');
+  assert.equal(s.gold, gold + r.gold + r.chest.gold);
+  assert.equal(g.towerNextChest(s), 20);
+  const b2 = g.beginTower(s);
+  b2.over = 'win';
+  assert.equal(g.finishBattle(s, b2).chest, undefined, 'floor 11 has no chest');
+});
+
+test('hero pairs in the party switch on synergies that boost the whole party', () => {
+  const ids = new Set(g.HEROES.map((d) => d.id));
+  for (const y of g.SYNERGIES) assert.ok(y.pair.every((id) => ids.has(id)), y.id);
+  for (const id of ids) assert.ok(g.SYNERGIES.some((y) => y.pair.includes(id)), `${id} is in a pair`);
+  const s = g.newState(1);
+  assert.deepEqual(g.activeSynergies(s.party).map((y) => y.id), ['oath'], 'the starting trio is Oathbound');
+  const withBonus = g.partyUnits(s);
+  s.party = ['knight', 'ranger', 'duelist'];
+  s.heroes.push({ id: 'duelist', level: 1, xp: 0, gear: { weapon: null, armor: null, charm: null } });
+  const knight = g.partyUnits(s).find((u) => u.key === 'knight');
+  const knightOath = withBonus.find((u) => u.key === 'knight');
+  assert.ok(knightOath.def > knight.def, 'Oathbound raises defence');
+  assert.deepEqual(g.activeSynergies(s.party).map((y) => y.id), ['hunt']);
+  const ranger = withBonus.find((u) => u.key === 'ranger');
+  assert.ok(g.partyUnits(s).find((u) => u.key === 'ranger').atk > ranger.atk, 'Hunt Pact raises attack');
+  assert.deepEqual(g.activeSynergies(['cleric', 'druid', 'pyromancer']).map((y) => y.id).sort(), ['grove', 'wild']);
+});
+
 test('old saves get an empty spire record', () => {
   const raw = JSON.parse(g.serialize(g.newState(1)));
   delete raw.tower;
-  assert.deepEqual(g.deserialize(JSON.stringify(raw)).tower, { best: 0 });
+  assert.deepEqual(g.deserialize(JSON.stringify(raw)).tower, { best: 0, since: 0 });
+});
+
+test('the spire tithe fills by the hour from the best floor, up to a cap', () => {
+  const s = g.newState(1);
+  const h = 3600e3;
+  assert.equal(g.titheReady(s, 10 * h), 0, 'nothing before a floor is cleared');
+  s.stars['1-5'] = 3;
+  for (const x of s.heroes) x.level = 12;
+  gearUp(s, 4, 3);
+  const b = g.beginTower(s);
+  g.autoBattle(b);
+  g.finishBattle(s, b, 100 * h);
+  assert.equal(s.tower.since, 100 * h, 'the clock starts at the first clear');
+  assert.equal(g.titheReady(s, 103 * h), 3 * g.titheRate(1));
+  s.tower.best = 10;
+  assert.equal(g.titheReady(s, 200 * h), g.TITHE_CAP_HOURS * g.titheRate(10), 'capped');
+  const gold = s.gold;
+  const got = g.claimTithe(s, 200 * h);
+  assert.equal(s.gold, gold + got);
+  assert.equal(g.titheReady(s, 200 * h), 0);
+  assert.equal(g.claimTithe(s, 200 * h), 0);
+});
+
+test('old saves get music switched on', () => {
+  const raw = JSON.parse(g.serialize(g.newState(1)));
+  delete raw.settings.music;
+  assert.equal(g.deserialize(JSON.stringify(raw)).settings.music, true);
 });

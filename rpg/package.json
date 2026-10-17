@@ -8,9 +8,18 @@
     "test": "node tools/build.mjs && node --test tests/*.test.js",
     "sim": "node tools/build.mjs && node tools/simulate.mjs",
     "screens": "node tools/build.mjs && node tools/screens.mjs screens",
-    "single": "node tools/build.mjs && node tools/single.mjs"
+    "single": "node tools/build.mjs && node tools/single.mjs",
+    "icons": "node tools/icons.mjs",
+    "android": "node tools/build.mjs && bash tools/android.sh"
   },
   "devDependencies": {
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "@capacitor/cli": "^7.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0"
   }
 }
