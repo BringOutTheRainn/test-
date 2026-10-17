@@ -188,7 +188,7 @@ function towerCard(): string {
   const t = towerFloor(f);
   return `<button class="trial tower" data-act="tower">
     <div><small>The Ember Spire · endless</small><b>Floor ${f}${t.stage.boss ? ' <em>BOSS</em>' : ''}</b><span>${s.tower.best ? `Your best: floor ${s.tower.best}` : 'Climb as high as you can. Every floor pays once.'}</span></div>
-    <div class="tside"><em>${coin()}${t.stage.gold}</em><small>enemy Lv ${towerLevel(f)}</small>${titheReady(s, Date.now()) >= 10 ? `<small class="tithe-ready">💰 ${titheReady(s, Date.now())} tithe</small>` : ''}</div>
+    <div class="tside"><em>${coin()}${t.stage.gold}</em><small>enemy Lv ${towerLevel(f)}</small><small>🧰 chest at ${towerNextChest(s)}</small>${titheReady(s, Date.now()) >= 10 ? `<small class="tithe-ready">💰 ${titheReady(s, Date.now())} tithe</small>` : ''}</div>
   </button>`;
 }
 
@@ -214,9 +214,10 @@ function openTower(): void {
     <p class="muted">${t.stage.waves.length} waves · enemy level ${towerLevel(f)} · ${s.tower.best ? `best: floor ${s.tower.best}` : 'no floors cleared yet'}</p>
     ${towerLevel(f) > partyLevel() + 1 ? `<p class="warn">Your heroes are level ${partyLevel()}. This floor will be tough.</p>` : ''}
     ${s.heroes.length > PARTY_SIZE ? partyStrip('tower') : ''}
-    <div class="rewards"><span class="chip">${coin()}${t.stage.gold}</span><span class="chip">✦ ${t.stage.xp} XP</span>${t.stage.boss ? '<span class="chip">🎁 gear</span>' : ''}</div>
+    <div class="rewards"><span class="chip">${coin()}${t.stage.gold}</span><span class="chip">✦ ${t.stage.xp} XP</span>${t.stage.boss ? '<span class="chip">🎁 gear</span>' : ''}${towerChest(f) ? `<span class="chip">🧰 ${coin()}${towerChest(f)!.gold} + gear +${towerChest(f)!.plus}</span>` : ''}</div>
     ${titheHtml()}
     <p class="muted center">${t.stage.boss ? 'A boss guards this floor. Beat it for a piece of gear.' : `Boss on floor ${nextBoss} guards a piece of gear.`} Losing costs nothing.</p>
+    ${towerChest(f) ? '' : `<p class="muted center">🧰 Milestone chest on floor ${towerNextChest(s)}: ${coin()}${towerChest(towerNextChest(s))!.gold} and upgraded gear.</p>`}
     <div class="btns"><button data-act="close">Back</button><button class="primary" data-act="fight" data-id="tower">Climb</button></div>`);
 }
 
@@ -808,12 +809,14 @@ function showTowerResult(b: Battle, r: Rewards): void {
     if (r.levelUps.length) setTimeout(() => playSfx('level'), 700);
     const item = r.item ? `<div class="loot">${sprite(ITEMS[r.item.id].art, 'ico')}<div><small>Spire boss reward</small><b>${ITEMS[r.item.id].name}</b><small>${statLine(itemStats(r.item))}</small></div></div>` : '';
     const next = towerFloor(floor + 1);
+    const chest = r.chest ? `<div class="loot chest">${sprite(ITEMS[r.chest.item.id].art, 'ico')}<div><small>🧰 Milestone chest · ${coin()}+${r.chest.gold}</small><b>${ITEMS[r.chest.item.id].name} +${r.chest.item.plus}</b><small>${statLine(itemStats(r.chest.item))}</small></div></div>` : '';
+    if (r.chest) setTimeout(() => playSfx('level'), 1200);
     openModal(`
       <div class="result win">
         <h3>Floor ${floor} cleared</h3>
         <p class="muted">New best: floor ${floor}. Next up: floor ${floor + 1}${next.stage.boss ? ', a boss floor' : ''}, enemy level ${towerLevel(floor + 1)}.</p>
         <div class="rewards"><span class="chip">${coin()}+${r.gold}</span><span class="chip">✦ +${r.xp} XP</span></div>
-        ${item}${ups}
+        ${chest}${item}${ups}
         ${adButton(r.gold)}
         <div class="btns"><button data-act="leave">Map</button><button class="primary" data-act="fight" data-id="tower">Climb on</button></div>
       </div>`, 'center');

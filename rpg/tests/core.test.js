@@ -475,6 +475,30 @@ test('spire floors are fixed, rise in level, and every fifth holds a boss with l
   assert.equal(s.items.length, before + 1);
 });
 
+test('every tenth spire floor pays a one-time milestone chest with upgraded gear', () => {
+  assert.equal(g.towerChest(9), null);
+  assert.equal(g.towerChest(15), null);
+  assert.deepEqual([10, 20, 60].map((f) => g.towerChest(f).plus), [1, 2, 5]);
+  assert.ok(g.towerChest(20).gold > g.towerChest(10).gold);
+  const s = g.newState(1);
+  s.stars['1-5'] = 3;
+  assert.equal(g.towerNextChest(s), 10);
+  s.tower.best = 9;
+  const gold = s.gold;
+  const items = s.items.length;
+  const b = g.beginTower(s);
+  b.over = 'win';
+  const r = g.finishBattle(s, b);
+  assert.ok(r.chest, 'floor 10 opens a chest');
+  assert.equal(r.chest.item.plus, 1);
+  assert.equal(s.items.length, items + 2, 'boss gear plus the chest item');
+  assert.equal(s.gold, gold + r.gold + r.chest.gold);
+  assert.equal(g.towerNextChest(s), 20);
+  const b2 = g.beginTower(s);
+  b2.over = 'win';
+  assert.equal(g.finishBattle(s, b2).chest, undefined, 'floor 11 has no chest');
+});
+
 test('old saves get an empty spire record', () => {
   const raw = JSON.parse(g.serialize(g.newState(1)));
   delete raw.tower;

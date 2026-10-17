@@ -98,6 +98,10 @@ from deeper regions as the floors rise.
 away, filling for up to 12 hours. Collect it from the spire's window; the result offers the usual
 optional ad to double it.
 
+**Milestone chests.** Every tenth floor pays a one-time chest on top of its boss gear: 30 gold per
+floor and a piece of gear from a deeper region, already upgraded (+1 at floor 10, up to +5 at floor
+50). The spire card always shows the next chest floor, so there is a bigger goal between boss floors.
+
 ## Music and sound
 
 Everything is synthesized with Web Audio, so there are no audio files. Three looping chiptune songs
@@ -126,8 +130,7 @@ rewarded video. No interstitials.
 3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
    Pyromancer "Wildfire"), shown on the party strip.
 4. ~~The Ember Spire: an endless climb with boss floors and a best-floor record.~~
-4b. ~~Spire tithe: idle gold per hour from the best floor.~~ Still to do: milestone chests every 10
-   floors.
+4b. ~~Spire tithe: idle gold per hour from the best floor, and milestone chests every 10 floors.~~
 5. ~~Music.~~
 6. ~~Android build in CI (Capacitor), icon, splash and back button.~~ Still to do: AdMob rewarded
    ads, a signed release build, store listing.
@@ -192,3 +195,11 @@ developer accounts must run a closed test with testers for 14 days before going 
 ([Ember.js showcase](https://discuss.emberjs.com/t/showcase-building-stroop-cascade-an-arcade-puzzle-game-built-with-ember-js-capacitor/21902)).
 Built: the Android project, launcher icon and splash from the game's art, a CI job that produces an
 installable APK, and back-button handling. Next: spire milestone chests, then hero-pair synergies.
+
+**2026-10-17, morning.** Endless towers in current mobile RPGs layer their rewards: Olympus's
+Celestial Tower drops special chests on floors ending in 5 and a different reward on floors ending
+in 0 ([Olympus wiki](https://wiki.olympusgg.com/guides/features/celestial-tower)), Nikke's Tribe
+Towers step rewards up every 5 and 10 floors ([Prydwen](https://www.prydwen.gg/nikke/guides/game-modes-tribe-towers)),
+and AFK Arena's King's Tower does the same (see Oct 15). The shared idea is a visible, bigger goal a
+few fights away. Built: milestone chests every tenth floor with upgraded gear, shown on the spire
+card. Also shipped: the Android APK now builds green in CI. Next: hero-pair synergies.

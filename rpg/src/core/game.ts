@@ -39,6 +39,8 @@ interface Rewards {
   trial?: { streak: number; repeat: boolean };
   /** Set for Ember Spire fights: the floor fought and whether it was a new record. */
   tower?: { floor: number; record: boolean };
+  /** Set when a spire floor ending in 0 is cleared: its one-time milestone chest. */
+  chest?: { gold: number; item: ItemInst };
 }
 
 const SAVE_VERSION = 1;
@@ -285,6 +287,20 @@ function towerFloor(floor: number): { stage: StageDef; region: RegionDef } {
 
 function towerNext(s: GameState): number { return s.tower.best + 1; }
 
+// Milestone chests: every tenth floor pays a one-time chest on top of the boss's gear, so the
+// long climb between boss floors always has a bigger goal in sight.
+const TOWER_CHEST_EVERY = 10;
+
+function towerChest(floor: number): { gold: number; plus: number; region: RegionDef } | null {
+  if (floor < TOWER_CHEST_EVERY || floor % TOWER_CHEST_EVERY) return null;
+  const n = floor / TOWER_CHEST_EVERY;
+  return { gold: 30 * floor, plus: Math.min(MAX_PLUS, n), region: REGIONS[Math.min(REGIONS.length - 1, n)] };
+}
+
+function towerNextChest(s: GameState): number {
+  return Math.ceil(towerNext(s) / TOWER_CHEST_EVERY) * TOWER_CHEST_EVERY;
+}
+
 function beginTower(s: GameState): Battle {
   const t = towerFloor(towerNext(s));
   return startBattle(t.stage, partyUnits(s), nextSeed(s), t.region.id);
@@ -308,7 +324,16 @@ function finishTower(s: GameState, b: Battle, now: number): Rewards {
     const loot = REGIONS.find((r) => r.id === b.region)!.loot;
     item = giveItem(s, loot[Math.floor(gameRand(s) * loot.length)]);
   }
-  return { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, tower: { floor, record: true } };
+  const rewards: Rewards = { result: 'win', stars: 0, first: true, gold: stage.gold, xp: stage.xp, levelUps, item, tower: { floor, record: true } };
+  const c = towerChest(floor);
+  if (c) {
+    const loot = c.region.loot;
+    const inst = giveItem(s, loot[Math.floor(gameRand(s) * loot.length)]);
+    inst.plus = c.plus;
+    s.gold += c.gold;
+    rewards.chest = { gold: c.gold, item: inst };
+  }
+  return rewards;
 }
 
 // The spire's tithe: gold that piles up while you're away, more the higher your best floor.
