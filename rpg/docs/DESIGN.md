@@ -63,6 +63,14 @@ All of Emberdeep's sprites now live in `rpg/art/`. The repo's shared `art/` fold
 the city builder was replaced by Stardust Empire, so the sprites Emberdeep uses were copied from
 before that change, along with `palette.hex`, `sources.json` and `pixelize.py`.
 
+### Synergies
+
+Five hero pairs give the whole party a small bonus while both are in it: Oathbound (Knight +
+Cleric, +10% defence), Hunt Pact (Ranger + Duelist, +8% attack), Wildfire (Druid + Pyromancer, +8%
+attack), Sanctuary (Cleric + Druid, +8% health) and Quickfire (Ranger + Pyromancer, +6% speed).
+Every hero is in at least one pair, the starting trio is Oathbound, and the slot picker shows which
+pair a swap would switch on. Bonuses stay small, so any three heroes still beat the campaign.
+
 ## Balance
 
 `npm run sim` plays the campaign with the autopilot, buying gear greedily, and prints the win rate,
@@ -127,8 +135,7 @@ rewarded video. No interstitials.
 1. ~~First playable: combat, 20 stages, levels, gear, forge, stars.~~
 2. ~~Daily Trial with streaks, and opt-in rewarded ads.~~
 3. ~~Three recruitable heroes at the Tavern and party picking.~~
-3b. Hero synergies: a small bonus for certain pairs (Knight + Cleric "Oathbound", Druid +
-   Pyromancer "Wildfire"), shown on the party strip.
+3b. ~~Hero synergies: a small party bonus for five hero pairs, shown on the party strip.~~
 4. ~~The Ember Spire: an endless climb with boss floors and a best-floor record.~~
 4b. ~~Spire tithe: idle gold per hour from the best floor, and milestone chests every 10 floors.~~
 5. ~~Music.~~
@@ -203,3 +210,14 @@ Towers step rewards up every 5 and 10 floors ([Prydwen](https://www.prydwen.gg/n
 and AFK Arena's King's Tower does the same (see Oct 15). The shared idea is a visible, bigger goal a
 few fights away. Built: milestone chests every tenth floor with upgraded gear, shown on the spire
 card. Also shipped: the Android APK now builds green in CI. Next: hero-pair synergies.
+
+**2026-10-17, evening.** AFK Arena rewards team composition with faction bonuses that start at
++10% attack and health and rise with more matching heroes, while guides point out that stacking one
+faction is rarely best late in the game, so the bonus nudges rather than dictates
+([AFK Arena wiki](https://afk-arena.fandom.com/wiki/Faction),
+[Gamer Empire](https://gamerempire.net/afk-arena-faction-advantages-guide/)). With only three
+slots, Emberdeep uses pairs instead of factions. Built: five hero-pair synergies (6–10% party
+bonuses), shown on the party strip and in the slot picker. They were tuned down after the
+simulator showed the final boss getting too easy. This closes the research week. Ideas left for
+later: AdMob rewarded video in the Android build, a signed release and store listing, hero skill
+upgrades, and a fifth depth.

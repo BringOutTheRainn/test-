@@ -499,6 +499,24 @@ test('every tenth spire floor pays a one-time milestone chest with upgraded gear
   assert.equal(g.finishBattle(s, b2).chest, undefined, 'floor 11 has no chest');
 });
 
+test('hero pairs in the party switch on synergies that boost the whole party', () => {
+  const ids = new Set(g.HEROES.map((d) => d.id));
+  for (const y of g.SYNERGIES) assert.ok(y.pair.every((id) => ids.has(id)), y.id);
+  for (const id of ids) assert.ok(g.SYNERGIES.some((y) => y.pair.includes(id)), `${id} is in a pair`);
+  const s = g.newState(1);
+  assert.deepEqual(g.activeSynergies(s.party).map((y) => y.id), ['oath'], 'the starting trio is Oathbound');
+  const withBonus = g.partyUnits(s);
+  s.party = ['knight', 'ranger', 'duelist'];
+  s.heroes.push({ id: 'duelist', level: 1, xp: 0, gear: { weapon: null, armor: null, charm: null } });
+  const knight = g.partyUnits(s).find((u) => u.key === 'knight');
+  const knightOath = withBonus.find((u) => u.key === 'knight');
+  assert.ok(knightOath.def > knight.def, 'Oathbound raises defence');
+  assert.deepEqual(g.activeSynergies(s.party).map((y) => y.id), ['hunt']);
+  const ranger = withBonus.find((u) => u.key === 'ranger');
+  assert.ok(g.partyUnits(s).find((u) => u.key === 'ranger').atk > ranger.atk, 'Hunt Pact raises attack');
+  assert.deepEqual(g.activeSynergies(['cleric', 'druid', 'pyromancer']).map((y) => y.id).sort(), ['grove', 'wild']);
+});
+
 test('old saves get an empty spire record', () => {
   const raw = JSON.parse(g.serialize(g.newState(1)));
   delete raw.tower;

@@ -119,13 +119,33 @@ function power(st: Stats): number {
   return Math.round(st.hp * 0.5 + st.atk * 6 + st.def * 4 + st.spd * 3 + st.crit * 200);
 }
 
+// Synergies: certain pairs in the party give the whole party a small bonus, so who you bring
+// matters a little beyond each hero's own kit.
+interface Synergy { id: string; name: string; pair: [string, string]; stat: 'hp' | 'atk' | 'def' | 'spd'; pct: number; text: string }
+
+const SYNERGIES: Synergy[] = [
+  { id: 'oath', name: 'Oathbound', pair: ['knight', 'cleric'], stat: 'def', pct: 10, text: '+10% defence' },
+  { id: 'hunt', name: 'Hunt Pact', pair: ['ranger', 'duelist'], stat: 'atk', pct: 8, text: '+8% attack' },
+  { id: 'wild', name: 'Wildfire', pair: ['druid', 'pyromancer'], stat: 'atk', pct: 8, text: '+8% attack' },
+  { id: 'grove', name: 'Sanctuary', pair: ['cleric', 'druid'], stat: 'hp', pct: 8, text: '+8% health' },
+  { id: 'volley', name: 'Quickfire', pair: ['ranger', 'pyromancer'], stat: 'spd', pct: 6, text: '+6% speed' },
+];
+
+function activeSynergies(party: string[]): Synergy[] {
+  return SYNERGIES.filter((y) => y.pair.every((id) => party.includes(id)));
+}
+
 function partyUnits(s: GameState): Unit[] {
+  const syn = activeSynergies(s.party);
+  const boost = (stat: Synergy['stat'], v: number): number =>
+    Math.round(v * (1 + syn.filter((y) => y.stat === stat).reduce((a, y) => a + y.pct, 0) / 100));
   return s.party.map((id) => heroDef(id)).map((d) => {
     const st = heroStats(s, d.id);
     const h = heroState(s, d.id);
+    const hp = boost('hp', st.hp);
     return {
       uid: 'h_' + d.id, key: d.id, name: d.name, side: 'hero' as Side, art: d.art, level: h.level,
-      maxHp: st.hp, hp: st.hp, atk: st.atk, def: st.def, spd: st.spd, crit: st.crit,
+      maxHp: hp, hp, atk: boost('atk', st.atk), def: boost('def', st.def), spd: boost('spd', st.spd), crit: st.crit,
       skills: d.skills.slice(), cds: {}, statuses: [], ct: 0,
       boss: false, enrage: false, enraged: false, intent: null,
     };

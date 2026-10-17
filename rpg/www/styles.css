@@ -330,3 +330,8 @@ button.wide { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; 
 .trial.tower.locked { background: var(--panel); border: 1px dashed var(--line); box-shadow: none; }
 .trial .tside small.tithe-ready { color: var(--gold); }
 .item.tithe { border-color: #6b5420; }
+.synergies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
+.syn { font-size: 12px; color: var(--muted); }
+.syn.on { color: #f3d27a; background: #2a2016; border: 1px solid #7a5a22; border-radius: 999px; padding: 3px 10px; }
+.syn.on small { color: var(--muted); margin-left: 4px; }
+.syn-gain { color: #f3d27a !important; }

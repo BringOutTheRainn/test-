@@ -29,7 +29,7 @@ const exportsList = [
   'newState', 'heroStats', 'partyUnits', 'beginBattle', 'finishBattle', 'stageUnlocked', 'regionUnlocked', 'frontier', 'starsFor', 'parFor',
   'xpToNext', 'addXp', 'giveItem', 'equip', 'canEquip', 'shopStock', 'buyItem', 'sellItem', 'upgradeItem', 'upgradeCost', 'itemStats',
   'serialize', 'deserialize', 'stageDef', 'heroState', 'suggestedLevel', 'power',
-  'titheReady', 'claimTithe', 'titheRate', 'TITHE_CAP_HOURS', 'towerUnlocked', 'towerFloor', 'towerLevel', 'towerNext', 'beginTower', 'towerChest', 'towerNextChest', 'TOWER_CHEST_EVERY',
+  'titheReady', 'claimTithe', 'titheRate', 'TITHE_CAP_HOURS', 'towerUnlocked', 'towerFloor', 'towerLevel', 'towerNext', 'beginTower', 'SYNERGIES', 'activeSynergies', 'towerChest', 'towerNextChest', 'TOWER_CHEST_EVERY',
   'PARTY_SIZE', 'canRecruit', 'recruitHero', 'recruitLevel', 'setPartySlot', 'heroDef',
   'TRIAL_MODS', 'dayKey', 'prevDay', 'trialFor', 'beginTrial', 'trialUnlocked', 'trialWonToday', 'adsLeft', 'claimAdBonus',
 ];

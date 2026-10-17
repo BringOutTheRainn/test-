@@ -270,7 +270,23 @@ function partyStrip(stageId = ''): string {
     return `<button class="pslot" data-act="pslot" data-slot="${i}" data-id="${stageId}">${sprite(d.art)}<b>${d.name}</b><small>Lv ${heroState(app.s, id).level}</small></button>`;
   }).join('');
   const bench = app.s.heroes.length - PARTY_SIZE;
-  return `<div class="party ${compact ? 'compact' : ''}">${compact ? '' : `<h4>Party <small>${bench > 0 ? 'tap a hero to swap them' : 'recruit more heroes to swap them'}</small></h4>`}<div class="pslots">${slots}</div></div>`;
+  return `<div class="party ${compact ? 'compact' : ''}">${compact ? '' : `<h4>Party <small>${bench > 0 ? 'tap a hero to swap them' : 'recruit more heroes to swap them'}</small></h4>`}<div class="pslots">${slots}</div>${synergyHtml(app.s.party)}</div>`;
+}
+
+function synergyHtml(party: string[]): string {
+  const on = activeSynergies(party);
+  return `<div class="synergies">${on.map((y) => `<span class="syn on">✦ ${y.name} <small>${y.text}</small></span>`).join('')}${on.length ? '' : '<span class="syn">No pair bonus. Try pairing heroes who fight well together.</span>'}</div>`;
+}
+
+/** The pair bonuses a swap would switch on, shown on each candidate in the slot picker. */
+function pairGain(slot: number, heroId: string): string {
+  const next = app.s.party.slice();
+  const at = next.indexOf(heroId);
+  if (at >= 0) next[at] = next[slot];
+  next[slot] = heroId;
+  const had = activeSynergies(app.s.party).map((y) => y.id);
+  const gain = activeSynergies(next).filter((y) => !had.includes(y.id));
+  return gain.map((y) => `<small class="syn-gain">✦ ${y.name}: ${y.text}</small>`).join('');
 }
 
 function openPartySlot(slot: number, stageId = ''): void {
@@ -279,7 +295,7 @@ function openPartySlot(slot: number, stageId = ''): void {
     const d = heroDef(h.id);
     const at = app.s.party.indexOf(h.id);
     return `<div class="item">${sprite(d.art, 'ico')}
-      <div><b>${d.name} <small>${d.cls} · Lv ${h.level}</small></b><small class="muted">${at >= 0 ? `In the party, will swap with ${heroDef(cur).name}` : d.blurb}</small></div>
+      <div><b>${d.name} <small>${d.cls} · Lv ${h.level}</small></b><small class="muted">${at >= 0 ? `In the party, will swap with ${heroDef(cur).name}` : d.blurb}</small>${pairGain(slot, h.id)}</div>
       <button class="primary sm" data-act="setparty" data-slot="${slot}" data-hero="${h.id}" data-id="${stageId}">${at >= 0 ? 'Swap' : 'Pick'}</button></div>`;
   }).join('');
   openModal(`<h3><small>Party slot ${slot + 1}</small>Replace ${heroDef(cur).name}</h3>
