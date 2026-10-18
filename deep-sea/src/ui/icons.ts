@@ -53,3 +53,11 @@ function upgradeIcon(u: UpgradeDef): string {
   if (u.kind === 'tier' && u.gen !== undefined) return GEN_ICONS[u.gen];
   return KIND_ICONS[u.kind] || ICON_PEARL;
 }
+
+// A branching coral in the given color, drawn at a fixed pixel size.
+function coralSvg(color: string, size: number): string {
+  return `<svg class="coral" style="width:${size}px;height:${size}px;flex:none" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round">
+    <path d="M32 60V34M32 40L18 26V12M18 26L10 20M32 34L46 22V8M46 22L54 16M32 46L44 40V30"/></g>
+    <g fill="${color}"><circle cx="18" cy="11" r="4"/><circle cx="10" cy="19" r="4"/><circle cx="46" cy="7" r="4"/><circle cx="54" cy="15" r="4"/><circle cx="44" cy="29" r="4"/></g>
+    <ellipse cx="32" cy="60" rx="12" ry="3" fill="#000" opacity=".25"/></svg>`;
+}

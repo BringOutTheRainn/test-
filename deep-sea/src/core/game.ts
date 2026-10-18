@@ -35,6 +35,7 @@ interface State {
   requests: { list: ReefRequest[]; done: number; nextAt: number };
   sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
   relics: Record<string, boolean>;
+  garden: { plots: Plot[]; found: Record<string, boolean>; harvests: number; checkAt: number };
 }
 
 // Reef Requests: three short goals at a time, each paying Pearls and a Heart.
@@ -75,6 +76,7 @@ function newState(now: number): State {
     requests: { list: [], done: 0, nextAt: 0 },
     sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
     relics: {},
+    garden: { plots: newPlots(), found: {}, harvests: 0, checkAt: 0 },
   };
 }
 
@@ -198,6 +200,7 @@ function baseMult(s: State): number {
   let m = 1 + 0.02 * s.moonstones;
   if (rare(s, 'narwhal')) m *= 1.1;
   if (relic(s, 'doubloon')) m *= 1.05;
+  m *= 1 + gardenBonus(s);
   m *= 1 + 0.01 * Object.keys(s.achievements).length;
   m *= Math.pow(ZONE_MULT, s.zone);
   UPGRADES.forEach((u) => { if (u.kind === 'research' && has(s, u.id)) m *= u.value!; });
@@ -602,10 +605,89 @@ function reminderPlan(s: State, now: number, eveningAt: number, eveningDay: stri
   return list.filter((r) => r.at - now >= REMINDER_MIN_MS).sort((a, b) => a.at - b.at);
 }
 
+// ---------- Reef garden ----------
+// Six plots in a 3 x 2 grid. A grown coral boosts all production while it stands; harvesting it pays Pearls
+// (and Hearts for the rarer kinds) but frees the plot. Two different grown corals next to an empty plot can
+// cross-breed: once a minute each such plot has a chance to sprout their hybrid.
+
+interface Plot { c: string; at: number; grown: boolean; }
+const GARDEN_COLS = 3;
+const GARDEN_PLOTS = 6;
+const SPROUT_CHANCE = 0.1; // per empty plot per minute, when both parents are grown next to it
+function newPlots(): Plot[] {
+  return Array.from({ length: GARDEN_PLOTS }, () => ({ c: '', at: 0, grown: false }));
+}
+
+const gardenUnlocked = (s: State) => s.zone >= 2 || s.stats.migrations > 0 || s.garden.harvests > 0;
+const coralKnown = (s: State, id: string) => !!CORAL_BY_ID[id] && (!CORAL_BY_ID[id].parents || !!s.garden.found[id]);
+const gardenBonus = (s: State) => s.garden.plots.reduce((sum, p) => sum + (p.grown ? CORAL_BY_ID[p.c].bonus : 0), 0);
+const coralReady = (s: State, i: number, now: number) => !!s.garden.plots[i] && !!s.garden.plots[i].c && now - s.garden.plots[i].at >= CORAL_BY_ID[s.garden.plots[i].c].ms;
+const coralReward = (s: State, id: string) => ({ pearls: Math.max(25, rawPPS(s) * CORAL_BY_ID[id].harvest), hearts: CORAL_BY_ID[id].hearts });
+
+function plotNeighbors(i: number): number[] {
+  const r = Math.floor(i / GARDEN_COLS), c = i % GARDEN_COLS, out: number[] = [];
+  if (c > 0) out.push(i - 1);
+  if (c < GARDEN_COLS - 1) out.push(i + 1);
+  if (r > 0) out.push(i - GARDEN_COLS);
+  if (i + GARDEN_COLS < GARDEN_PLOTS) out.push(i + GARDEN_COLS);
+  return out;
+}
+
+// The hybrid an empty plot could sprout from its grown neighbors (the rarest one if several fit).
+function sproutCandidate(s: State, i: number): string | null {
+  const grown = new Set(plotNeighbors(i).map((j) => s.garden.plots[j]).filter((p) => p.grown).map((p) => p.c));
+  let best: string | null = null;
+  CORALS.forEach((c) => { if (c.parents && grown.has(c.parents[0]) && grown.has(c.parents[1])) best = c.id; });
+  return best;
+}
+
+function plantCoral(s: State, i: number, id: string, now: number): boolean {
+  const p = s.garden.plots[i];
+  if (!gardenUnlocked(s) || !p || p.c || !coralKnown(s, id)) return false;
+  p.c = id; p.at = now; p.grown = false;
+  return true;
+}
+
+function harvestCoral(s: State, i: number, now: number): { pearls: number; hearts: number } | null {
+  if (!coralReady(s, i, now)) return null;
+  const p = s.garden.plots[i];
+  const r = coralReward(s, p.c);
+  p.c = ''; p.at = 0; p.grown = false;
+  earn(s, r.pearls);
+  s.hearts += r.hearts;
+  s.garden.harvests += 1;
+  return r;
+}
+
+// Clears a plot without a harvest (for a seedling you no longer want).
+function uprootCoral(s: State, i: number): boolean {
+  const p = s.garden.plots[i];
+  if (!p || !p.c) return false;
+  p.c = ''; p.at = 0; p.grown = false;
+  return true;
+}
+
+// Marks grown corals and rolls cross-breeding. Returns the ids of any new hybrids found this time.
+function gardenTick(s: State, now: number, rand: () => number): string[] {
+  const found: string[] = [];
+  if (!gardenUnlocked(s)) return found;
+  s.garden.plots.forEach((p, i) => { p.grown = !!p.c && coralReady(s, i, now); });
+  if (now < s.garden.checkAt) return found;
+  s.garden.checkAt = now + 60e3;
+  s.garden.plots.forEach((p, i) => {
+    if (p.c) return;
+    const id = sproutCandidate(s, i);
+    if (!id || rand() >= SPROUT_CHANCE) return;
+    p.c = id; p.at = now; p.grown = false;
+    if (!s.garden.found[id]) { s.garden.found[id] = true; found.push(id); }
+  });
+  return found;
+}
+
 // ---------- Tick ----------
 
 // Returns the pearls from geyser auto-taps this tick (so the scene can show them).
-function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTaps: number; autoPearls: number } {
+function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTaps: number; autoPearls: number; sprouted: string[] } {
   const dt = Math.max(0, dtMs) / 1000;
   earn(s, pps(s, now) * dt);
   let autoTaps = 0, autoPearls = 0;
@@ -622,8 +704,9 @@ function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTa
   if (!s.visitor && now >= s.nextVisitorAt) spawnVisitor(s, now, rand);
   fillRequests(s, now, rand);
   s.requests.list.forEach((r) => { if (!r.got && requestProgress(s, r) >= r.target) r.got = true; });
+  const sprouted = gardenTick(s, now, rand);
   s.lastSeen = now;
-  return { autoTaps, autoPearls };
+  return { autoTaps, autoPearls, sprouted };
 }
 
 // ---------- Logbook ----------
@@ -657,6 +740,10 @@ function checkAchievements(s: State): AchDef[] {
   const relics = Object.keys(s.relics).length;
   if (relics >= 1) give('relic_1');
   if (relics >= RELICS.length) give('relic_8');
+  if (s.garden.harvests >= 1) give('garden_1');
+  const hybrids = CORALS.filter((c) => c.parents && s.garden.found[c.id]).length;
+  if (hybrids >= 1) give('hybrid_1');
+  if (hybrids >= CORALS.filter((c) => c.parents).length) give('hybrid_3');
   return got;
 }
 
@@ -761,6 +848,8 @@ function deserialize(text: string, now: number): State {
   s.requests = Object.assign(newState(now).requests, data.requests || {});
   s.sub = Object.assign(newState(now).sub, data.sub || {});
   s.relics = data.relics || {};
+  s.garden = Object.assign(newState(now).garden, data.garden || {});
+  if (!Array.isArray(s.garden.plots) || s.garden.plots.length !== GARDEN_PLOTS) s.garden.plots = newPlots();
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);
   s.v = SAVE_VERSION;
   return s;

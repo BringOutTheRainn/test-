@@ -195,6 +195,12 @@ class App {
     rollAds(this.s, localDay(now));
     setAmbientDepth(this.s.zone);
     const auto = tick(this.s, now, dt * 1000, rng);
+    auto.sprouted.forEach((id) => {
+      const c = CORAL_BY_ID[id];
+      this.scene.announce(c.name, c.color);
+      this.toast(`<b>Reef garden:</b> two corals cross-bred into ${c.name}!`);
+      if (this.s.settings.sound) playChime();
+    });
     for (let k = 0; k < auto.autoTaps; k++) {
       const sc = this.scene;
       sc.tapAt(sc.clamX + (Math.random() - 0.5) * sc.clamR * 1.6, sc.clamY - sc.clamR * 0.3, '+' + fmt(auto.autoPearls / auto.autoTaps, this.s.settings.sci), '#9ff7ff');
@@ -374,7 +380,17 @@ class App {
         const bar = document.querySelector<HTMLElement>('#panel .subcard .bar i');
         if (bar) bar.style.width = `${Math.min(100, ((now - s.sub.startedAt) / (s.sub.until - s.sub.startedAt || 1)) * 100)}%`;
       }
-      const key = `${this.tab}|${subKey}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
+      document.querySelectorAll<HTMLElement>('#panel .plot[data-i]').forEach((el2) => {
+        const pl = s.garden.plots[+el2.dataset.i!];
+        if (!pl.c || pl.grown) return;
+        const c = CORAL_BY_ID[pl.c];
+        const tl = el2.querySelector<HTMLElement>('.pt');
+        if (tl) tl.textContent = fmtTime(Math.max(0, (pl.at + c.ms - now) / 1000));
+        const bar = el2.querySelector<HTMLElement>('.bar i');
+        if (bar) bar.style.width = `${Math.min(100, ((now - pl.at) / c.ms) * 100)}%`;
+      });
+      const gardenKey = gardenUnlocked(s) ? s.garden.plots.map((pl) => pl.c + (pl.grown ? '!' : '')).join(',') : 'locked';
+      const key = `${this.tab}|${subKey}|${gardenKey}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'logbook') {
       const key = `logbook|${s.hearts}|${Object.keys(s.relics).length}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
@@ -445,9 +461,80 @@ class App {
     p.appendChild(card);
   }
 
+  renderGarden(p: HTMLElement) {
+    const s = this.s, now = Date.now();
+    const card = el('div', 'subcard garden');
+    if (!gardenUnlocked(s)) {
+      card.innerHTML = '<b>🪸 Reef garden</b><small>Reach the Midnight Trench to start a coral garden.</small>';
+      p.appendChild(card);
+      return;
+    }
+    const bonus = gardenBonus(s);
+    card.innerHTML = `<b>🪸 Reef garden <span class="gbonus">${bonus > 0 ? `+${Math.round(bonus * 100)}% production` : ''}</span></b>
+      <small>Grown corals boost all production. Harvest them for Pearls, or keep them standing. Two different grown corals beside an empty plot may cross-breed.</small>`;
+    const grid = el('div', 'plots');
+    s.garden.plots.forEach((pl, i) => {
+      const c = pl.c ? CORAL_BY_ID[pl.c] : null;
+      const b = el('button', 'plot' + (c ? (pl.grown ? ' grown' : ' growing') : ' empty'));
+      b.dataset.i = String(i);
+      if (!c) b.innerHTML = '<span class="plus">+</span><small>Plant</small>';
+      else if (pl.grown) b.innerHTML = `${coralSvg(c.color, 46)}<small>${c.name.split(' ')[0]}</small><small class="ready">Harvest</small>`;
+      else b.innerHTML = `${coralSvg(c.color, 26)}<small class="pt">${fmtTime(Math.max(0, (pl.at + c.ms - now) / 1000))}</small><div class="bar"><i style="width:${Math.min(100, ((now - pl.at) / c.ms) * 100)}%"></i></div>`;
+      b.addEventListener('click', () => this.plotAction(i));
+      grid.appendChild(b);
+    });
+    card.appendChild(grid);
+    const hybrids = CORALS.filter((c) => c.parents);
+    const strip = el('div', 'relics');
+    strip.innerHTML = `<small>Cross-bred ${hybrids.filter((c) => s.garden.found[c.id]).length}/${hybrids.length}</small>` +
+      hybrids.map((c) => `<span class="${s.garden.found[c.id] ? 'got' : ''}" title="${s.garden.found[c.id] ? c.name : '?'}">${s.garden.found[c.id] ? coralSvg(c.color, 22) : '?'}</span>`).join('');
+    card.appendChild(strip);
+    p.appendChild(card);
+  }
+
+  plotAction(i: number) {
+    const s = this.s, pl = s.garden.plots[i], now = Date.now();
+    const redraw = () => { this.save(); this.panelKey = ''; this.renderPanel(); };
+    if (!pl.c) {
+      const m = $('#modal');
+      this.modal('<h2>Plant a coral</h2><p>A coral boosts production once it is fully grown.</p><div class="seeds"></div>', [['Cancel', () => {}, 'ghost']]);
+      const list = m.querySelector<HTMLElement>('.seeds')!;
+      CORALS.forEach((c) => {
+        const known = coralKnown(s, c.id);
+        const r = coralReward(s, c.id);
+        const row = el('button', 'seed' + (known ? '' : ' locked'));
+        row.innerHTML = known
+          ? `${coralSvg(c.color, 34)}<div><b>${c.name}</b><small>${c.ms < 3600e3 ? `${c.ms / 60e3} min` : `${c.ms / 3600e3} h`} · +${Math.round(c.bonus * 100)}% while grown · harvest ${fmt(r.pearls)}${c.hearts ? `&nbsp;+&nbsp;${c.hearts}&nbsp;❤` : ''}</small></div>`
+          : `<span class="ricon">?</span><div><b>Unknown coral</b><small>Grow ${CORAL_BY_ID[c.parents![0]].name} and ${CORAL_BY_ID[c.parents![1]].name} side by side.</small></div>`;
+        if (known) row.addEventListener('click', () => {
+          m.hidden = true;
+          if (plantCoral(s, i, c.id, Date.now())) { if (s.settings.sound) playBubble(0.5); redraw(); }
+        });
+        list.appendChild(row);
+      });
+      return;
+    }
+    const c = CORAL_BY_ID[pl.c];
+    if (!pl.grown) {
+      this.modal(`<div class="relic-big">${coralSvg(c.color, 72)}</div><h2>${c.name}</h2><p>Fully grown in ${fmtTime(Math.max(0, (pl.at + c.ms - now) / 1000))}.</p>`,
+        [['Uproot', () => { uprootCoral(s, i); redraw(); }, 'ghost'], ['Keep growing', () => {}]]);
+      return;
+    }
+    const r = coralReward(s, c.id);
+    this.modal(`<div class="relic-big">${coralSvg(c.color, 72)}</div><h2>${c.name}</h2><p>Adds +${Math.round(c.bonus * 100)}% production while it stands. Harvest it for ${fmt(r.pearls)} Pearls${c.hearts ? ` and ${c.hearts} ❤` : ''}?</p>`,
+      [['Keep it', () => {}, 'ghost'], ['Harvest', () => {
+        const got = harvestCoral(s, i, Date.now());
+        if (!got) return;
+        if (s.settings.sound) playChime();
+        this.toast(`<b>${c.name}:</b> +${fmt(got.pearls)} Pearls${got.hearts ? ` and +${got.hearts} ❤` : ''}.`);
+        redraw();
+      }]]);
+  }
+
   renderDepths(p: HTMLElement) {
     const s = this.s;
     this.renderSub(p);
+    this.renderGarden(p);
     p.appendChild(el('p', 'lead', 'Each zone you reach unlocks new creatures and multiplies all production by x1.5 for this migration.'));
     const list = el('div', 'zones');
     ZONES.forEach((z, i) => {
@@ -751,7 +838,7 @@ class App {
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
       <div class="setting"><span>Start over</span><button data-a="reset" class="danger">Reset</button></div>
-      <small>Fathom 0.3 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
+      <small>Fathom 0.4 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
       if (k) {

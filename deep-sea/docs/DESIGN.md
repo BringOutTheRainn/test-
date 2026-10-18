@@ -170,6 +170,17 @@ Doubloon (all production +5%), Brass Diving Helmet (taps +10%), Captain's Compas
 (Reef Request rewards x1.5) and Moon Pearl (Tide Gifts x1.25). A find opens a reveal card; the sub card shows the
 collection and the Logbook has a Sunken relics page. Logbook: first relic and all eight.
 
+## Reef garden
+
+Opens in the Midnight Trench (or after a migration), as a card in the Depths tab. Six plots in a 3 x 2 grid.
+Staghorn Coral (10 min, +1%), Brain Coral (1 h, +2%) and Purple Sea Fan (4 h, +3%, 1 Heart) can always be planted.
+A fully grown coral adds its bonus to all production for as long as it stands; harvesting it pays Pearls (20 s to
+20 min of production by kind, about 3-4% of its growing time) and frees the plot. So the choice is a standing
+bonus or a payout. Once a minute, an empty plot with two different grown corals beside it has a 10% chance to
+sprout their hybrid: Fire Coral (staghorn + brain, 30 min, +3%, 1 Heart), Moonlight Coral (brain + fan, 2 h, +5%,
+2 Hearts) and Rainbow Coral (fire + moonlight, 8 h, +8%, 3 Hearts). Found hybrids can be planted freely. A full
+rainbow garden gives +48%. The garden survives migrations. Logbook: first harvest, first hybrid, all hybrids.
+
 ## Reminders
 
 On phones, when the app goes to the background it schedules up to five local notifications (no server):
@@ -209,7 +220,7 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
    ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), ~~reminders~~ (built).
 4. **Depth content**: ~~coral spawning on real full moons~~ (built), ~~expedition submarine~~ (built), ~~sunken
-   relics for the submarine to find~~ (built), a reef garden minigame.
+   relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built).
 
 ## Research log
 
@@ -292,3 +303,13 @@ permanent boosts; deeper missions find rarer ones), run 6's plan.
   Logbook page. Every find is new, so the set completes in a few weeks of overnight expeditions. With relics, the
   simulated player reaches 1T at 98.7 minutes (97 before; the run's luck changed which relics came first).
 - This was the last run of the research week.
+
+**Run 8 (Oct 18, morning; week two).** Sources: Cookie Clicker's garden minigame (plants that buff while they
+grow and cross-breed into new kinds next to each other), small idle farming games on itch.io (a harvest that waits
+rather than rots, readable timers), SolodevStack's "Designing an Idle Game That Respects Your Time".
+- A garden gives the colony a second, slower loop with its own decision. **Built: the reef garden.** Six plots,
+  three starter corals and three hybrids that only appear by cross-breeding grown parents next to an empty plot.
+  Grown corals boost production while they stand, so harvesting is a real choice. Nothing rots, and timers show
+  on every plot. With the simulated player keeping three brain corals and farming three staghorns, 1T comes at
+  94.6 minutes (98.7 before).
+- **Next:** show grown corals on the seabed in the scene, then a weekly ocean event.

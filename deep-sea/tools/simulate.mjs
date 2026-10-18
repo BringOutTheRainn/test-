@@ -25,6 +25,11 @@ for (let t = 0; t < hours * 3600e3; t += step) {
   g.startGeyser(s, t);
   if (g.subBack(s, t)) g.collectDive(s, t, rand2);
   g.launchDive(s, 1, t);
+  // Reef garden: brain corals kept for their bonus, staghorn harvested and replanted.
+  for (let i = 0; i < 6; i++) {
+    if (g.coralReady(s, i, t) && s.garden.plots[i].c === 'staghorn') g.harvestCoral(s, i, t);
+    g.plantCoral(s, i, i % 2 ? 'staghorn' : 'brain', t);
+  }
   for (let i = 0; i < s.requests.list.length; i++) if (g.requestDone(s, s.requests.list[i])) g.claimRequest(s, i, t, rand2);
   if (t % 1000 !== 0) continue;
   for (const u of g.visibleUpgrades(s)) if (s.pearls >= u.cost) g.buyUpgrade(s, u.id);

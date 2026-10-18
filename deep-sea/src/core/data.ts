@@ -131,6 +131,9 @@ function buildAchievements(): AchDef[] {
     list.push({ id: `dive_${n}`, name, desc: `Bring the submarine back from ${n} dive${n > 1 ? 's' : ''}.` }));
   list.push({ id: 'relic_1', name: 'Treasure Hunter', desc: 'Find a sunken relic.' });
   list.push({ id: 'relic_8', name: 'Museum of the Deep', desc: 'Find every sunken relic.' });
+  list.push({ id: 'garden_1', name: 'Green Fins', desc: 'Harvest a coral from the reef garden.' });
+  list.push({ id: 'hybrid_1', name: 'Coral Matchmaker', desc: 'Cross-breed a new kind of coral.' });
+  list.push({ id: 'hybrid_3', name: 'Rainbow Reef', desc: 'Discover every cross-bred coral.' });
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();
@@ -181,3 +184,18 @@ const RELICS: RelicDef[] = [
 ];
 const RELIC_BY_ID: Record<string, RelicDef> = {};
 RELICS.forEach((r) => (RELIC_BY_ID[r.id] = r));
+
+// Reef garden corals. The first three can always be planted; the rest only appear by cross-breeding two grown
+// parents next to an empty plot, and can be planted freely once found.
+interface CoralDef { id: string; name: string; color: string; ms: number; bonus: number; harvest: number; hearts: number; parents?: [string, string]; }
+
+const CORALS: CoralDef[] = [
+  { id: 'staghorn', name: 'Staghorn Coral', color: '#ff9f7a', ms: 10 * 60e3, bonus: 0.01, harvest: 20, hearts: 0 },
+  { id: 'brain', name: 'Brain Coral', color: '#c9e36b', ms: 60 * 60e3, bonus: 0.02, harvest: 120, hearts: 0 },
+  { id: 'fan', name: 'Purple Sea Fan', color: '#b48cff', ms: 4 * 3600e3, bonus: 0.03, harvest: 480, hearts: 1 },
+  { id: 'fire', name: 'Fire Coral', color: '#ff5d5d', ms: 30 * 60e3, bonus: 0.03, harvest: 120, hearts: 1, parents: ['staghorn', 'brain'] },
+  { id: 'moon', name: 'Moonlight Coral', color: '#9fe8ff', ms: 2 * 3600e3, bonus: 0.05, harvest: 360, hearts: 2, parents: ['brain', 'fan'] },
+  { id: 'rainbow', name: 'Rainbow Coral', color: '#ffd84a', ms: 8 * 3600e3, bonus: 0.08, harvest: 1200, hearts: 3, parents: ['fire', 'moon'] },
+];
+const CORAL_BY_ID: Record<string, CoralDef> = {};
+CORALS.forEach((c) => (CORAL_BY_ID[c.id] = c));

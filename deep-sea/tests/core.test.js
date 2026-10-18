@@ -394,3 +394,35 @@ test('deep dives find sunken relics that last forever and each bend one rule', (
   assert.equal(r.relic, undefined);
   assert.ok(g.checkAchievements(s).some((a) => a.id === 'relic_8'));
 });
+
+test('reef garden corals grow, boost production, pay on harvest and cross-breed', () => {
+  const s = g.newState(0);
+  s.owned[0] = 10;
+  assert.equal(g.plantCoral(s, 0, 'staghorn', 0), false, 'locked before the third zone');
+  s.zone = 2;
+  assert.equal(g.plantCoral(s, 0, 'fire', 0), false, 'hybrids must be discovered first');
+  assert.ok(g.plantCoral(s, 0, 'staghorn', 0));
+  assert.ok(g.plantCoral(s, 2, 'brain', 0));
+  assert.equal(g.plantCoral(s, 0, 'brain', 0), false, 'one coral per plot');
+  const before = g.baseMult(s);
+  g.gardenTick(s, 10 * 60e3, fixed(0.99));
+  assert.equal(s.garden.plots[0].grown, true);
+  assert.equal(s.garden.plots[2].grown, false);
+  assert.ok(Math.abs(g.baseMult(s) / before - 1.01) < 1e-9, 'a grown staghorn adds 1%');
+  // Plot 1 sits between the staghorn and the brain coral: once both are grown it can sprout fire coral.
+  assert.deepEqual(g.plotNeighbors(1).sort(), [0, 2, 4]);
+  assert.equal(g.sproutCandidate(s, 1), null);
+  const found = g.gardenTick(s, 60 * 60e3, fixed(0.05));
+  assert.deepEqual(found, ['fire']);
+  assert.equal(s.garden.plots[1].c, 'fire');
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'hybrid_1'));
+  assert.ok(g.plantCoral(s, 3, 'fire', 0), 'found hybrids can be planted');
+  const r = g.harvestCoral(s, 0, 60 * 60e3);
+  assert.equal(Math.round(r.pearls), Math.round(Math.max(25, g.rawPPS(s) * 20)));
+  assert.equal(s.garden.plots[0].c, '');
+  assert.equal(g.harvestCoral(s, 1, 60 * 60e3), null, 'a seedling cannot be harvested');
+  assert.ok(g.uprootCoral(s, 1));
+  const back = g.deserialize(g.serialize(s), 0);
+  assert.equal(back.garden.found.fire, true);
+  assert.equal(back.garden.plots[2].c, 'brain');
+});

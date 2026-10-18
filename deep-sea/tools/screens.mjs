@@ -108,6 +108,26 @@ await page.click('#modal .btns .act');
 await page.waitForTimeout(300);
 await shot('24_relic_strip');
 
+// Reef garden in the Midnight Trench: two grown parents cross-breed fire coral in the plot between them.
+await game(() => {
+  const s = window.__fathom.s, now = Date.now();
+  s.zone = 2;
+  const P = (c, ago) => ({ c, at: now - ago, grown: false });
+  s.garden.plots = [P('staghorn', 11 * 60e3), P('', 0), P('brain', 61 * 60e3), P('fan', 75 * 60e3), P('', 0), P('staghorn', 4 * 60e3)];
+  s.garden.plots[1].c = ''; s.garden.plots[4].c = '';
+  s.garden.checkAt = 0;
+  window.__realRandom = Math.random; Math.random = () => 0.01;
+});
+await page.waitForTimeout(400);
+await game(() => { Math.random = window.__realRandom; });
+await page.evaluate(() => document.querySelector('#panel .garden').scrollIntoView({ block: 'start' }));
+await page.waitForTimeout(4500); // let the toasts fade
+await shot('25_garden');
+await page.click('#panel .plot[data-i="4"]');
+await page.waitForTimeout(300);
+await shot('26_garden_plant');
+await page.click('#modal .btns .act');
+
 // Late game in the Midnight Trench and deeper.
 await game(() => {
   const app = window.__fathom, s = app.s;
