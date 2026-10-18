@@ -426,3 +426,15 @@ test('reef garden corals grow, boost production, pay on harvest and cross-breed'
   assert.equal(back.garden.found.fire, true);
   assert.equal(back.garden.plots[2].c, 'brain');
 });
+
+test('a reminder fires when the last growing coral is grown', () => {
+  const s = g.newState(0);
+  s.zone = 2;
+  g.plantCoral(s, 0, 'brain', 0);
+  g.plantCoral(s, 1, 'staghorn', 0);
+  let r = g.reminderPlan(s, 0, 20 * 3600e3, '1970-01-01').find((x) => x.id === 6);
+  assert.equal(r.at, 60 * 60e3, 'waits for the slowest coral');
+  g.gardenTick(s, 60 * 60e3, fixed(0.99));
+  r = g.reminderPlan(s, 60 * 60e3, 20 * 3600e3, '1970-01-01').find((x) => x.id === 6);
+  assert.equal(r, undefined, 'nothing left growing');
+});

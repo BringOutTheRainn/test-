@@ -152,6 +152,7 @@ class Scene {
     } else if (this.spawn.length) this.spawn = [];
 
     this.drawSeabed(A, B, zt);
+    this.drawGarden(s, now);
     this.drawReef(s);
     this.drawClam(s);
     this.drawVisitor(s, now);
@@ -222,6 +223,44 @@ class Scene {
     g.lineTo(w, h); g.lineTo(0, h); g.fill();
     g.fillStyle = 'rgba(0,0,0,0.08)';
     for (let i = 0; i < 14; i++) { g.beginPath(); g.ellipse((i * 97) % w, this.sandY + 14 + (i * 37) % (h - this.sandY - 10), 6, 2, 0, 0, Math.PI * 2); g.fill(); }
+  }
+
+  // The reef garden's corals, growing on the sand either side of the clam. Grown ones sway and glow.
+  drawGarden(s: State, now: number) {
+    if (!gardenUnlocked(s)) return;
+    const g = this.g, { w, h } = this;
+    const xs = [0.3, 0.235, 0.17, 0.7, 0.765, 0.83];
+    s.garden.plots.forEach((p, i) => {
+      if (!p.c) return;
+      const c = CORAL_BY_ID[p.c];
+      const grow = Math.min(1, Math.max(0, (now - p.at) / c.ms));
+      const size = h * 0.12 * (0.3 + 0.7 * grow);
+      const x = w * xs[i], y = this.sandY + 2;
+      const sway = p.grown ? Math.sin(this.t * 1.3 + i) * 0.06 : 0;
+      g.save();
+      g.translate(x, y);
+      g.rotate(sway);
+      if (p.grown) { g.shadowColor = c.color; g.shadowBlur = 12; }
+      g.strokeStyle = c.color;
+      g.fillStyle = c.color;
+      g.globalAlpha = p.grown ? 1 : 0.75;
+      g.lineCap = 'round';
+      g.lineWidth = Math.max(2, size * 0.1);
+      const u = size / 52; // the coral is drawn on a 64 unit grid, base at (32, 60)
+      const P = (px: number, py: number): [number, number] => [(px - 32) * u, (py - 60) * u];
+      const line = (pts: number[]) => {
+        g.beginPath();
+        g.moveTo(...P(pts[0], pts[1]));
+        for (let k = 2; k < pts.length; k += 2) g.lineTo(...P(pts[k], pts[k + 1]));
+        g.stroke();
+      };
+      line([32, 60, 32, 34]); line([32, 40, 18, 26, 18, 12]); line([18, 26, 10, 20]);
+      line([32, 34, 46, 22, 46, 8]); line([46, 22, 54, 16]); line([32, 46, 44, 40, 44, 30]);
+      [[18, 11], [10, 19], [46, 7], [54, 15], [44, 29]].forEach(([px, py]) => {
+        g.beginPath(); g.arc(...P(px, py), Math.max(1.5, size * 0.065), 0, Math.PI * 2); g.fill();
+      });
+      g.restore();
+    });
   }
 
   drawReef(s: State) {

@@ -180,13 +180,14 @@ bonus or a payout. Once a minute, an empty plot with two different grown corals 
 sprout their hybrid: Fire Coral (staghorn + brain, 30 min, +3%, 1 Heart), Moonlight Coral (brain + fan, 2 h, +5%,
 2 Hearts) and Rainbow Coral (fire + moonlight, 8 h, +8%, 3 Hearts). Found hybrids can be planted freely. A full
 rainbow garden gives +48%. The garden survives migrations. Logbook: first harvest, first hybrid, all hybrids.
+Planted corals also grow on the sand either side of the clam in the scene; grown ones sway and glow.
 
 ## Reminders
 
-On phones, when the app goes to the background it schedules up to five local notifications (no server):
+On phones, when the app goes to the background it schedules up to six local notifications (no server):
 the submarine is back,
 the geyser is recharged, the Tide Gift is waiting (6 pm local, only if that day is not claimed yet, naming the
-streak day), the coral starts spawning (if within three days), and the nets are full (8 hours, the offline cap).
+streak day), the coral starts spawning (if within three days), the reef garden is fully grown, and the nets are full (8 hours, the offline cap).
 Nothing under 15 minutes away is scheduled, everything is cancelled when the app opens again, permission is
 asked after the first Tide Gift claim, and Settings has a Reminders switch.
 
@@ -313,3 +314,12 @@ rather than rots, readable timers), SolodevStack's "Designing an Idle Game That 
   on every plot. With the simulated player keeping three brain corals and farming three staghorns, 1T comes at
   94.6 minutes (98.7 before).
 - **Next:** show grown corals on the seabed in the scene, then a weekly ocean event.
+
+**Run 9 (Oct 18, evening).** Sources: Abyssrium and Tap Tap Fish (the tank itself shows what you have grown, and
+that view is the reward), run 5's notes on reminders only for meaningful moments.
+- Progress you can see in the main view feels more real than a number in a menu. **Built: the garden in the
+  scene.** Every planted coral grows on the sand beside the clam, from a sprig to full size, and grown ones sway
+  and glow in their colour.
+- **Built: a garden reminder** for when the last growing coral is grown (the moment a harvest or cross-breed
+  decision is waiting), using the same rules as the other reminders. Pacing is unchanged (1T at 94.6 minutes).
+- **Next:** a weekly ocean event with its own goal and reward.

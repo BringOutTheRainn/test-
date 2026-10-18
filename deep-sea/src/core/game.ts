@@ -601,6 +601,8 @@ function reminderPlan(s: State, now: number, eveningAt: number, eveningDay: stri
   const spawn = nextSpawningAt(now);
   if (spawn - now < 3 * 86400e3) list.push({ id: 3, at: spawn, title: 'The coral is spawning', body: 'Visitors come twice as often and leave double Hearts.' });
   if (subDiving(s) && s.sub.until > now) list.push({ id: 5, at: s.sub.until, title: 'Your submarine is back', body: `The ${DIVES[s.sub.dive].name.toLowerCase()} brought back Pearls and Hearts.` });
+  const growing = s.garden.plots.filter((p) => p.c && !p.grown).map((p) => p.at + CORAL_BY_ID[p.c].ms);
+  if (gardenUnlocked(s) && growing.length) list.push({ id: 6, at: Math.max(...growing), title: 'Your reef garden is grown', body: 'Every coral is fully grown. Harvest them, or leave them standing for their bonus.' });
   if (rawPPS(s) > 0) list.push({ id: 4, at: now + OFFLINE_CAP_MS, title: 'Your colony\'s nets are full', body: 'Eight hours of Pearls are waiting for you.' });
   return list.filter((r) => r.at - now >= REMINDER_MIN_MS).sort((a, b) => a.at - b.at);
 }
