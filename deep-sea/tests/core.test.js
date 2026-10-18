@@ -339,10 +339,10 @@ test('the expedition submarine dives in real time and brings back Pearls and Hea
   s.zone = 1;
   assert.ok(g.launchDive(s, 1, 0));
   assert.equal(g.launchDive(s, 0, 0), false, 'one dive at a time');
-  assert.equal(g.collectDive(s, 30 * 60e3), null, 'still diving');
+  assert.equal(g.collectDive(s, 30 * 60e3, fixed(0.99)), null, 'still diving');
   const expect = g.diveReward(s, 1);
   assert.ok(Math.abs(expect.pearls - g.rawPPS(s) * 3600 * 0.2) < 1e-6 || expect.pearls === 50);
-  const r = g.collectDive(s, 60 * 60e3);
+  const r = g.collectDive(s, 60 * 60e3, fixed(0.99));
   assert.deepEqual(r, expect);
   assert.equal(s.hearts, 2);
   assert.equal(s.sub.dives, 1);
@@ -351,10 +351,10 @@ test('the expedition submarine dives in real time and brings back Pearls and Hea
   g.launchDive(s, 2, 0);
   assert.ok(g.speedUpDive(s, 60e3, '2026-10-17'));
   assert.ok(g.subBack(s, 60e3));
-  g.collectDive(s, 60e3);
+  g.collectDive(s, 60e3, fixed(0.99));
   g.launchDive(s, 0, 0);
   assert.equal(g.speedUpDive(s, 11 * 60e3, '2026-10-17'), false, 'under five minutes left');
-  g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0); g.launchDive(s, 0, 0); g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0);
+  g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0, fixed(0.99)); g.launchDive(s, 0, 0); g.speedUpDive(s, 0, '2026-10-17'); g.collectDive(s, 0, fixed(0.99));
   g.launchDive(s, 0, 0);
   assert.equal(g.subSpeedsLeft(s, '2026-10-17'), 0);
   assert.equal(g.speedUpDive(s, 0, '2026-10-17'), false, 'three a day');
