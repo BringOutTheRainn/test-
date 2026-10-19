@@ -163,6 +163,14 @@ await page.click('#tabs button[data-tab="stats"]');
 await shot('08_stats');
 
 // Offline popup after reload.
+await game(() => {
+  const s = window.__fathom.s, now = Date.now();
+  // Things that finish during the 3 hours away: an expedition, two corals and the geyser.
+  s.sub.dive = 1; s.sub.startedAt = now - 4 * 3600e3; s.sub.until = now - 2 * 3600e3;
+  s.garden.plots[0] = { c: 'brain', at: now - 3.5 * 3600e3, grown: false };
+  s.garden.plots[5] = { c: 'fire', at: now - 2.8 * 3600e3, grown: false };
+  s.geyser.readyAt = now - 3600e3;
+});
 await game(() => { const a = window.__fathom; a.s.lastSeen = Date.now() - 3 * 3600e3; localStorage.setItem('fathom.save', JSON.stringify(a.s)); window.onbeforeunload = null; });
 await page.evaluate(() => { window.__fathom.save = () => {}; });
 await page.reload();

@@ -239,3 +239,8 @@ h3 .muted { color: var(--muted); font-weight: 600; }
 #eventchip.ready { color: #04223a; background: var(--gold); box-shadow: 0 0 14px rgba(255, 216, 74, 0.7); animation: glow 1.2s ease-in-out infinite alternate; }
 .req.got { opacity: .6; }
 .req.got .rw { color: #7cf5c6; font-weight: 800; }
+
+/* Welcome back: what finished while away */
+.away { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.away div { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 7px 10px; font-size: 14px; }
+.away span { font-size: 18px; width: 22px; text-align: center; flex: none; }

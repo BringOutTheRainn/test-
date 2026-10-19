@@ -468,3 +468,23 @@ test('weekly ocean events rotate on UTC Mondays, count from the start and pay th
   const back = g.deserialize(g.serialize(s), mon);
   assert.equal(back.event.completed, 1);
 });
+
+test('the welcome back card lists only what finished while the player was away', () => {
+  const t0 = Date.UTC(2026, 9, 20, 12); // a Tuesday
+  const s = g.newState(t0);
+  s.zone = 2;
+  g.rollEvent(s, t0);
+  g.launchDive(s, 0, t0); // back after 15 minutes
+  g.plantCoral(s, 0, 'staghorn', t0); // 10 minutes
+  g.plantCoral(s, 1, 'fan', t0); // 4 hours
+  assert.deepEqual(g.awaySummary(s, t0, t0 + 5 * 60e3), [], 'nothing finished yet');
+  const items = g.awaySummary(s, t0, t0 + 60 * 60e3);
+  assert.equal(items.length, 2);
+  assert.match(items[0].text, /submarine is back/);
+  assert.match(items[1].text, /^1 coral finished/);
+  assert.deepEqual(g.awaySummary(s, t0 + 30 * 60e3, t0 + 60 * 60e3), [], 'already seen before the last visit');
+  const later = g.awaySummary(s, t0, t0 + 7 * 86400e3);
+  assert.ok(later.some((x) => /new weekly event/.test(x.text)));
+  const left = s.lastSeen;
+  assert.equal(g.applyOffline(s, t0 + 60e3).since, left, 'applyOffline reports when the player left');
+});

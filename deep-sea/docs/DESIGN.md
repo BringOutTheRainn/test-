@@ -191,6 +191,13 @@ is still locked runs Strong Current instead. Progress counts from the moment the
 tiers pay 5, 15 and 30 minutes of production plus 2, 4 and 8 Hearts. A chip in the scene shows the tier and glows
 when a reward is ready; the event survives migrations. Logbook: finish one event, finish four.
 
+## Welcome back
+
+When the app opens after 30+ seconds away, the welcome back card shows the offline Pearls (with the rewarded ad
+to double them) and a short list of what finished while you were gone: the submarine docking, corals that
+finished growing, the geyser recharging, Reef Requests ready to claim, a new weekly event or a ready event tier,
+coral spawning starting, and a new day's Tide Gift. Only things that finished after you left are listed.
+
 ## Reminders
 
 On phones, when the app goes to the background it schedules up to six local notifications (no server):
@@ -343,3 +350,11 @@ back), run 5's note that Fathom prefers nature's calendar to a store calendar.
   Targets are set so a player who checks in daily finishes in about a week. With the simulated heavy tapper
   claiming tiers, 1T comes at 89.8 minutes (94.6 before).
 - **Next:** a gentle "while you were away" summary that lists what finished (sub, garden, event tiers).
+
+**Run 11 (Oct 19, evening).** Sources: Egg, Inc.'s and AdVenture Capitalist's return screens (offline earnings
+first, then what is ready), Mind Studios' idle design guide on making the return feel rewarding, Fathom's own
+reminders (a notification promises something; the app should confirm it on arrival).
+- With six timed systems, a returning player has to hunt through chips and tabs to find what is ready. **Built: a
+  "while you were away" list** on the welcome back card, one line per thing that finished since the last visit,
+  with nothing listed twice. Pacing is unchanged (1T at 89.8 minutes; the sim has no offline time).
+- **Next:** a short first-week guide that points new players at each system as it unlocks.

@@ -877,16 +877,37 @@ function adoptRare(s: State, id: string): boolean {
   return true;
 }
 
-function applyOffline(s: State, now: number): { seconds: number; pearls: number } {
-  const away = Math.min(Math.max(0, now - s.lastSeen), OFFLINE_CAP_MS);
+function applyOffline(s: State, now: number): { seconds: number; pearls: number; since: number } {
+  const since = s.lastSeen;
+  const away = Math.min(Math.max(0, now - since), OFFLINE_CAP_MS);
   s.lastSeen = now;
-  if (away < 30e3) return { seconds: 0, pearls: 0 };
+  if (away < 30e3) return { seconds: 0, pearls: 0, since };
   const gained = rawPPS(s) * (away / 1000) * offlineRate(s);
   earn(s, gained);
   s.boosts = s.boosts.filter((b) => b.until > now);
   if (s.nextVisitorAt < now) s.nextVisitorAt = now + 20e3;
   s.visitor = null;
-  return { seconds: away / 1000, pearls: gained };
+  return { seconds: away / 1000, pearls: gained, since };
+}
+
+// What finished or became ready while the player was away (since = when they left), for the welcome back card.
+interface AwayItem { icon: string; text: string; }
+function awaySummary(s: State, since: number, now: number): AwayItem[] {
+  const list: AwayItem[] = [];
+  const done = (at: number) => at > since && at <= now;
+  if (subDiving(s) && done(s.sub.until)) list.push({ icon: '🚢', text: `The submarine is back from its ${DIVES[s.sub.dive].name.toLowerCase()}.` });
+  if (gardenUnlocked(s)) {
+    const grown = s.garden.plots.filter((p) => p.c && done(p.at + CORAL_BY_ID[p.c].ms)).length;
+    if (grown) list.push({ icon: '🪸', text: `${grown} coral${grown > 1 ? 's' : ''} finished growing in the reef garden.` });
+  }
+  if (geyserUnlocked(s) && done(s.geyser.readyAt)) list.push({ icon: '💨', text: 'The geyser is ready to erupt.' });
+  const ready = requestsReady(s);
+  if (ready) list.push({ icon: '📜', text: `${ready} Reef Request${ready > 1 ? 's are' : ' is'} ready to claim.` });
+  const week = eventWeek(now);
+  if (s.event.week !== week && s.event.week >= 0) list.push({ icon: eventFor(s, week).icon, text: `A new weekly event began: ${eventFor(s, week).name}.` });
+  else if (eventClaimable(s)) list.push({ icon: currentEvent(s)!.icon, text: 'A weekly event reward is ready.' });
+  if (spawningActive(now) && !spawningActive(since)) list.push({ icon: '🌕', text: 'The coral is spawning: visitors come twice as often.' });
+  return list;
 }
 
 function serialize(s: State): string {

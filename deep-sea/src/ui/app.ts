@@ -39,7 +39,7 @@ class App {
   readyRequests = 0;
   newsIdx = 0;
   newsAt = 0;
-  offline: { seconds: number; pearls: number } | null = null;
+  offline: { seconds: number; pearls: number; since: number } | null = null;
 
   constructor() {
     this.s = this.load();
@@ -47,7 +47,7 @@ class App {
     this.shownPearls = this.s.pearls;
     this.build();
     checkAchievements(this.s);
-    if (this.offline.seconds > 0 && this.offline.pearls > 0) this.showOffline(this.offline);
+    if (this.offline.seconds > 0 && (this.offline.pearls > 0 || this.awayItems(this.offline.since).length)) this.showOffline(this.offline);
     else if (this.s.stats.taps === 0) this.showIntro();
     requestAnimationFrame(() => this.frame());
     setInterval(() => this.save(), 10e3);
@@ -56,7 +56,7 @@ class App {
       else {
         cancelReminders();
         const off = applyOffline(this.s, Date.now());
-        if (off.pearls > 0) this.showOffline(off);
+        if (off.seconds > 0 && (off.pearls > 0 || this.awayItems(off.since).length)) this.showOffline(off);
       }
     });
     window.addEventListener('pagehide', () => this.save());
@@ -843,10 +843,19 @@ class App {
     }]]);
   }
 
-  showOffline(off: { seconds: number; pearls: number }) {
+  // Everything worth a look after a break: the core list plus today's gift, which depends on the local day.
+  awayItems(since: number): { icon: string; text: string }[] {
+    const now = Date.now(), items = awaySummary(this.s, since, now);
+    if (this.s.daily.claimedDay !== localDay(now) && localDay(since) !== localDay(now)) items.unshift({ icon: '🎁', text: "Today's Tide Gift is waiting in the clam." });
+    return items;
+  }
+
+  showOffline(off: { seconds: number; pearls: number; since: number }) {
     this.shownPearls = this.s.pearls;
+    const items = this.awayItems(off.since);
+    const list = items.length ? `<div class="away">${items.map((x) => `<div><span>${x.icon}</span>${x.text}</div>`).join('')}</div>` : '';
     this.modal(`<h2>Welcome back</h2><p>While you were away for ${fmtTime(off.seconds)}, your colony gathered</p>
-      <p class="big-num">${ICON_PEARL}${fmt(off.pearls)}</p><small>Offline rate ${Math.round(offlineRate(this.s) * 100)}%, up to 8 hours.</small>`,
+      <p class="big-num">${ICON_PEARL}${fmt(off.pearls)}</p><small>Offline rate ${Math.round(offlineRate(this.s) * 100)}%, up to 8 hours.</small>${list}`,
     [['Collect', () => {}, 'ghost'], ['▶ Ad: collect x2', async () => {
       if (await showRewardedAd()) {
         const got = rewardOffline(this.s, off.pearls);
