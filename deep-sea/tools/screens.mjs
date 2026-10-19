@@ -128,6 +128,22 @@ await page.waitForTimeout(300);
 await shot('26_garden_plant');
 await page.click('#modal .btns .act');
 
+// Weekly ocean event: Coral Bloom Week with the second tier ready.
+await game(() => {
+  const s = window.__fathom.s;
+  s.event.id = 'bloom'; s.event.claimed = 1; s.event.base = s.garden.harvests - 13;
+});
+await page.evaluate(() => document.querySelector('#panel').scrollTo(0, 0));
+await page.waitForTimeout(400);
+await shot('29_event_chip');
+await page.click('#eventchip');
+await page.waitForTimeout(300);
+await shot('27_event');
+await page.click('#modal .claim');
+await page.waitForTimeout(400);
+await shot('28_event_claimed');
+await page.click('#modal .btns .act');
+
 // Late game in the Midnight Trench and deeper.
 await game(() => {
   const app = window.__fathom, s = app.s;

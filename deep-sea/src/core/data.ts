@@ -134,6 +134,8 @@ function buildAchievements(): AchDef[] {
   list.push({ id: 'garden_1', name: 'Green Fins', desc: 'Harvest a coral from the reef garden.' });
   list.push({ id: 'hybrid_1', name: 'Coral Matchmaker', desc: 'Cross-breed a new kind of coral.' });
   list.push({ id: 'hybrid_3', name: 'Rainbow Reef', desc: 'Discover every cross-bred coral.' });
+  list.push({ id: 'event_1', name: 'Ocean Champion', desc: 'Finish every tier of a weekly ocean event.' });
+  list.push({ id: 'event_4', name: 'Season of Tides', desc: 'Finish four weekly ocean events.' });
   return list;
 }
 const ACHIEVEMENTS = buildAchievements();
@@ -199,3 +201,18 @@ const CORALS: CoralDef[] = [
 ];
 const CORAL_BY_ID: Record<string, CoralDef> = {};
 CORALS.forEach((c) => (CORAL_BY_ID[c.id] = c));
+
+// Weekly ocean events. One runs each week (Monday to Sunday, UTC), in rotation; each counts one kind of play
+// from the moment it starts and pays three reward tiers.
+type EventStat = 'fish' | 'taps' | 'geyser' | 'dives' | 'harvests';
+interface EventDef { id: string; icon: string; name: string; goal: string; stat: EventStat; targets: [number, number, number]; }
+
+const EVENTS: EventDef[] = [
+  { id: 'shoal', icon: '🐟', name: 'Golden Shoal Week', goal: 'Catch golden fish and greet whales', stat: 'fish', targets: [15, 50, 120] },
+  { id: 'current', icon: '🌊', name: 'Strong Current Week', goal: 'Tap the giant clam', stat: 'taps', targets: [3000, 15000, 50000] },
+  { id: 'vents', icon: '💨', name: 'Thermal Vent Week', goal: 'Erupt the geyser', stat: 'geyser', targets: [4, 12, 30] },
+  { id: 'expedition', icon: '🚢', name: 'Expedition Week', goal: 'Bring the submarine home from dives', stat: 'dives', targets: [3, 8, 18] },
+  { id: 'bloom', icon: '🪸', name: 'Coral Bloom Week', goal: 'Harvest corals in the reef garden', stat: 'harvests', targets: [4, 12, 30] },
+];
+const EVENT_BY_ID: Record<string, EventDef> = {};
+EVENTS.forEach((e) => (EVENT_BY_ID[e.id] = e));

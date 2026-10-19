@@ -25,6 +25,7 @@ for (let t = 0; t < hours * 3600e3; t += step) {
   g.startGeyser(s, t);
   if (g.subBack(s, t)) g.collectDive(s, t, rand2);
   g.launchDive(s, 1, t);
+  g.claimEvent(s);
   // Reef garden: brain corals kept for their bonus, staghorn harvested and replanted.
   for (let i = 0; i < 6; i++) {
     if (g.coralReady(s, i, t) && s.garden.plots[i].c === 'staghorn') g.harvestCoral(s, i, t);

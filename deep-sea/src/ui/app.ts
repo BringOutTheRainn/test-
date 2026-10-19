@@ -112,6 +112,7 @@ class App {
         <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
         <button id="requests" class="requests" aria-label="Reef Requests"></button>
         <button id="subchip" class="subchip" aria-label="Submarine" hidden></button>
+        <button id="eventchip" class="eventchip" aria-label="Weekly ocean event" hidden></button>
         <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
         <button id="surge" class="surge" aria-label="Current Surge" hidden></button>
         <div id="boosts"></div>
@@ -140,6 +141,7 @@ class App {
     $('#gear').addEventListener('click', () => this.showSettings());
     $('#gift').addEventListener('click', () => this.showGift());
     $('#requests').addEventListener('click', () => this.showRequests());
+    $('#eventchip').addEventListener('click', () => this.showEvent());
     $('#subchip').addEventListener('click', () => { this.tab = 'depths'; this.panelKey = ''; this.renderPanel(); });
     $('#surge').addEventListener('click', () => this.showSurge());
     $('#geyser').addEventListener('click', () => {
@@ -253,6 +255,17 @@ class App {
     const scHtml = back ? '🚢 Sub is back!' : s.sub.dive >= 0 ? `🚢 Diving ${fmtTime((s.sub.until - now) / 1000)}` : '🚢 Sub docked';
     if (sc.innerHTML !== scHtml) sc.innerHTML = scHtml;
     sc.classList.toggle('ready', back);
+    const ec = $('#eventchip');
+    const ev = currentEvent(s);
+    ec.hidden = !ev;
+    if (ev) {
+      // Sits where the sub chip would be until the submarine unlocks.
+      ec.style.top = subUnlocked(s) ? '120px' : '92px';
+      const ecHtml = eventClaimable(s) ? `${ev.icon} Event reward ready!`
+        : s.event.claimed >= 3 ? `${ev.icon} ${ev.name.replace(' Week', '')} done` : `${ev.icon} ${ev.name.replace(' Week', '')} ${s.event.claimed}/3`;
+      if (ec.innerHTML !== ecHtml) ec.innerHTML = ecHtml;
+      ec.classList.toggle('ready', eventClaimable(s));
+    }
     const su = $('#surge');
     su.hidden = !surgeUnlocked(s);
     const suHtml = surgesLeft(s) > 0 ? `<b>x2 ▶</b><small>${surgesLeft(s)} left today</small>` : '<b>x2</b><small>back tomorrow</small>';
@@ -745,6 +758,33 @@ class App {
       this.save();
       this.showRequests();
     }));
+  }
+
+  showEvent() {
+    const s = this.s, sci = s.settings.sci, now = Date.now();
+    const e = currentEvent(s);
+    if (!e) return;
+    const prog = eventProgress(s);
+    const left = eventEndsAt(now) - now;
+    const tiers = e.targets.map((target, i) => {
+      const r = eventReward(s, i);
+      const got = s.event.claimed > i, ready = !got && s.event.claimed === i && prog >= target;
+      return `<div class="req${got ? ' got' : ready ? ' done' : ''}"><div class="rt"><b>Tier ${i + 1}: ${fmt(target, sci)}</b>
+        <small>${fmt(r.pearls, sci)} Pearls + ${r.hearts} ❤</small>
+        <div class="bar"><i style="width:${Math.min(100, (prog / target) * 100)}%"></i></div></div>
+        ${ready ? '<button class="act claim">Claim</button>' : `<span class="rw">${got ? '✓' : `${fmt(Math.min(prog, target), sci)}/${fmt(target, sci)}`}</span>`}</div>`;
+    }).join('');
+    this.modal(`<div class="relic-big">${e.icon}</div><h2>${e.name}</h2><p>${e.goal} this week. Progress counts from the start of the event; a new event begins every Monday.</p>
+      <div class="reqs">${tiers}</div><p class="note">Ends in ${left >= 86400e3 ? `${Math.floor(left / 86400e3)}d ${Math.floor((left % 86400e3) / 3600e3)}h` : fmtTime(left / 1000)} · events finished: ${s.event.completed}</p>`, [['Close', () => {}]]);
+    document.querySelector<HTMLElement>('#modal .claim')?.addEventListener('click', () => {
+      const r = claimEvent(s);
+      if (!r) return;
+      if (s.settings.sound) playChime();
+      this.scene.announce(r.tier === 2 ? 'Event complete!' : `Tier ${r.tier + 1}`, '#ffd84a');
+      this.toast(`<b>${e.name}:</b> +${fmt(r.pearls, sci)} Pearls and +${r.hearts} ❤.`);
+      this.save();
+      this.showEvent();
+    });
   }
 
   showGift() {

@@ -233,3 +233,9 @@ h3 .muted { color: var(--muted); font-weight: 600; }
 .seed.locked { cursor: default; opacity: .6; }
 .seed .ricon { width: 34px; text-align: center; }
 .relics span svg.coral { display: block; margin: auto; }
+
+/* Weekly ocean event */
+#eventchip { position: absolute; left: 10px; top: 120px; font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.9); background: rgba(0, 20, 40, 0.45); padding: 4px 9px; border-radius: 8px; }
+#eventchip.ready { color: #04223a; background: var(--gold); box-shadow: 0 0 14px rgba(255, 216, 74, 0.7); animation: glow 1.2s ease-in-out infinite alternate; }
+.req.got { opacity: .6; }
+.req.got .rw { color: #7cf5c6; font-weight: 800; }

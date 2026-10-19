@@ -35,6 +35,7 @@ interface State {
   requests: { list: ReefRequest[]; done: number; nextAt: number };
   sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
   relics: Record<string, boolean>;
+  event: { week: number; id: string; base: number; claimed: number; completed: number };
   garden: { plots: Plot[]; found: Record<string, boolean>; harvests: number; checkAt: number };
 }
 
@@ -76,6 +77,7 @@ function newState(now: number): State {
     requests: { list: [], done: 0, nextAt: 0 },
     sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
     relics: {},
+    event: { week: -1, id: '', base: 0, claimed: 0, completed: 0 },
     garden: { plots: newPlots(), found: {}, harvests: 0, checkAt: 0 },
   };
 }
@@ -686,6 +688,60 @@ function gardenTick(s: State, now: number, rand: () => number): string[] {
   return found;
 }
 
+// ---------- Weekly ocean event ----------
+// One event a week (Monday 00:00 UTC to the next Monday), rotating through EVENTS. Progress counts from the
+// moment the week's event starts, so every week begins fresh; three tiers pay Pearls and Hearts.
+
+const WEEK_MS = 7 * 86400e3;
+const EVENT_EPOCH = Date.UTC(2024, 0, 1); // a Monday
+const EVENT_HEARTS = [2, 4, 8];
+const EVENT_MINUTES = [5, 15, 30];
+const eventWeek = (now: number) => Math.floor((now - EVENT_EPOCH) / WEEK_MS);
+const eventEndsAt = (now: number) => EVENT_EPOCH + (eventWeek(now) + 1) * WEEK_MS;
+
+function eventStat(s: State, stat: EventStat): number {
+  switch (stat) {
+    case 'fish': return s.stats.fish + s.stats.whales;
+    case 'taps': return s.stats.taps;
+    case 'geyser': return s.geyser.uses;
+    case 'dives': return s.sub.dives;
+    case 'harvests': return s.garden.harvests;
+  }
+}
+
+// The week's event, falling back to the tapping event while the rotation's pick is still locked.
+function eventFor(s: State, week: number): EventDef {
+  const e = EVENTS[((week % EVENTS.length) + EVENTS.length) % EVENTS.length];
+  const locked = (e.stat === 'dives' && !subUnlocked(s)) || (e.stat === 'harvests' && !gardenUnlocked(s)) || (e.stat === 'geyser' && !geyserUnlocked(s));
+  return locked ? EVENT_BY_ID.current : e;
+}
+
+function rollEvent(s: State, now: number) {
+  const week = eventWeek(now);
+  if (s.event.week === week) return;
+  const e = eventFor(s, week);
+  s.event.week = week; s.event.id = e.id; s.event.base = eventStat(s, e.stat); s.event.claimed = 0;
+}
+
+const currentEvent = (s: State) => EVENT_BY_ID[s.event.id] || null;
+const eventProgress = (s: State) => { const e = currentEvent(s); return e ? Math.max(0, eventStat(s, e.stat) - s.event.base) : 0; };
+const eventReward = (s: State, tier: number) => ({ pearls: Math.max(100 * (tier + 1), rawPPS(s) * 60 * EVENT_MINUTES[tier]), hearts: EVENT_HEARTS[tier] });
+function eventClaimable(s: State): boolean {
+  const e = currentEvent(s);
+  return !!e && s.event.claimed < 3 && eventProgress(s) >= e.targets[s.event.claimed];
+}
+
+function claimEvent(s: State): { pearls: number; hearts: number; tier: number } | null {
+  if (!eventClaimable(s)) return null;
+  const tier = s.event.claimed;
+  const r = eventReward(s, tier);
+  earn(s, r.pearls);
+  s.hearts += r.hearts;
+  s.event.claimed += 1;
+  if (s.event.claimed === 3) s.event.completed += 1;
+  return { ...r, tier };
+}
+
 // ---------- Tick ----------
 
 // Returns the pearls from geyser auto-taps this tick (so the scene can show them).
@@ -707,6 +763,7 @@ function tick(s: State, now: number, dtMs: number, rand: () => number): { autoTa
   fillRequests(s, now, rand);
   s.requests.list.forEach((r) => { if (!r.got && requestProgress(s, r) >= r.target) r.got = true; });
   const sprouted = gardenTick(s, now, rand);
+  rollEvent(s, now);
   s.lastSeen = now;
   return { autoTaps, autoPearls, sprouted };
 }
@@ -746,6 +803,7 @@ function checkAchievements(s: State): AchDef[] {
   const hybrids = CORALS.filter((c) => c.parents && s.garden.found[c.id]).length;
   if (hybrids >= 1) give('hybrid_1');
   if (hybrids >= CORALS.filter((c) => c.parents).length) give('hybrid_3');
+  [1, 4].forEach((n) => { if (s.event.completed >= n) give(`event_${n}`); });
   return got;
 }
 
@@ -850,6 +908,7 @@ function deserialize(text: string, now: number): State {
   s.requests = Object.assign(newState(now).requests, data.requests || {});
   s.sub = Object.assign(newState(now).sub, data.sub || {});
   s.relics = data.relics || {};
+  s.event = Object.assign(newState(now).event, data.event || {});
   s.garden = Object.assign(newState(now).garden, data.garden || {});
   if (!Array.isArray(s.garden.plots) || s.garden.plots.length !== GARDEN_PLOTS) s.garden.plots = newPlots();
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);

@@ -438,3 +438,33 @@ test('a reminder fires when the last growing coral is grown', () => {
   r = g.reminderPlan(s, 60 * 60e3, 20 * 3600e3, '1970-01-01').find((x) => x.id === 6);
   assert.equal(r, undefined, 'nothing left growing');
 });
+
+test('weekly ocean events rotate on UTC Mondays, count from the start and pay three tiers', () => {
+  const mon = Date.UTC(2026, 9, 19); // Monday 19 October 2026
+  assert.equal(g.eventWeek(mon), g.eventWeek(mon + 6.9 * 86400e3));
+  assert.equal(g.eventWeek(mon) + 1, g.eventWeek(mon + 7 * 86400e3));
+  assert.equal(g.eventEndsAt(mon + 1000), mon + 7 * 86400e3);
+  const s = g.newState(mon);
+  s.stats.taps = 500;
+  // A fresh player has no submarine or garden, so those weeks fall back to the tapping event.
+  for (let w = 0; w < 5; w++) assert.ok(['shoal', 'current', 'vents'].includes(g.eventFor(s, w).id));
+  s.zone = 2; s.earnedRun = 1e9;
+  assert.deepEqual([0, 1, 2, 3, 4].map((w) => g.eventFor(s, w).id).sort(), g.EVENTS.map((e) => e.id).sort());
+  // Force this week to the tapping event and play through it.
+  s.event.week = g.eventWeek(mon); s.event.id = 'current'; s.event.base = s.stats.taps; s.event.claimed = 0;
+  assert.equal(g.eventProgress(s), 0, 'taps before the event do not count');
+  assert.equal(g.claimEvent(s), null);
+  s.stats.taps += 50000;
+  const hearts = s.hearts;
+  for (let tier = 0; tier < 3; tier++) assert.equal(g.claimEvent(s).tier, tier);
+  assert.equal(g.claimEvent(s), null, 'three tiers only');
+  assert.equal(s.hearts - hearts, 2 + 4 + 8);
+  assert.equal(s.event.completed, 1);
+  assert.ok(g.checkAchievements(s).some((a) => a.id === 'event_1'));
+  // Next week starts fresh.
+  g.rollEvent(s, mon + 7 * 86400e3);
+  assert.equal(s.event.claimed, 0);
+  assert.equal(g.eventProgress(s), 0);
+  const back = g.deserialize(g.serialize(s), mon);
+  assert.equal(back.event.completed, 1);
+});

@@ -182,6 +182,15 @@ sprout their hybrid: Fire Coral (staghorn + brain, 30 min, +3%, 1 Heart), Moonli
 rainbow garden gives +48%. The garden survives migrations. Logbook: first harvest, first hybrid, all hybrids.
 Planted corals also grow on the sand either side of the clam in the scene; grown ones sway and glow.
 
+## Weekly ocean event
+
+One event a week, Monday 00:00 UTC to the next Monday, rotating through five: Golden Shoal (catch golden fish and
+whales: 15 / 50 / 120), Strong Current (taps: 3,000 / 15,000 / 50,000), Thermal Vent (geyser eruptions: 4 / 12 /
+30), Expedition (submarine dives: 3 / 8 / 18) and Coral Bloom (garden harvests: 4 / 12 / 30). A week whose feature
+is still locked runs Strong Current instead. Progress counts from the moment the week's event starts. The three
+tiers pay 5, 15 and 30 minutes of production plus 2, 4 and 8 Hearts. A chip in the scene shows the tier and glows
+when a reward is ready; the event survives migrations. Logbook: finish one event, finish four.
+
 ## Reminders
 
 On phones, when the app goes to the background it schedules up to six local notifications (no server):
@@ -221,7 +230,8 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 3. **Retention**: ~~daily tide gifts~~, ~~geyser~~, ~~opt-in rewarded ads~~, ~~ocean ambience~~ (built),
    ~~Hearts and rare creatures~~ (built), ~~missions (Reef Requests)~~ (built), ~~reminders~~ (built).
 4. **Depth content**: ~~coral spawning on real full moons~~ (built), ~~expedition submarine~~ (built), ~~sunken
-   relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built).
+   relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built), ~~a weekly ocean
+   event~~ (built).
 
 ## Research log
 
@@ -323,3 +333,13 @@ that view is the reward), run 5's notes on reminders only for meaningful moments
 - **Built: a garden reminder** for when the last growing coral is grown (the moment a harvest or cross-breed
   decision is waiting), using the same rules as the other reminders. Pacing is unchanged (1T at 94.6 minutes).
 - **Next:** a weekly ocean event with its own goal and reward.
+
+**Run 10 (Oct 19, morning).** Sources: Egg, Inc.'s weekly contracts and its rotating weekend events, Cookie
+Clicker's seasons, AdVenture Capitalist's timed events (a fresh goal on a known schedule brings lapsed players
+back), run 5's note that Fathom prefers nature's calendar to a store calendar.
+- A weekly goal gives every session a direction beyond "number goes up". **Built: the weekly ocean event.** Five
+  themed weeks in rotation, each counting one kind of play the game already has (fish, taps, geyser, dives,
+  harvests), three reward tiers with Hearts, a chip in the scene and two Logbook entries. No new currency or shop.
+  Targets are set so a player who checks in daily finishes in about a week. With the simulated heavy tapper
+  claiming tiers, 1T comes at 89.8 minutes (94.6 before).
+- **Next:** a gentle "while you were away" summary that lists what finished (sub, garden, event tiers).
