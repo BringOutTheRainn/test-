@@ -376,3 +376,13 @@ complain about "too many menus and no idea what to do first", run 11's note that
   adds no new panel to the screen. Pacing is unchanged (1T at 89.8 minutes; Hearts do not feed production
   directly).
 - **Next:** a short Play listing refresh (screenshots of the garden, event and sub), then polish.
+
+**Run 13 (Oct 22).** Sources: ASO guides from MobileAction, ASOMobile and SplitMetrics on store screenshots
+(short benefit-led captions, one idea per frame, the first two or three frames carry most installs), Google
+Play's limit of 8 screenshots at 9:16, run 12's note that the listing still showed none of the newer systems.
+- The Play listing showed raw screenshots with no captions and nothing from the garden, relics or weekly events.
+  **Built: captioned store screenshots** (`npm run store`), seven 1080x1920 frames that tell the game in order:
+  the glowing deep, tapping, the coral garden, relics, coral spawning, weekly events, offline progress. The full
+  description now mentions the garden, events and relics. No game change, so pacing is unchanged (1T at 89.8
+  minutes).
+- **Next:** polish, with a pass over small-screen layout and tap targets.

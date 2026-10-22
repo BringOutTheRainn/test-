@@ -19,7 +19,9 @@
 > 🌊 Descend through five ocean zones that darken and light up with bioluminescence.
 > 🐟 Catch golden fish and greet passing whales for big boosts and Hearts.
 > ❤ Adopt rare creatures: a Moon Jelly, a Pearl Narwhal, a Leafy Sea Dragon and more.
-> 🚢 Send your submarine on dives that bring back treasure while you sleep.
+> 🚢 Send your submarine on dives that bring back treasure and rare sunken relics while you sleep.
+> 🪸 Plant a reef garden and cross-breed corals into new colours for lasting bonuses.
+> 🧭 A new ocean event every week, with three reward tiers to chase.
 > 📜 Help your neighbours with Reef Requests, claim a Daily Tide Gift and erupt the geyser.
 > 🌕 On real full-moon weeks the coral spawns: visitors come twice as often and leave double Hearts.
 > 🌙 Lead a Great Migration to earn Moonstones and permanent Heritage perks.
@@ -28,8 +30,9 @@
 > bonus. Relaxing ocean ambience included. Plays offline.
 
 **Graphics to upload**: icon 512x512 (`www/icon-512.png`), feature graphic 1024x500
-(`resources/store/feature-graphic.png`, rebuilt with `npm run feature`), and 4 to 8 phone screenshots (portrait,
-from `node tools/screens.mjs`: 02, 03, 05, 07, 18, 20, 21).
+(`resources/store/feature-graphic.png`, rebuilt with `npm run feature`), and 7 captioned phone screenshots
+(1080x1920, `resources/store/screenshots/`, rebuilt with `npm run store`). Upload them in file order: the first
+three are what most visitors see before deciding.
 
 ## Data safety form
 
