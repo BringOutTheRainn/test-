@@ -386,3 +386,13 @@ Play's limit of 8 screenshots at 9:16, run 12's note that the listing still show
   description now mentions the garden, events and relics. No game change, so pacing is unchanged (1T at 89.8
   minutes).
 - **Next:** polish, with a pass over small-screen layout and tap targets.
+
+**Run 14 (Oct 22, evening).** Sources: Android's 48dp and Apple's 44pt minimum touch targets, store reviews of
+idle games that complain about "fat finger" misses on small phones and buttons hidden behind other buttons.
+- A new layout check (`npm run audit`) opens Fathom at 320x568, 360x640 and 390x844 and flags tap targets under
+  44px, overlapping stage buttons and sideways scrolling. It found 228 problems, including the stage chips at
+  24px tall and the event chip sitting on top of the geyser on small phones. **Built: a tap target pass.** The
+  stage chips now stack in one column at 44px each, tabs are 48px, and the buy-amount row, action buttons,
+  settings gear and tide chip are all at least 44px. On short phones the geyser moves above the surge button so
+  the clam stays clear. The check now reports no problems. Pacing is unchanged (1T at 89.8 minutes).
+- **Next:** a last pass over text contrast and readable font sizes, then the week two wrap-up.

@@ -12,6 +12,7 @@
     "icons": "node tools/make_icons.mjs",
     "android": "node tools/build.mjs && bash tools/android.sh",
     "feature": "node tools/screens.mjs build/screens && node tools/feature_graphic.mjs",
+    "audit": "node tools/build.mjs && node tools/audit.mjs --strict",
     "store": "node tools/build.mjs && node tools/screens.mjs build/screens && node tools/store_shots.mjs"
   },
   "devDependencies": {

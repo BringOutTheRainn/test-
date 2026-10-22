@@ -109,10 +109,12 @@ class App {
       <section id="stage">
         <canvas id="scene"></canvas>
         <div id="depth-tag"></div>
-        <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
-        <button id="requests" class="requests" aria-label="Reef Requests"></button>
-        <button id="subchip" class="subchip" aria-label="Submarine" hidden></button>
-        <button id="eventchip" class="eventchip" aria-label="Weekly ocean event" hidden></button>
+        <div id="chips">
+          <button id="gift" class="gift" aria-label="Daily Tide Gift"></button>
+          <button id="requests" class="requests" aria-label="Reef Requests"></button>
+          <button id="subchip" class="subchip" aria-label="Submarine" hidden></button>
+          <button id="eventchip" class="eventchip" aria-label="Weekly ocean event" hidden></button>
+        </div>
         <button id="geyser" class="geyser" aria-label="Geyser" hidden></button>
         <button id="surge" class="surge" aria-label="Current Surge" hidden></button>
         <div id="boosts"></div>
@@ -260,8 +262,6 @@ class App {
     const ev = currentEvent(s);
     ec.hidden = !ev;
     if (ev) {
-      // Sits where the sub chip would be until the submarine unlocks.
-      ec.style.top = subUnlocked(s) ? '120px' : '92px';
       const ecHtml = eventClaimable(s) ? `${ev.icon} Event reward ready!`
         : s.event.claimed >= 3 ? `${ev.icon} ${ev.name.replace(' Week', '')} done` : `${ev.icon} ${ev.name.replace(' Week', '')} ${s.event.claimed}/3`;
       if (ec.innerHTML !== ecHtml) ec.innerHTML = ecHtml;
