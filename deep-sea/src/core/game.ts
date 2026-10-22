@@ -35,6 +35,7 @@ interface State {
   requests: { list: ReefRequest[]; done: number; nextAt: number };
   sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
   relics: Record<string, boolean>;
+  guide: Record<string, boolean>;
   event: { week: number; id: string; base: number; claimed: number; completed: number };
   garden: { plots: Plot[]; found: Record<string, boolean>; harvests: number; checkAt: number };
 }
@@ -77,6 +78,7 @@ function newState(now: number): State {
     requests: { list: [], done: 0, nextAt: 0 },
     sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
     relics: {},
+    guide: {},
     event: { week: -1, id: '', base: 0, claimed: 0, completed: 0 },
     garden: { plots: newPlots(), found: {}, harvests: 0, checkAt: 0 },
   };
@@ -742,6 +744,36 @@ function claimEvent(s: State): { pearls: number; hearts: number; tier: number } 
   return { ...r, tier };
 }
 
+// ---------- First-week guide ----------
+// A short trail of hints, one at a time in the ticker, that points a new player at each system as it opens.
+// Each step pays one Heart the first time it is done, in any order; the hint shows the first step not yet done.
+
+interface GuideStep { id: string; hint: string; done: (s: State) => boolean; open?: (s: State) => boolean; }
+const GUIDE: GuideStep[] = [
+  { id: 'tap', hint: 'Tap the giant clam to gather Pearls.', done: (s) => s.stats.taps >= 10 },
+  { id: 'crab', hint: 'Buy a Hermit Crab in the Colony tab.', done: (s) => s.owned[0] >= 1 || s.stats.migrations > 0 },
+  { id: 'upgrade', hint: 'Buy your first upgrade in the Colony tab.', done: (s) => Object.keys(s.upgrades).length > 0 || s.stats.migrations > 0 },
+  { id: 'fish', hint: 'Tap a golden fish when one swims past.', done: (s) => s.stats.fish + s.stats.whales >= 1 },
+  { id: 'gift', hint: `Tap the clam ${DAILY_TAPS} times today for the Tide Gift.`, done: (s) => !!s.daily.claimedDay },
+  { id: 'twilight', hint: 'Descend to the Twilight Reef in the Depths tab.', done: (s) => s.zone >= 1 || s.stats.migrations > 0 },
+  { id: 'request', hint: 'Finish a Reef Request, then claim it from 📜.', done: (s) => s.requests.done >= 1 },
+  { id: 'geyser', hint: 'Erupt the geyser for 20 s of free taps.', done: (s) => s.geyser.uses >= 1, open: (s) => geyserUnlocked(s) },
+  { id: 'dive', hint: 'Send the submarine on a dive (Depths tab).', done: (s) => s.sub.dives >= 1 || subDiving(s), open: (s) => subUnlocked(s) },
+  { id: 'trench', hint: 'Descend to the Midnight Trench for a garden.', done: (s) => s.zone >= 2 || s.stats.migrations > 0, open: (s) => s.zone >= 1 },
+  { id: 'garden', hint: 'Plant a coral in the reef garden (Depths tab).', done: (s) => s.garden.harvests > 0 || s.garden.plots.some((p) => !!p.c), open: (s) => gardenUnlocked(s) },
+  { id: 'migrate', hint: 'The Migrate tab is lit: migrate for Moonstones.', done: (s) => s.stats.migrations >= 1, open: (s) => canMigrate(s) },
+];
+
+// Pays a Heart for each newly finished step and returns them.
+function advanceGuide(s: State): GuideStep[] {
+  const got = GUIDE.filter((g) => !s.guide[g.id] && g.done(s));
+  got.forEach((g) => { s.guide[g.id] = true; s.hearts += 1; });
+  return got;
+}
+// The hint to show: the first unfinished step whose feature is open (null once the guide is finished or waiting).
+const guideHint = (s: State): GuideStep | null => GUIDE.find((g) => !s.guide[g.id] && (!g.open || g.open(s))) || null;
+const guideFinished = (s: State) => GUIDE.every((g) => s.guide[g.id]);
+
 // ---------- Tick ----------
 
 // Returns the pearls from geyser auto-taps this tick (so the scene can show them).
@@ -930,6 +962,9 @@ function deserialize(text: string, now: number): State {
   s.sub = Object.assign(newState(now).sub, data.sub || {});
   s.relics = data.relics || {};
   s.event = Object.assign(newState(now).event, data.event || {});
+  s.guide = data.guide || {};
+  // Saves from before the guide: mark what is already done without paying for it again.
+  if (!data.guide) GUIDE.forEach((g) => { if (g.done(s)) s.guide[g.id] = true; });
   s.garden = Object.assign(newState(now).garden, data.garden || {});
   if (!Array.isArray(s.garden.plots) || s.garden.plots.length !== GARDEN_PLOTS) s.garden.plots = newPlots();
   s.owned = GENS.map((_, i) => (data.owned && data.owned[i]) || 0);

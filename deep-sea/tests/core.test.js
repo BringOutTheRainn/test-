@@ -488,3 +488,25 @@ test('the welcome back card lists only what finished while the player was away',
   const left = s.lastSeen;
   assert.equal(g.applyOffline(s, t0 + 60e3).since, left, 'applyOffline reports when the player left');
 });
+
+test('the first-week guide hints one open step at a time and pays a Heart per step', () => {
+  const s = g.newState(0);
+  assert.equal(g.guideHint(s).id, 'tap');
+  s.stats.taps = 10; s.owned[0] = 1;
+  const got = g.advanceGuide(s);
+  assert.deepEqual(got.map((x) => x.id), ['tap', 'crab']);
+  assert.equal(s.hearts, 2);
+  assert.deepEqual(g.advanceGuide(s), [], 'each step pays once');
+  assert.equal(g.guideHint(s).id, 'upgrade');
+  // Steps for locked features are skipped until they open.
+  ['upgrade', 'fish', 'gift', 'twilight', 'request'].forEach((id) => (s.guide[id] = true));
+  assert.notEqual(g.guideHint(s) && g.guideHint(s).id, 'geyser', 'geyser is still locked');
+  assert.equal(g.guideHint(s), null, 'nothing open to point at yet');
+  assert.equal(g.guideFinished(s), false);
+  // An old save without guide data is credited silently.
+  const old = JSON.parse(g.serialize(s));
+  delete old.guide; old.hearts = 0; old.zone = 1;
+  const back = g.deserialize(JSON.stringify(old), 0);
+  assert.equal(back.guide.twilight, true);
+  assert.equal(back.hearts, 0);
+});

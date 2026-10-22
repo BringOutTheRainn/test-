@@ -191,6 +191,15 @@ is still locked runs Strong Current instead. Progress counts from the moment the
 tiers pay 5, 15 and 30 minutes of production plus 2, 4 and 8 Hearts. A chip in the scene shows the tier and glows
 when a reward is ready; the event survives migrations. Logbook: finish one event, finish four.
 
+## First-week guide
+
+A trail of twelve short hints shown one at a time in the ticker under the scene (in gold, with a 🧭), each pointing
+at the next system to try: tap, buy a Hermit Crab, an upgrade, a golden fish, the Tide Gift, the Twilight Reef, a
+Reef Request, the geyser, a submarine dive, the Midnight Trench, the reef garden and the first migration. A step
+whose feature is still locked waits until it opens. Each step pays one Heart the first time it is done, in any
+order. Once the trail is done the ticker goes back to ocean news. Saves from before the guide are credited
+silently.
+
 ## Welcome back
 
 When the app opens after 30+ seconds away, the welcome back card shows the offline Pearls (with the rewarded ad
@@ -358,3 +367,12 @@ reminders (a notification promises something; the app should confirm it on arriv
   "while you were away" list** on the welcome back card, one line per thing that finished since the last visit,
   with nothing listed twice. Pacing is unchanged (1T at 89.8 minutes; the sim has no offline time).
 - **Next:** a short first-week guide that points new players at each system as it unlocks.
+
+**Run 12 (Oct 22; runs on Oct 20 and 21 were missed while Claude was at its usage limit).** Sources: Egg, Inc.'s and
+AdVenture Capitalist's early-game prompts (one clear next step at a time), store reviews of idle games that
+complain about "too many menus and no idea what to do first", run 11's note that Fathom now has six timed systems.
+- New players meet a lot of systems in the first hour. **Built: a first-week guide** in the ticker, one hint at a
+  time and only for features that are already open, with a Heart per step. It reuses the existing ticker, so it
+  adds no new panel to the screen. Pacing is unchanged (1T at 89.8 minutes; Hearts do not feed production
+  directly).
+- **Next:** a short Play listing refresh (screenshots of the garden, event and sub), then polish.

@@ -213,6 +213,7 @@ class App {
       this.lastRefresh = t;
       const got = checkAchievements(this.s);
       got.forEach((a) => this.toast(`<b>Logbook:</b> ${a.name}`));
+      advanceGuide(this.s).forEach(() => this.toast('<b>🧭 Step done!</b> +1 ❤'));
       const ready = requestsReady(this.s);
       if (ready > this.readyRequests) this.toast('<b>Reef Request done!</b> Tap 📜 to claim it.');
       this.readyRequests = ready;
@@ -286,7 +287,15 @@ class App {
     }).join('');
     const bx = $('#boosts');
     if (bx.innerHTML !== boosts) bx.innerHTML = boosts;
-    if (now > this.newsAt) {
+    // While the first-week guide has an open step, the ticker shows it instead of the news.
+    const hint = guideHint(s);
+    const tk = $('#ticker');
+    tk.classList.toggle('guide', !!hint);
+    if (hint) {
+      const text = `🧭 ${hint.hint}`;
+      if (tk.textContent !== text) tk.textContent = text;
+      this.newsAt = 0;
+    } else if (now > this.newsAt) {
       this.newsAt = now + 12e3;
       const pool = NEWS.slice(0, Math.min(NEWS.length, 3 + s.owned.filter((n) => n > 0).length));
       $('#ticker').textContent = pool[this.newsIdx++ % pool.length];
