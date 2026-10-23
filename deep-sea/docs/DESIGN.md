@@ -396,3 +396,13 @@ idle games that complain about "fat finger" misses on small phones and buttons h
   settings gear and tide chip are all at least 44px. On short phones the geyser moves above the surge button so
   the clam stays clear. The check now reports no problems. Pacing is unchanged (1T at 89.8 minutes).
 - **Next:** a last pass over text contrast and readable font sizes, then the week two wrap-up.
+
+**Run 15 (Oct 23).** Sources: WCAG 2.1 AA contrast (4.5:1 for body text, 3:1 for large text), Android's
+guidance against text under 11sp, idle-game store reviews that mention "tiny unreadable numbers" on small phones.
+- The layout check (`npm run audit`) now also flags text under 11px and text below AA contrast, measured against
+  the panel behind it or the brightest common colour of the scene. It found 93 problems: the combo label faded to
+  2.8:1 when idle, owned counts at 2.9:1, and 9 to 10px labels on the geyser, surge button and tide timer.
+  **Built: a readability pass.** The idle combo bar now dims only its fill, owned counts are brighter, and every
+  label is at least 11px (the short-phone geyser and surge buttons grew to 66px to fit). The check reports no
+  problems. Pacing is unchanged (1T at 89.8 minutes).
+- **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.

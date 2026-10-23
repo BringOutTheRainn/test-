@@ -1,5 +1,5 @@
 // Checks the layout on small phones: tap targets under 44px, controls that overlap,
-// and anything that scrolls sideways. Usage: node tools/audit.mjs [--strict]
+// anything that scrolls sideways, text under 11px and text below WCAG AA contrast. Usage: node tools/audit.mjs [--strict]
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -65,7 +65,43 @@ for (const [w, h] of SIZES) {
         const r = el.getBoundingClientRect();
         if (vis(el) && r.right > innerWidth + 1) { out.push(`off-screen ${name(el)} right=${Math.round(r.right)}`); break; }
       }
+      out.push(...textProblems());
       return out;
+
+      // Text checks. Over the canvas the scene is assumed to be its lightest common colour.
+      function textProblems() {
+        const res = [];
+        const parse = (c) => { const m = c.match(/[\d.]+/g) || []; return [+m[0] || 0, +m[1] || 0, +m[2] || 0, m[3] === undefined ? 1 : +m[3]]; };
+        const over = (top, base) => [0, 1, 2].map((i) => top[i] * top[3] + base[i] * (1 - top[3])).concat(1);
+        const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+        const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const SCENE = [27, 74, 110, 1];
+        for (const el of document.querySelectorAll('body *')) {
+          if (!vis(el) || el.closest('.locked, [disabled], .hidden-gen, .poor, #modal[hidden]')) continue;
+          const own = [...el.childNodes].some((n) => n.nodeType === 3 && /[A-Za-z0-9]/.test(n.textContent));
+          if (!own) continue;
+          const st = getComputedStyle(el);
+          const size = parseFloat(st.fontSize), bold = +st.fontWeight >= 700;
+          if (size < 11) res.push(`tiny text ${name(el)} ${size}px`);
+          let opacity = 1, layers = [], onScene = false;
+          for (let a = el; a && a !== document.documentElement; a = a.parentElement) {
+            const as = getComputedStyle(a);
+            opacity *= +as.opacity;
+            const bg = parse(as.backgroundColor);
+            if (as.backgroundColor !== 'rgba(0, 0, 0, 0)' && as.backgroundImage === 'none') layers.push(bg);
+            else if (as.backgroundImage !== 'none') layers.push([7, 38, 64, 1]);
+            if (a.id === 'stage') { onScene = true; break; }
+            if (bg[3] === 1) break;
+          }
+          let base = onScene ? SCENE : [4, 24, 44, 1];
+          for (const l of layers.reverse()) base = l[3] === 1 ? l : over(l, base);
+          const fg = parse(st.color); fg[3] *= opacity;
+          const r = ratio(over(fg, base), base);
+          const need = size >= 24 || (bold && size >= 18.66) ? 3 : 4.5;
+          if (r < need) res.push(`low contrast ${name(el)} ${r.toFixed(2)}:1`);
+        }
+        return res;
+      }
     }, MIN);
     for (const f of found) problems.push(`${w}x${h} ${tab}: ${f}`);
   }
