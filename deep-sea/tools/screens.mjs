@@ -171,10 +171,14 @@ await game(() => {
   s.garden.plots[5] = { c: 'fire', at: now - 2.8 * 3600e3, grown: false };
   s.geyser.readyAt = now - 3600e3;
 });
-await game(() => { const a = window.__fathom; a.s.lastSeen = Date.now() - 3 * 3600e3; localStorage.setItem('fathom.save', JSON.stringify(a.s)); window.onbeforeunload = null; });
+// The save is from before 0.5, so the release notes show first.
+await game(() => { const a = window.__fathom; a.s.seen = 1; a.s.lastSeen = Date.now() - 3 * 3600e3; localStorage.setItem('fathom.save', JSON.stringify(a.s)); window.onbeforeunload = null; });
 await page.evaluate(() => { window.__fathom.save = () => {}; });
 await page.reload();
 await page.waitForTimeout(800);
+await shot('30_whats_new');
+await page.click('#modal .btns .act');
+await page.waitForTimeout(300);
 await shot('09_welcome_back');
 
 // Coral spawning: a fresh page with the clock moved to a spawning night (Oct 29, 2026).

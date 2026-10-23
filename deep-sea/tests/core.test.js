@@ -510,3 +510,20 @@ test('the first-week guide hints one open step at a time and pays a Heart per st
   assert.equal(back.guide.twilight, true);
   assert.equal(back.hearts, 0);
 });
+
+test('release notes show once to returning players and never to new ones', () => {
+  const fresh = g.newState(0);
+  assert.equal(g.whatsNew(fresh).length, 0);
+  const old = JSON.parse(g.serialize(g.newState(0)));
+  delete old.seen;
+  const s = g.deserialize(JSON.stringify(old), 0);
+  const notes = g.whatsNew(s);
+  assert.ok(notes.length >= 1 && notes.length <= 2);
+  assert.equal(notes[notes.length - 1].id, g.UPDATES[g.UPDATES.length - 1].id);
+  g.markSeen(s);
+  assert.equal(g.whatsNew(s).length, 0);
+  assert.equal(g.whatsNew(g.deserialize(g.serialize(s), 0)).length, 0);
+  s.seen = g.UPDATES[g.UPDATES.length - 1].id - 1;
+  assert.deepEqual(g.whatsNew(s).map((u) => u.id), [g.UPDATES[g.UPDATES.length - 1].id]);
+  assert.ok(g.UPDATES.every((u, i) => u.id === i + 1 && u.items.length > 0));
+});

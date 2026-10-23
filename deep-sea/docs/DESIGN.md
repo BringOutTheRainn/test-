@@ -249,6 +249,13 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
    relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built), ~~a weekly ocean
    event~~ (built).
 
+## What's new
+
+Returning players see a short "What's new" card once after an update, before the welcome back card. Notes live in
+`UPDATES` in `src/core/data.ts`; each release adds one entry with the next id and two to four one-line items. New
+players never see it (they start with every note marked seen), and a save that missed several updates only shows
+the last two.
+
 ## Research log
 
 **Run 1 (Oct 14, evening).** Sources: TouchArcade and Reefbuilders reviews of AbyssRium (Tap Tap Fish),
@@ -405,4 +412,13 @@ guidance against text under 11sp, idle-game store reviews that mention "tiny unr
   **Built: a readability pass.** The idle combo bar now dims only its fill, owned counts are brighter, and every
   label is at least 11px (the short-phone geyser and surge buttons grew to 66px to fit). The check reports no
   problems. Pacing is unchanged (1T at 89.8 minutes).
+- **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
+
+**Run 16 (Oct 23, evening).** Sources: Egg, Inc. and AdVenture Capitalist patch-note popups on first launch after
+an update, idle-game store reviews from returning players who "didn't notice anything changed" or missed a new
+feature for weeks, run 15's note that two weeks of features have shipped since most saves began.
+- Returning players had no way to learn about the garden, weekly events, relics or the bigger buttons unless they
+  stumbled on them. **Built: a What's new card** shown once after an update, listing the newest one or two
+  releases with an icon per line, then the usual welcome back card. New players skip it. Version is now 0.5.
+  Pacing is unchanged (1T at 89.8 minutes).
 - **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.

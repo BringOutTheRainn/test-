@@ -47,8 +47,12 @@ class App {
     this.shownPearls = this.s.pearls;
     this.build();
     checkAchievements(this.s);
-    if (this.offline.seconds > 0 && (this.offline.pearls > 0 || this.awayItems(this.offline.since).length)) this.showOffline(this.offline);
-    else if (this.s.stats.taps === 0) this.showIntro();
+    const welcome = () => {
+      if (this.offline!.seconds > 0 && (this.offline!.pearls > 0 || this.awayItems(this.offline!.since).length)) this.showOffline(this.offline!);
+      else if (this.s.stats.taps === 0) this.showIntro();
+    };
+    if (this.s.stats.taps > 0 && whatsNew(this.s).length) this.showWhatsNew(welcome);
+    else { markSeen(this.s); welcome(); }
     requestAnimationFrame(() => this.frame());
     setInterval(() => this.save(), 10e3);
     document.addEventListener('visibilitychange', () => {
@@ -859,6 +863,14 @@ class App {
     return items;
   }
 
+  showWhatsNew(then: () => void) {
+    const notes = whatsNew(this.s);
+    markSeen(this.s);
+    this.save();
+    const html = notes.map((u) => `<h3>Fathom ${u.version}</h3><div class="away">${u.items.map(([icon, text]) => `<div><span>${icon}</span>${text}</div>`).join('')}</div>`).join('');
+    this.modal(`<h2>What's new</h2>${html}`, [['Dive in', then]]);
+  }
+
   showOffline(off: { seconds: number; pearls: number; since: number }) {
     this.shownPearls = this.s.pearls;
     const items = this.awayItems(off.since);
@@ -896,7 +908,7 @@ class App {
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
       <div class="setting"><span>Start over</span><button data-a="reset" class="danger">Reset</button></div>
-      <small>Fathom 0.4 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
+      <small>Fathom 0.5 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
       if (k) {

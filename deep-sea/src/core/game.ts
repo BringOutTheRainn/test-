@@ -36,6 +36,7 @@ interface State {
   sub: { dive: number; startedAt: number; until: number; dives: number; speeds: number; speedDay: string };
   relics: Record<string, boolean>;
   guide: Record<string, boolean>;
+  seen: number;
   event: { week: number; id: string; base: number; claimed: number; completed: number };
   garden: { plots: Plot[]; found: Record<string, boolean>; harvests: number; checkAt: number };
 }
@@ -79,6 +80,7 @@ function newState(now: number): State {
     sub: { dive: -1, startedAt: 0, until: 0, dives: 0, speeds: 0, speedDay: '' },
     relics: {},
     guide: {},
+    seen: UPDATES[UPDATES.length - 1].id,
     event: { week: -1, id: '', base: 0, claimed: 0, completed: 0 },
     garden: { plots: newPlots(), found: {}, harvests: 0, checkAt: 0 },
   };
@@ -942,6 +944,15 @@ function awaySummary(s: State, since: number, now: number): AwayItem[] {
   return list;
 }
 
+// Release notes the player has not seen yet, newest last. Older ones are dropped after two.
+function whatsNew(s: State): UpdateDef[] {
+  return UPDATES.filter((u) => u.id > s.seen).slice(-2);
+}
+
+function markSeen(s: State) {
+  s.seen = UPDATES[UPDATES.length - 1].id;
+}
+
 function serialize(s: State): string {
   return JSON.stringify(s);
 }
@@ -963,6 +974,8 @@ function deserialize(text: string, now: number): State {
   s.relics = data.relics || {};
   s.event = Object.assign(newState(now).event, data.event || {});
   s.guide = data.guide || {};
+  // Saves from before release notes have seen none of them.
+  s.seen = typeof data.seen === 'number' ? data.seen : 0;
   // Saves from before the guide: mark what is already done without paying for it again.
   if (!data.guide) GUIDE.forEach((g) => { if (g.done(s)) s.guide[g.id] = true; });
   s.garden = Object.assign(newState(now).garden, data.garden || {});

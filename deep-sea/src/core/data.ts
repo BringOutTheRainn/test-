@@ -202,6 +202,23 @@ const CORALS: CoralDef[] = [
 const CORAL_BY_ID: Record<string, CoralDef> = {};
 CORALS.forEach((c) => (CORAL_BY_ID[c.id] = c));
 
+interface UpdateDef { id: number; version: string; items: [string, string][] }
+
+// Release notes shown once to returning players. Add new entries at the end with the next id.
+const UPDATES: UpdateDef[] = [
+  { id: 1, version: '0.4', items: [
+    ['🪸', 'Reef garden: plant corals in the Midnight Trench and cross-breed new colours.'],
+    ['🗓', 'A new ocean event every week, with three reward tiers.'],
+    ['🏺', 'Your submarine can bring back sunken relics.'],
+    ['🧭', 'A short guide points the way, one step at a time.'],
+  ] },
+  { id: 2, version: '0.5', items: [
+    ['👆', 'Bigger buttons, easier to tap on small phones.'],
+    ['🔍', 'Clearer, larger text everywhere.'],
+    ['🌋', 'On short screens the geyser moves out of the way of the clam.'],
+  ] },
+];
+
 // Weekly ocean events. One runs each week (Monday to Sunday, UTC), in rotation; each counts one kind of play
 // from the moment it starts and pays three reward tiers.
 type EventStat = 'fish' | 'taps' | 'geyser' | 'dives' | 'harvests';
