@@ -1,0 +1,265 @@
+// Static game data: zones, generators, upgrades, logbook entries and heritage perks.
+
+interface ZoneDef { name: string; depth: number; cost: number; flavor: string; }
+
+const ZONES: ZoneDef[] = [
+  { name: 'Sunlit Shallows', depth: 0, cost: 0, flavor: 'Warm water, soft sand, one very patient clam.' },
+  { name: 'Twilight Reef', depth: 200, cost: 50e3, flavor: 'The light fades to blue. Things start to glow.' },
+  { name: 'Midnight Trench', depth: 1000, cost: 250e6, flavor: 'No sunlight reaches here. Only the creatures shine.' },
+  { name: 'Abyssal Plain', depth: 4000, cost: 2e12, flavor: 'Cold, crushing and full of old shipwrecks.' },
+  { name: 'Hadal Deep', depth: 10000, cost: 300e12, flavor: 'The bottom of the world. Something enormous sleeps here.' },
+];
+const ZONE_MULT = 1.5;
+
+interface GenDef { id: string; name: string; zone: number; cost: number; pps: number; flavor: string; }
+
+const GENS: GenDef[] = [
+  { id: 'crab', name: 'Hermit Crab', zone: 0, cost: 15, pps: 0.1, flavor: 'Picks loose pearls out of the sand.' },
+  { id: 'seahorse', name: 'Seahorse Ranch', zone: 0, cost: 100, pps: 1, flavor: 'Seahorses ferry pearls home in their pouches.' },
+  { id: 'kelp', name: 'Kelp Farm', zone: 0, cost: 1100, pps: 8, flavor: 'Tall kelp shelters a nursery of baby clams.' },
+  { id: 'lantern', name: 'Lanternfish School', zone: 1, cost: 12e3, pps: 47, flavor: 'A thousand tiny lights search the reef.' },
+  { id: 'octopus', name: 'Octopus Workshop', zone: 1, cost: 130e3, pps: 260, flavor: 'Eight arms, eight pearls at a time.' },
+  { id: 'jelly', name: 'Jellyfish Lamps', zone: 1, cost: 1.4e6, pps: 1400, flavor: 'Glowing jellies light the night shift.' },
+  { id: 'angler', name: 'Anglerfish Lure', zone: 2, cost: 20e6, pps: 7800, flavor: 'Its lantern draws pearls out of the dark.' },
+  { id: 'squid', name: 'Giant Squid Press', zone: 2, cost: 330e6, pps: 44e3, flavor: 'Squeezes nacre into flawless spheres.' },
+  { id: 'vent', name: 'Hydrothermal Vent', zone: 2, cost: 5.1e9, pps: 260e3, flavor: 'Mineral smoke crystallises into pearls.' },
+  { id: 'galleon', name: 'Sunken Galleon', zone: 3, cost: 75e9, pps: 1.6e6, flavor: 'A pirate fortune, salvaged chest by chest.' },
+  { id: 'leviathan', name: 'Leviathan Stable', zone: 3, cost: 1e12, pps: 10e6, flavor: 'Tame sea giants haul pearls by the ton.' },
+  { id: 'forge', name: 'Trench Forge', zone: 4, cost: 14e12, pps: 65e6, flavor: 'Pressure and heat forge pearls from bedrock.' },
+  { id: 'cathedral', name: 'Abyssal Cathedral', zone: 4, cost: 170e12, pps: 430e6, flavor: 'The ancient ones sing pearls into being.' },
+];
+const COST_GROWTH = 1.15;
+
+type UpgradeKind = 'tier' | 'crab' | 'tap' | 'mop' | 'rhythm' | 'slack' | 'lure' | 'slow' | 'research';
+
+interface UpgradeDef {
+  id: string; name: string; desc: string; cost: number; kind: UpgradeKind;
+  gen?: number; need?: number; value?: number;
+}
+
+const TIER_AT = [1, 5, 25, 50, 100, 150, 200];
+const TIER_COST = [10, 50, 500, 5e4, 5e6, 5e8, 5e10];
+const TIER_NAMES = ['Polished', 'Shiny', 'Lustrous', 'Iridescent', 'Radiant', 'Mythic', 'Abyssal'];
+
+function buildUpgrades(): UpgradeDef[] {
+  const list: UpgradeDef[] = [];
+  GENS.forEach((g, i) => {
+    TIER_AT.forEach((at, k) => {
+      list.push({
+        id: `t_${g.id}_${k}`, kind: 'tier', gen: i, need: at, cost: g.cost * TIER_COST[k],
+        name: `${TIER_NAMES[k]} ${g.name}s`, desc: `${g.name} production x2.`,
+      });
+    });
+  });
+  const crab = [[1, 0.1, 1e3], [10, 0.5, 1e5], [25, 5, 1e7], [50, 50, 1e9], [100, 500, 1e11], [150, 5e3, 1e13]];
+  crab.forEach(([need, value, cost], k) => list.push({
+    id: `crab_${k}`, kind: 'crab', gen: 0, need, value, cost,
+    name: ['Crab Pickers', 'Busy Claws', 'Crab Union', 'Crab Kingdom', 'Crab Empire', 'Crab Cosmos'][k],
+    desc: `Hermit Crabs gain +${fmt(value)} PPS for every other creature you own.`,
+  }));
+  [100, 500, 1e4, 1e6, 1e8, 1e10].forEach((cost, k) => list.push({
+    id: `tap_${k}`, kind: 'tap', cost, value: 2,
+    name: ['Strong Grip', 'Steady Hands', 'Pearl Diver', 'Free Diver', 'Deep Diver', 'Ocean Hands'][k],
+    desc: 'Tap power x2.',
+  }));
+  [5e4, 5e6, 5e8, 5e10, 5e12, 5e14].forEach((cost, k) => list.push({
+    id: `mop_${k}`, kind: 'mop', cost, value: 0.01,
+    name: ['Mother of Pearl', 'Nacre Layers', 'Pearl Heart', 'Pearl Soul', 'Pearl Spirit', 'Pearl Legend'][k],
+    desc: 'Each tap also gives 1% of your PPS.',
+  }));
+  list.push({ id: 'rhythm_0', kind: 'rhythm', cost: 5e3, value: 25, name: 'Rhythm of the Tide', desc: 'Combo cap +25 (up to x2.5).' });
+  list.push({ id: 'rhythm_1', kind: 'rhythm', cost: 5e7, value: 25, name: 'Riptide Rhythm', desc: 'Combo cap +25 (up to x3).' });
+  list.push({ id: 'slack_0', kind: 'slack', cost: 2e5, value: 0.5, name: 'Slack Water', desc: 'Your combo drains half as fast.' });
+  list.push({ id: 'lure_0', kind: 'lure', cost: 5e5, value: 0.8, name: 'Shiny Lures', desc: 'Visitors come 20% more often.' });
+  list.push({ id: 'lure_1', kind: 'lure', cost: 5e9, value: 0.8, name: 'Glitter Bait', desc: 'Visitors come 20% more often.' });
+  list.push({ id: 'slow_0', kind: 'slow', cost: 5e6, value: 1.5, name: 'Slow Swimmers', desc: 'Visitors stay 50% longer.' });
+  for (let k = 0; k < 10; k++) {
+    list.push({
+      id: `research_${k}`, kind: 'research', cost: 1e6 * Math.pow(60, k), value: 1.15,
+      name: `Reef Research ${k + 1}`, desc: 'All production x1.15.',
+    });
+  }
+  return list;
+}
+const UPGRADES = buildUpgrades();
+const UPGRADE_BY_ID: Record<string, UpgradeDef> = {};
+UPGRADES.forEach((u) => (UPGRADE_BY_ID[u.id] = u));
+
+interface PerkDef { id: string; name: string; desc: string; costs: number[]; }
+
+const PERKS: PerkDef[] = [
+  { id: 'warm', name: 'Warm Currents', desc: 'Offline earnings +25% per level (base 25%).', costs: [1, 5, 20] },
+  { id: 'shoals', name: 'Golden Shoals', desc: 'Visitors come 15% more often per level.', costs: [2, 8, 30] },
+  { id: 'inherit', name: 'Pearl Inheritance', desc: 'Start each migration with 1K, then 1M, then 1B Pearls.', costs: [3, 15, 60] },
+  { id: 'mastery', name: 'Clam Mastery', desc: 'Combo cap +25 per level.', costs: [4, 20] },
+  { id: 'tides', name: 'Long Tides', desc: 'High tide lasts 1 minute longer per level.', costs: [5, 25] },
+  { id: 'memory', name: 'Deep Memory', desc: 'Start each migration in the Twilight Reef.', costs: [10] },
+  { id: 'whale', name: 'Whale Friend', desc: 'Whales visit twice as often, even in the shallows.', costs: [12] },
+  { id: 'notes', name: 'Research Notes', desc: 'Keep Reef Research through migrations.', costs: [40] },
+];
+const PERK_BY_ID: Record<string, PerkDef> = {};
+PERKS.forEach((p) => (PERK_BY_ID[p.id] = p));
+
+interface AchDef { id: string; name: string; desc: string; }
+
+function buildAchievements(): AchDef[] {
+  const list: AchDef[] = [];
+  const earned = [[1e3, 'Pocket Change'], [1e6, 'Pearl Necklace'], [1e9, 'Treasure Chest'], [1e12, 'Sunken Fortune'],
+    [1e15, 'Ocean of Pearls'], [1e18, 'Seven Seas'], [1e21, 'Tidal Wealth']] as const;
+  earned.forEach(([n, name]) => list.push({ id: `earn_${n}`, name, desc: `Earn ${fmt(n)} Pearls in total.` }));
+  const taps = [[100, 'Knock Knock'], [1000, 'Tap Dancer'], [10000, 'Woodpecker of the Sea'], [100000, 'Unstoppable Fingers']] as const;
+  taps.forEach(([n, name]) => list.push({ id: `taps_${n}`, name, desc: `Tap ${fmt(n)} times.` }));
+  list.push({ id: 'combo_max', name: 'Riding the Current', desc: 'Fill the combo bar.' });
+  GENS.forEach((g) => [1, 50, 100].forEach((n) => list.push({ id: `gen_${g.id}_${n}`, name: `${g.name} x${n}`, desc: `Own ${n} ${g.name}${n > 1 ? 's' : ''}.` })));
+  ([[1, 'Gone Fishing'], [10, 'Fish Whisperer'], [50, 'Golden Net']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `fish_${n}`, name, desc: `Catch ${n} golden fish.` }));
+  ([[1, 'Whale Watcher'], [10, 'Song of the Deep']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `whale_${n}`, name, desc: `Greet ${n} whale${n > 1 ? 's' : ''}.` }));
+  ZONES.forEach((z, i) => { if (i > 0) list.push({ id: `zone_${i}`, name: z.name, desc: `Descend to ${z.depth.toLocaleString('en-US')} m.` }); });
+  ([[1, 'Moving House'], [5, 'Nomad Colony'], [20, 'Eternal Tides']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `mig_${n}`, name, desc: `Migrate ${n} time${n > 1 ? 's' : ''}.` }));
+  ([[1, 'First Gift'], [7, 'Full Week of Tides']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `daily_${n}`, name, desc: n === 1 ? 'Claim a Daily Tide Gift.' : 'Reach day 7 of the Tide Gift streak.' }));
+  ([[1, 'Thar She Blows'], [25, 'Geyser Keeper']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `geyser_${n}`, name, desc: `Erupt the geyser ${n} time${n > 1 ? 's' : ''}.` }));
+  ([[1, 'New Friend'], [6, 'Rare Collection']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `rare_${n}`, name, desc: n === 1 ? 'Adopt a rare creature.' : 'Adopt every rare creature.' }));
+  ([[10, 'Helpful Neighbour'], [50, 'Pillar of the Reef']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `req_${n}`, name, desc: `Finish ${n} Reef Requests.` }));
+  list.push({ id: 'spawn_1', name: 'Spawning Night', desc: 'Catch a visitor while the coral is spawning.' });
+  ([[1, 'Up Periscope'], [25, 'Old Salt']] as [number, string][]).forEach(([n, name]) =>
+    list.push({ id: `dive_${n}`, name, desc: `Bring the submarine back from ${n} dive${n > 1 ? 's' : ''}.` }));
+  list.push({ id: 'relic_1', name: 'Treasure Hunter', desc: 'Find a sunken relic.' });
+  list.push({ id: 'relic_8', name: 'Museum of the Deep', desc: 'Find every sunken relic.' });
+  list.push({ id: 'garden_1', name: 'Green Fins', desc: 'Harvest a coral from the reef garden.' });
+  list.push({ id: 'hybrid_1', name: 'Coral Matchmaker', desc: 'Cross-breed a new kind of coral.' });
+  list.push({ id: 'hybrid_3', name: 'Rainbow Reef', desc: 'Discover every cross-bred coral.' });
+  list.push({ id: 'event_1', name: 'Ocean Champion', desc: 'Finish every tier of a weekly ocean event.' });
+  list.push({ id: 'event_4', name: 'Season of Tides', desc: 'Finish four weekly ocean events.' });
+  return list;
+}
+const ACHIEVEMENTS = buildAchievements();
+
+const NEWS = [
+  'Local crab insists it found the pearl first.',
+  'Seahorse ranchers report record pouch sizes.',
+  'Kelp grows 30 cm overnight, shades three confused fish.',
+  'Lanternfish union demands brighter working hours.',
+  'Octopus completes eight tasks at once, still bored.',
+  'Jellyfish lamps voted most relaxing night light of the reef.',
+  'Anglerfish denies its lure is "a bit much".',
+  'Giant squid press accused of squeezing too hard.',
+  'Hydrothermal vent tourism booming, visitors advised to bring nothing flammable.',
+  'Pirate ghost files complaint about salvage crews.',
+  'Leviathan stable adds second, larger stable for the first stable.',
+  'Scientists confirm the ocean is, in fact, quite deep.',
+  'Clam reports feeling "seen" after millionth tap.',
+  'Whale song tops the reef charts for the 40th week.',
+];
+
+// Rare creatures, adopted with Hearts that visitors leave behind. Kept forever, through migrations.
+interface RareDef { id: string; name: string; hearts: number; desc: string; color: string; }
+
+const RARES: RareDef[] = [
+  { id: 'moonjelly', name: 'Moon Jelly', hearts: 3, desc: 'Combo cap +10.', color: '#cfe3ff' },
+  { id: 'narwhal', name: 'Pearl Narwhal', hearts: 6, desc: 'All production +10%.', color: '#f3ecff' },
+  { id: 'glasssquid', name: 'Glass Squid', hearts: 10, desc: 'The geyser recharges 20% faster.', color: '#9ff7ff' },
+  { id: 'ray', name: 'Ghost Ray', hearts: 15, desc: 'Visitors come 10% more often.', color: '#b9a6d8' },
+  { id: 'turtle', name: 'Golden Turtle', hearts: 25, desc: 'Offline earnings +10%.', color: '#ffd84a' },
+  { id: 'dragon', name: 'Leafy Sea Dragon', hearts: 40, desc: 'Tap power +25%.', color: '#7fe08a' },
+];
+const RARE_BY_ID: Record<string, RareDef> = {};
+RARES.forEach((r) => (RARE_BY_ID[r.id] = r));
+
+// Ocean facts: a true fact about each real creature, unlocked by owning 10 of a creature or adopting a rare one.
+// Reading a new fact for the first time gives a Heart.
+interface FactDef { id: string; icon: string; name: string; gen?: string; rare?: string; text: string; }
+
+const FACT_OWNED = 10;
+const FACTS: FactDef[] = [
+  { id: 'crab', icon: '🦀', name: 'Hermit Crab', gen: 'crab', text: 'When a bigger empty shell turns up, hermit crabs line up by size and swap shells in a chain, each moving into the next one up.' },
+  { id: 'seahorse', icon: '🐴', name: 'Seahorse', gen: 'seahorse', text: 'Male seahorses carry the eggs in a pouch and give birth to the young.' },
+  { id: 'kelp', icon: '🌿', name: 'Giant Kelp', gen: 'kelp', text: 'Giant kelp can grow about 60 cm in a single day, one of the fastest growing things on Earth.' },
+  { id: 'lantern', icon: '🐟', name: 'Lanternfish', gen: 'lantern', text: 'Every night lanternfish swim hundreds of metres up to feed near the surface, part of the biggest daily migration on the planet.' },
+  { id: 'octopus', icon: '🐙', name: 'Octopus', gen: 'octopus', text: 'An octopus has three hearts and blue blood.' },
+  { id: 'jelly', icon: '🪼', name: 'Jellyfish', gen: 'jelly', text: 'Jellyfish have no brain, heart or bones, and they have drifted through the oceans for more than 500 million years.' },
+  { id: 'angler', icon: '🎣', name: 'Anglerfish', gen: 'angler', text: "A deep sea anglerfish's glowing lure is lit by bacteria that live inside it." },
+  { id: 'squid', icon: '🦑', name: 'Giant Squid', gen: 'squid', text: 'Giant and colossal squid have the biggest eyes of any animal, about the size of a dinner plate.' },
+  { id: 'vent', icon: '🌋', name: 'Hydrothermal Vents', gen: 'vent', text: 'Deep sea vents were first found in 1977. The tube worms and clams around them live on chemicals from the vent instead of sunlight.' },
+  { id: 'galleon', icon: '⚓', name: 'Shipwrecks', gen: 'galleon', text: 'A sunken ship soon becomes a reef, as corals, sponges and fish move in.' },
+  { id: 'moonjelly', icon: '🌕', name: 'Moon Jelly', rare: 'moonjelly', text: 'The four rings you can see through a moon jelly are its reproductive organs.' },
+  { id: 'narwhal', icon: '🦄', name: 'Narwhal', rare: 'narwhal', text: "A narwhal's tusk is a tooth that grows through its upper lip and can reach about 3 metres." },
+  { id: 'glasssquid', icon: '🔮', name: 'Glass Squid', rare: 'glasssquid', text: 'Glass squids are almost completely see-through, which hides them in open water.' },
+  { id: 'ray', icon: '🩻', name: 'Rays', rare: 'ray', text: 'Rays are close cousins of sharks, with skeletons made of cartilage instead of bone.' },
+  { id: 'turtle', icon: '🐢', name: 'Sea Turtle', rare: 'turtle', text: 'Sea turtles come back to the beach where they hatched to lay their own eggs, sometimes decades later.' },
+  { id: 'dragon', icon: '🐉', name: 'Leafy Sea Dragon', rare: 'dragon', text: 'Leafy sea dragons live only off southern Australia. Their leafy fins are just camouflage; they swim with tiny clear fins.' },
+];
+
+// Sunken relics, found now and then by the expedition submarine. Kept forever, through migrations.
+interface RelicDef { id: string; icon: string; name: string; desc: string; }
+
+const RELICS: RelicDef[] = [
+  { id: 'doubloon', icon: '🪙', name: 'Pirate Doubloon', desc: 'All production +5%.' },
+  { id: 'helmet', icon: '🤿', name: 'Brass Diving Helmet', desc: 'Tap power +10%.' },
+  { id: 'compass', icon: '🧭', name: "Captain's Compass", desc: 'Submarine dives are 10% shorter.' },
+  { id: 'bell', icon: '🔔', name: "Ship's Bell", desc: 'Visitors stay 25% longer.' },
+  { id: 'amphora', icon: '🏺', name: 'Ancient Amphora', desc: 'Offline earnings +5%.' },
+  { id: 'tooth', icon: '🦷', name: 'Kraken Tooth', desc: 'The geyser erupts 5 seconds longer.' },
+  { id: 'comb', icon: '🪮', name: "Mermaid's Comb", desc: 'Reef Requests pay 50% more.' },
+  { id: 'moonpearl', icon: '🌕', name: 'Moon Pearl', desc: 'The Daily Tide Gift is 25% bigger.' },
+];
+const RELIC_BY_ID: Record<string, RelicDef> = {};
+RELICS.forEach((r) => (RELIC_BY_ID[r.id] = r));
+
+// Reef garden corals. The first three can always be planted; the rest only appear by cross-breeding two grown
+// parents next to an empty plot, and can be planted freely once found.
+interface CoralDef { id: string; name: string; color: string; ms: number; bonus: number; harvest: number; hearts: number; parents?: [string, string]; }
+
+const CORALS: CoralDef[] = [
+  { id: 'staghorn', name: 'Staghorn Coral', color: '#ff9f7a', ms: 10 * 60e3, bonus: 0.01, harvest: 20, hearts: 0 },
+  { id: 'brain', name: 'Brain Coral', color: '#c9e36b', ms: 60 * 60e3, bonus: 0.02, harvest: 120, hearts: 0 },
+  { id: 'fan', name: 'Purple Sea Fan', color: '#b48cff', ms: 4 * 3600e3, bonus: 0.03, harvest: 480, hearts: 1 },
+  { id: 'fire', name: 'Fire Coral', color: '#ff5d5d', ms: 30 * 60e3, bonus: 0.03, harvest: 120, hearts: 1, parents: ['staghorn', 'brain'] },
+  { id: 'moon', name: 'Moonlight Coral', color: '#9fe8ff', ms: 2 * 3600e3, bonus: 0.05, harvest: 360, hearts: 2, parents: ['brain', 'fan'] },
+  { id: 'rainbow', name: 'Rainbow Coral', color: '#ffd84a', ms: 8 * 3600e3, bonus: 0.08, harvest: 1200, hearts: 3, parents: ['fire', 'moon'] },
+];
+const CORAL_BY_ID: Record<string, CoralDef> = {};
+CORALS.forEach((c) => (CORAL_BY_ID[c.id] = c));
+
+interface UpdateDef { id: number; version: string; items: [string, string][] }
+
+// Release notes shown once to returning players. Add new entries at the end with the next id.
+const UPDATES: UpdateDef[] = [
+  { id: 1, version: '0.4', items: [
+    ['🪸', 'Reef garden: plant corals in the Midnight Trench and cross-breed new colours.'],
+    ['🗓', 'A new ocean event every week, with three reward tiers.'],
+    ['🏺', 'Your submarine can bring back sunken relics.'],
+    ['🧭', 'A short guide points the way, one step at a time.'],
+  ] },
+  { id: 2, version: '0.5', items: [
+    ['👆', 'Bigger buttons, easier to tap on small phones.'],
+    ['🔍', 'Clearer, larger text everywhere.'],
+    ['🌋', 'On short screens the geyser moves out of the way of the clam.'],
+  ] },
+  { id: 3, version: '0.6', items: [
+    ['🌊', 'Reduce motion in Settings slows the sea and stops pulsing glows. It follows your phone setting.'],
+  ] },
+  { id: 4, version: '0.7', items: [
+    ['📖', 'Ocean facts in the Logbook: a true fact for each real creature, and a Heart for each one you read.'],
+  ] },
+];
+
+// Weekly ocean events. One runs each week (Monday to Sunday, UTC), in rotation; each counts one kind of play
+// from the moment it starts and pays three reward tiers.
+type EventStat = 'fish' | 'taps' | 'geyser' | 'dives' | 'harvests';
+interface EventDef { id: string; icon: string; name: string; goal: string; stat: EventStat; targets: [number, number, number]; }
+
+const EVENTS: EventDef[] = [
+  { id: 'shoal', icon: '🐟', name: 'Golden Shoal Week', goal: 'Catch golden fish and greet whales', stat: 'fish', targets: [15, 50, 120] },
+  { id: 'current', icon: '🌊', name: 'Strong Current Week', goal: 'Tap the giant clam', stat: 'taps', targets: [3000, 15000, 50000] },
+  { id: 'vents', icon: '💨', name: 'Thermal Vent Week', goal: 'Erupt the geyser', stat: 'geyser', targets: [4, 12, 30] },
+  { id: 'expedition', icon: '🚢', name: 'Expedition Week', goal: 'Bring the submarine home from dives', stat: 'dives', targets: [3, 8, 18] },
+  { id: 'bloom', icon: '🪸', name: 'Coral Bloom Week', goal: 'Harvest corals in the reef garden', stat: 'harvests', targets: [4, 12, 30] },
+];
+const EVENT_BY_ID: Record<string, EventDef> = {};
+EVENTS.forEach((e) => (EVENT_BY_ID[e.id] = e));
