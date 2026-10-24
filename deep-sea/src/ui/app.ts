@@ -40,11 +40,13 @@ class App {
   newsIdx = 0;
   newsAt = 0;
   offline: { seconds: number; pearls: number; since: number } | null = null;
+  factsToasted = new Set<string>();
 
   constructor() {
     this.s = this.load();
     this.offline = applyOffline(this.s, Date.now());
     this.shownPearls = this.s.pearls;
+    unreadFacts(this.s).forEach((f) => this.factsToasted.add(f.id));
     this.build();
     document.body.classList.toggle('calm', this.s.settings.calm);
     checkAchievements(this.s);
@@ -212,6 +214,11 @@ class App {
       this.scene.announce(c.name, c.color);
       this.toast(`<b>Reef garden:</b> two corals cross-bred into ${c.name}!`);
       if (this.s.settings.sound) playChime();
+    });
+    unreadFacts(this.s).forEach((f) => {
+      if (this.factsToasted.has(f.id)) return;
+      this.factsToasted.add(f.id);
+      this.toast(`${f.icon} <b>New ocean fact:</b> ${f.name}. Read it in the Logbook for a Heart.`);
     });
     for (let k = 0; k < auto.autoTaps; k++) {
       const sc = this.scene;
@@ -423,7 +430,7 @@ class App {
       const key = `${this.tab}|${subKey}|${gardenKey}|${s.zone}|${s.pearls >= descendCost(s)}|${moonstonesOnMigrate(s)}|${s.moonstones - s.moonstonesSpent}|${Math.floor(s.earnedLife / nextMoonstoneAt(s) * 100)}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'logbook') {
-      const key = `logbook|${s.hearts}|${Object.keys(s.relics).length}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
+      const key = `logbook|${FACTS.filter((f) => factUnlocked(s, f)).length}|${Object.keys(s.facts).length}|${s.hearts}|${Object.keys(s.relics).length}|${Object.keys(s.rares).length}|${Object.keys(s.achievements).length}`;
       if (key !== this.panelKey) { this.panelKey = key; this.renderPanel(); }
     } else if (this.tab === 'stats') {
       const key = `stats|${Math.floor(Date.now() / 1000)}`;
@@ -616,6 +623,21 @@ class App {
       rares.appendChild(card);
     });
     p.appendChild(rares);
+    const known = FACTS.filter((f) => s.facts[f.id]).length;
+    p.appendChild(el('h3', '', `Ocean facts <span class="muted">${known}/${FACTS.length}</span>`));
+    p.appendChild(el('p', 'lead', `A true fact for each real creature. Own ${FACT_OWNED} of a creature, or adopt a rare one, to unlock its fact. Reading a new one gives a Heart.`));
+    const facts = el('div', 'facts');
+    FACTS.forEach((f) => {
+      const open = factUnlocked(s, f), fresh = open && !s.facts[f.id];
+      const gen = GENS.find((g) => g.id === f.gen), rare = RARES.find((r) => r.id === f.rare);
+      const gi = GENS.findIndex((g) => g.id === f.gen);
+      const hint = rare ? `Adopt the ${rare.name}` : `${gen ? gen.name : ''} ${Math.min(s.owned[gi] || 0, FACT_OWNED)}/${FACT_OWNED}`;
+      const b = el('button', 'fact' + (open ? ' open' : '') + (fresh ? ' fresh' : ''),
+        `<span>${open ? f.icon : '?'}</span><b>${open ? f.name : hint}</b>${fresh ? '<i>New</i>' : ''}`);
+      if (open) b.addEventListener('click', () => this.showFact(f.id));
+      facts.appendChild(b);
+    });
+    p.appendChild(facts);
     p.appendChild(el('h3', '', `Sunken relics <span class="muted">${RELICS.filter((r) => s.relics[r.id]).length}/${RELICS.length}</span>`));
     p.appendChild(el('p', 'lead', 'The expedition submarine sometimes finds a relic, more often on long dives. Relics stay forever.'));
     const relics = el('div', 'rares');
@@ -867,6 +889,13 @@ class App {
     return items;
   }
 
+  showFact(id: string) {
+    const f = FACTS.find((x) => x.id === id)!;
+    const paid = readFact(this.s, id);
+    if (paid) { this.save(); this.panelKey = ''; this.renderPanel(); }
+    this.modal(`<div class="relic-big">${f.icon}</div><h2>${f.name}</h2><p>${f.text}</p>${paid ? '<p class="big-num">+1 ❤</p>' : ''}`, [['Close', () => {}]]);
+  }
+
   showWhatsNew(then: () => void) {
     const notes = whatsNew(this.s);
     markSeen(this.s);
@@ -913,7 +942,7 @@ class App {
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
       <div class="setting"><span>Start over</span><button data-a="reset" class="danger">Reset</button></div>
-      <small>Fathom 0.6 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
+      <small>Fathom 0.7 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
       if (k) {

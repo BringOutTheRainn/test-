@@ -536,3 +536,27 @@ test('reduce motion is off by default and old saves load with it off', () => {
   const on = g.newState(0); on.settings.calm = true;
   assert.equal(g.deserialize(g.serialize(on), 0).settings.calm, true);
 });
+
+test('ocean facts unlock at 10 owned or on adoption, and pay one Heart on first read', () => {
+  const s = g.newState(0);
+  assert.equal(g.unreadFacts(s).length, 0);
+  assert.equal(g.readFact(s, 'crab'), false);
+  s.owned[0] = g.FACT_OWNED - 1;
+  assert.equal(g.unreadFacts(s).length, 0);
+  s.owned[0] = g.FACT_OWNED;
+  assert.deepEqual(g.unreadFacts(s).map((f) => f.id), ['crab']);
+  const h = s.hearts;
+  assert.equal(g.readFact(s, 'crab'), true);
+  assert.equal(s.hearts, h + 1);
+  assert.equal(g.readFact(s, 'crab'), false);
+  assert.equal(s.hearts, h + 1);
+  // A read fact stays open after a migration resets the colony.
+  s.owned[0] = 0;
+  assert.ok(g.factUnlocked(s, g.FACTS.find((f) => f.id === 'crab')));
+  s.rares.narwhal = true;
+  assert.deepEqual(g.unreadFacts(s).map((f) => f.id), ['narwhal']);
+  assert.equal(g.deserialize(g.serialize(s), 0).facts.crab, true);
+  // Every fact points at a real creature.
+  const gens = new Set(g.GENS.map((x) => x.id)), rares = new Set(g.RARES.map((x) => x.id));
+  assert.ok(g.FACTS.every((f) => (f.gen && gens.has(f.gen)) || (f.rare && rares.has(f.rare))));
+});

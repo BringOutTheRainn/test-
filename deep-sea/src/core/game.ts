@@ -37,6 +37,7 @@ interface State {
   relics: Record<string, boolean>;
   guide: Record<string, boolean>;
   seen: number;
+  facts: Record<string, boolean>; // facts read
   event: { week: number; id: string; base: number; claimed: number; completed: number };
   garden: { plots: Plot[]; found: Record<string, boolean>; harvests: number; checkAt: number };
 }
@@ -81,6 +82,7 @@ function newState(now: number): State {
     relics: {},
     guide: {},
     seen: UPDATES[UPDATES.length - 1].id,
+    facts: {},
     event: { week: -1, id: '', base: 0, claimed: 0, completed: 0 },
     garden: { plots: newPlots(), found: {}, harvests: 0, checkAt: 0 },
   };
@@ -944,6 +946,26 @@ function awaySummary(s: State, since: number, now: number): AwayItem[] {
   return list;
 }
 
+function factUnlocked(s: State, f: FactDef): boolean {
+  if (s.facts[f.id]) return true;
+  if (f.rare) return !!s.rares[f.rare];
+  const i = GENS.findIndex((g) => g.id === f.gen);
+  return i >= 0 && s.owned[i] >= FACT_OWNED;
+}
+
+function unreadFacts(s: State): FactDef[] {
+  return FACTS.filter((f) => !s.facts[f.id] && factUnlocked(s, f));
+}
+
+// Marks a fact read. The first read of an unlocked fact pays a Heart.
+function readFact(s: State, id: string): boolean {
+  const f = FACTS.find((x) => x.id === id);
+  if (!f || s.facts[id] || !factUnlocked(s, f)) return false;
+  s.facts[id] = true;
+  s.hearts += 1;
+  return true;
+}
+
 // Release notes the player has not seen yet, newest last. Older ones are dropped after two.
 function whatsNew(s: State): UpdateDef[] {
   return UPDATES.filter((u) => u.id > s.seen).slice(-2);
@@ -974,6 +996,7 @@ function deserialize(text: string, now: number): State {
   s.relics = data.relics || {};
   s.event = Object.assign(newState(now).event, data.event || {});
   s.guide = data.guide || {};
+  s.facts = data.facts || {};
   // Saves from before release notes have seen none of them.
   s.seen = typeof data.seen === 'number' ? data.seen : 0;
   // Saves from before the guide: mark what is already done without paying for it again.

@@ -260,3 +260,13 @@ h3 .muted { color: var(--muted); font-weight: 600; }
 
 /* Reduce motion: no pulsing glows or pop-in; ready chips keep their steady glow. */
 body.calm *, body.calm *::before, body.calm *::after { animation: none !important; transition: none !important; }
+
+/* Ocean facts */
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fact { position: relative; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 10px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); text-align: left; color: var(--muted); }
+.fact span { font-size: 20px; width: 24px; text-align: center; flex: none; }
+.fact b { font-size: 12px; font-weight: 600; line-height: 1.2; }
+.fact.open { background: var(--panel-2); color: var(--text); }
+.fact.open b { font-size: 14px; font-weight: 700; }
+.fact.fresh { box-shadow: inset 0 0 0 2px var(--gold); }
+.fact i { position: absolute; top: -6px; right: -4px; font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 8px; background: var(--gold); color: #04223a; }

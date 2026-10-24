@@ -159,6 +159,16 @@ await page.click('#tabs button[data-tab="migrate"]');
 await shot('06_migrate');
 await page.click('#tabs button[data-tab="logbook"]');
 await shot('07_logbook');
+// Ocean facts: one already read, the rest new.
+await game(() => { window.__fathom.s.facts = { crab: true }; window.__fathom.panelKey = ''; window.__fathom.renderPanel(); });
+await page.evaluate(() => document.querySelector('#panel .facts').scrollIntoView({ block: 'center' }));
+await page.waitForTimeout(4500); // let the fact toasts fade
+await shot('32_facts');
+await page.click('#panel .fact[class*="fresh"] >> nth=3');
+await page.waitForTimeout(300);
+await shot('33_fact');
+await page.click('#modal .btns .act');
+await page.evaluate(() => document.querySelector('#panel').scrollTo(0, 0));
 await page.click('#tabs button[data-tab="stats"]');
 await shot('08_stats');
 // Settings, with Reduce motion switched on.

@@ -171,6 +171,30 @@ const RARES: RareDef[] = [
 const RARE_BY_ID: Record<string, RareDef> = {};
 RARES.forEach((r) => (RARE_BY_ID[r.id] = r));
 
+// Ocean facts: a true fact about each real creature, unlocked by owning 10 of a creature or adopting a rare one.
+// Reading a new fact for the first time gives a Heart.
+interface FactDef { id: string; icon: string; name: string; gen?: string; rare?: string; text: string; }
+
+const FACT_OWNED = 10;
+const FACTS: FactDef[] = [
+  { id: 'crab', icon: '🦀', name: 'Hermit Crab', gen: 'crab', text: 'When a bigger empty shell turns up, hermit crabs line up by size and swap shells in a chain, each moving into the next one up.' },
+  { id: 'seahorse', icon: '🐴', name: 'Seahorse', gen: 'seahorse', text: 'Male seahorses carry the eggs in a pouch and give birth to the young.' },
+  { id: 'kelp', icon: '🌿', name: 'Giant Kelp', gen: 'kelp', text: 'Giant kelp can grow about 60 cm in a single day, one of the fastest growing things on Earth.' },
+  { id: 'lantern', icon: '🐟', name: 'Lanternfish', gen: 'lantern', text: 'Every night lanternfish swim hundreds of metres up to feed near the surface, part of the biggest daily migration on the planet.' },
+  { id: 'octopus', icon: '🐙', name: 'Octopus', gen: 'octopus', text: 'An octopus has three hearts and blue blood.' },
+  { id: 'jelly', icon: '🪼', name: 'Jellyfish', gen: 'jelly', text: 'Jellyfish have no brain, heart or bones, and they have drifted through the oceans for more than 500 million years.' },
+  { id: 'angler', icon: '🎣', name: 'Anglerfish', gen: 'angler', text: "A deep sea anglerfish's glowing lure is lit by bacteria that live inside it." },
+  { id: 'squid', icon: '🦑', name: 'Giant Squid', gen: 'squid', text: 'Giant and colossal squid have the biggest eyes of any animal, about the size of a dinner plate.' },
+  { id: 'vent', icon: '🌋', name: 'Hydrothermal Vents', gen: 'vent', text: 'Deep sea vents were first found in 1977. The tube worms and clams around them live on chemicals from the vent instead of sunlight.' },
+  { id: 'galleon', icon: '⚓', name: 'Shipwrecks', gen: 'galleon', text: 'A sunken ship soon becomes a reef, as corals, sponges and fish move in.' },
+  { id: 'moonjelly', icon: '🌕', name: 'Moon Jelly', rare: 'moonjelly', text: 'The four rings you can see through a moon jelly are its reproductive organs.' },
+  { id: 'narwhal', icon: '🦄', name: 'Narwhal', rare: 'narwhal', text: "A narwhal's tusk is a tooth that grows through its upper lip and can reach about 3 metres." },
+  { id: 'glasssquid', icon: '🔮', name: 'Glass Squid', rare: 'glasssquid', text: 'Glass squids are almost completely see-through, which hides them in open water.' },
+  { id: 'ray', icon: '🩻', name: 'Rays', rare: 'ray', text: 'Rays are close cousins of sharks, with skeletons made of cartilage instead of bone.' },
+  { id: 'turtle', icon: '🐢', name: 'Sea Turtle', rare: 'turtle', text: 'Sea turtles come back to the beach where they hatched to lay their own eggs, sometimes decades later.' },
+  { id: 'dragon', icon: '🐉', name: 'Leafy Sea Dragon', rare: 'dragon', text: 'Leafy sea dragons live only off southern Australia. Their leafy fins are just camouflage; they swim with tiny clear fins.' },
+];
+
 // Sunken relics, found now and then by the expedition submarine. Kept forever, through migrations.
 interface RelicDef { id: string; icon: string; name: string; desc: string; }
 
@@ -219,6 +243,9 @@ const UPDATES: UpdateDef[] = [
   ] },
   { id: 3, version: '0.6', items: [
     ['🌊', 'Reduce motion in Settings slows the sea and stops pulsing glows. It follows your phone setting.'],
+  ] },
+  { id: 4, version: '0.7', items: [
+    ['📖', 'Ocean facts in the Logbook: a true fact for each real creature, and a Heart for each one you read.'],
   ] },
 ];
 

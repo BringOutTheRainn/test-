@@ -249,6 +249,13 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
    relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built), ~~a weekly ocean
    event~~ (built).
 
+## Ocean facts
+
+The Logbook holds a true fact for each real creature: the ten real generators (from Hermit Crab to Sunken Galleon)
+and the six rare creatures. A generator's fact unlocks when you own 10 of it, a rare creature's when you adopt it.
+A toast announces each new fact, and reading one for the first time gives a Heart (16 Hearts in all). Read facts
+stay open through migrations. The made-up creatures of the deepest zones have no fact.
+
 ## Reduce motion
 
 A Reduce motion switch in Settings slows every sway and drift in the scene to about a third, makes floating
@@ -435,4 +442,13 @@ ocean idle games that mention motion sickness or "too busy to look at for long".
 - Fathom's scene is always moving (fish, jellies, kelp, bubbles) and four chips pulse when ready, with no way to
   calm it. **Built: a Reduce motion setting** that follows the phone's setting for new players. Version 0.6, with
   a What's new line. Pacing is unchanged (1T at 89.8 minutes).
+- **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
+
+**Run 18 (Oct 24, evening).** Sources: Abyssrium's and Tap Tap Fish's creature info cards, which store reviews
+single out as a reason the games feel calm and worth collecting, and Cookie Clicker's flavour text as a reward for
+reaching milestones. Fathom's creatures only had one line of flavour text.
+- **Built: Ocean facts**, a true fact per real creature, unlocked by owning 10 or adopting a rare one, with a
+  Heart for each first read. It gives early milestones a small reward and fits Fathom's real-ocean twist (it already
+  follows real full moons). Version 0.7. Pacing is unchanged (1T at 89.8 minutes); 16 Hearts in all is about one
+  rare creature.
 - **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
