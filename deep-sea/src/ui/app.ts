@@ -46,6 +46,7 @@ class App {
     this.offline = applyOffline(this.s, Date.now());
     this.shownPearls = this.s.pearls;
     this.build();
+    document.body.classList.toggle('calm', this.s.settings.calm);
     checkAchievements(this.s);
     const welcome = () => {
       if (this.offline!.seconds > 0 && (this.offline!.pearls > 0 || this.awayItems(this.offline!.since).length)) this.showOffline(this.offline!);
@@ -89,7 +90,10 @@ class App {
       const text = localStorage.getItem(SAVE_KEY);
       if (text) return deserialize(text, Date.now());
     } catch (e) { console.warn('Could not load save', e); }
-    return newState(Date.now());
+    const s = newState(Date.now());
+    // New players start with the phone's own reduce motion choice.
+    s.settings.calm = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    return s;
   }
 
   save() {
@@ -905,15 +909,17 @@ class App {
       <div class="setting"><span>Ocean ambience</span><button data-k="ambience">${on(s.settings.ambience)}</button></div>
       <div class="setting"><span>Vibration</span><button data-k="vibrate">${on(s.settings.vibrate)}</button></div>
       <div class="setting"><span>Reminders</span><button data-k="reminders">${on(s.settings.reminders)}</button></div>
+      <div class="setting"><span>Reduce motion</span><button data-k="calm">${on(s.settings.calm)}</button></div>
       <div class="setting"><span>Scientific numbers</span><button data-k="sci">${on(s.settings.sci)}</button></div>
       <div class="setting"><span>Save</span><button data-a="export">Export</button><button data-a="import">Import</button></div>
       <div class="setting"><span>Start over</span><button data-a="reset" class="danger">Reset</button></div>
-      <small>Fathom 0.5 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
+      <small>Fathom 0.6 · progress saves on this device.</small>`, [['Done', () => this.save()]]);
     document.querySelectorAll<HTMLElement>('#modal .setting button').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k as keyof State['settings'] | undefined;
       if (k) {
         s.settings[k] = !s.settings[k]; b.textContent = on(s.settings[k]);
         if (k === 'reminders' && s.settings.reminders) askReminderPermission();
+        document.body.classList.toggle('calm', s.settings.calm);
         if (s.settings.sound && s.settings.ambience) startAmbient(s.zone); else stopAmbient();
         return;
       }

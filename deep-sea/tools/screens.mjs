@@ -161,6 +161,13 @@ await page.click('#tabs button[data-tab="logbook"]');
 await shot('07_logbook');
 await page.click('#tabs button[data-tab="stats"]');
 await shot('08_stats');
+// Settings, with Reduce motion switched on.
+await page.click('#gear');
+await page.click('#modal .setting button[data-k="calm"]');
+await page.waitForTimeout(200);
+await shot('31_settings');
+await page.click('#modal .setting button[data-k="calm"]');
+await page.click('#modal .btns .act');
 
 // Offline popup after reload.
 await game(() => {

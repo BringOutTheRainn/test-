@@ -249,6 +249,12 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
    relics for the submarine to find~~ (built), ~~a reef garden minigame~~ (built), ~~a weekly ocean
    event~~ (built).
 
+## Reduce motion
+
+A Reduce motion switch in Settings slows every sway and drift in the scene to about a third, makes floating
+numbers rise gently, cuts tap bubbles from four to one, softens the clam's squash, and stops the pulsing glows and
+pop-in animations. New players start with their phone's own reduce motion setting.
+
 ## What's new
 
 Returning players see a short "What's new" card once after an update, before the welcome back card. Notes live in
@@ -421,4 +427,12 @@ feature for weeks, run 15's note that two weeks of features have shipped since m
   stumbled on them. **Built: a What's new card** shown once after an update, listing the newest one or two
   releases with an icon per line, then the usual welcome back card. New players skip it. Version is now 0.5.
   Pacing is unchanged (1T at 89.8 minutes).
+- **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
+
+**Run 17 (Oct 24).** Sources: Apple's and Android's reduce motion settings and the `prefers-reduced-motion` media
+query, the Game Accessibility Guidelines' advice to let players turn down background movement, store reviews of
+ocean idle games that mention motion sickness or "too busy to look at for long".
+- Fathom's scene is always moving (fish, jellies, kelp, bubbles) and four chips pulse when ready, with no way to
+  calm it. **Built: a Reduce motion setting** that follows the phone's setting for new players. Version 0.6, with
+  a What's new line. Pacing is unchanged (1T at 89.8 minutes).
 - **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.

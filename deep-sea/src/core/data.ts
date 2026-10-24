@@ -217,6 +217,9 @@ const UPDATES: UpdateDef[] = [
     ['🔍', 'Clearer, larger text everywhere.'],
     ['🌋', 'On short screens the geyser moves out of the way of the clam.'],
   ] },
+  { id: 3, version: '0.6', items: [
+    ['🌊', 'Reduce motion in Settings slows the sea and stops pulsing glows. It follows your phone setting.'],
+  ] },
 ];
 
 // Weekly ocean events. One runs each week (Monday to Sunday, UTC), in rotation; each counts one kind of play

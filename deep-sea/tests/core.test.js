@@ -527,3 +527,12 @@ test('release notes show once to returning players and never to new ones', () =>
   assert.deepEqual(g.whatsNew(s).map((u) => u.id), [g.UPDATES[g.UPDATES.length - 1].id]);
   assert.ok(g.UPDATES.every((u, i) => u.id === i + 1 && u.items.length > 0));
 });
+
+test('reduce motion is off by default and old saves load with it off', () => {
+  assert.equal(g.newState(0).settings.calm, false);
+  const old = JSON.parse(g.serialize(g.newState(0)));
+  delete old.settings.calm;
+  assert.equal(g.deserialize(JSON.stringify(old), 0).settings.calm, false);
+  const on = g.newState(0); on.settings.calm = true;
+  assert.equal(g.deserialize(g.serialize(on), 0).settings.calm, true);
+});

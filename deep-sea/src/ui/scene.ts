@@ -28,6 +28,8 @@ class Scene {
   motes: Mote[] = [];
   spawn: Mote[] = []; // coral spawn bundles rising during spawning nights
   squash = 0;
+  rt = 0; // real seconds, for floating numbers
+  calm = false;
   depthShown = 0;
   t = 0;
 
@@ -57,9 +59,9 @@ class Scene {
   get sandY() { return this.h * 0.8; }
 
   tapAt(x: number, y: number, text: string, color = '#ffffff') {
-    this.squash = 1;
-    this.floaters.push({ x: x + (Math.random() - 0.5) * 50, y: y - 10 - Math.random() * 20, text, born: this.t, color, size: 20 });
-    for (let i = 0; i < 4; i++) {
+    this.squash = this.calm ? 0.3 : 1;
+    this.floaters.push({ x: x + (Math.random() - 0.5) * 50, y: y - 10 - Math.random() * 20, text, born: this.rt, color, size: 20 });
+    for (let i = 0; i < (this.calm ? 1 : 4); i++) {
       this.bubbles.push({ x: this.clamX + (Math.random() - 0.5) * this.clamR, y: this.clamY - this.clamR * 0.2, r: 2 + Math.random() * 5, vy: 40 + Math.random() * 60, wob: Math.random() * 6 });
     }
     if (this.bubbles.length > 120) this.bubbles.splice(0, this.bubbles.length - 120);
@@ -67,7 +69,7 @@ class Scene {
   }
 
   announce(text: string, color: string) {
-    this.floaters.push({ x: this.w / 2, y: this.h * 0.35, text, born: this.t, color, size: 26 });
+    this.floaters.push({ x: this.w / 2, y: this.h * 0.35, text, born: this.rt, color, size: 26 });
   }
 
   visitorPos(v: Visitor, now: number): { x: number; y: number } {
@@ -88,7 +90,10 @@ class Scene {
   }
 
   draw(s: State, now: number, dt: number) {
-    this.t += dt;
+    // Reduce motion slows every sway and drift to about a third.
+    this.calm = s.settings.calm;
+    this.t += this.calm ? dt * 0.35 : dt;
+    this.rt += dt;
     const g = this.g;
     const { w, h } = this;
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -167,17 +172,17 @@ class Scene {
     });
 
     // Floating numbers.
-    this.floaters = this.floaters.filter((f) => this.t - f.born < 1.3);
+    this.floaters = this.floaters.filter((f) => this.rt - f.born < 1.3);
     g.textAlign = 'center';
     this.floaters.forEach((f) => {
-      const age = this.t - f.born;
+      const age = this.rt - f.born, rise = age * (this.calm ? 20 : 60);
       g.globalAlpha = Math.max(0, 1 - age / 1.3);
       g.font = `800 ${f.size}px system-ui, sans-serif`;
       g.lineWidth = 4;
       g.strokeStyle = 'rgba(0,20,40,0.55)';
-      g.strokeText(f.text, f.x, f.y - age * 60);
+      g.strokeText(f.text, f.x, f.y - rise);
       g.fillStyle = f.color;
-      g.fillText(f.text, f.x, f.y - age * 60);
+      g.fillText(f.text, f.x, f.y - rise);
     });
     g.globalAlpha = 1;
     this.squash = Math.max(0, this.squash - dt * 6);

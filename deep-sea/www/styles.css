@@ -257,3 +257,6 @@ h3 .muted { color: var(--muted); font-weight: 600; }
   .geyser b, #surge b { font-size: 12px; }
   .geyser small, #surge small { font-size: 11px; letter-spacing: -0.2px; }
 }
+
+/* Reduce motion: no pulsing glows or pop-in; ready chips keep their steady glow. */
+body.calm *, body.calm *::before, body.calm *::after { animation: none !important; transition: none !important; }

@@ -24,7 +24,7 @@ interface State {
     taps: number; tapsRun: number; fish: number; whales: number; migrations: number;
     bestCombo: number; tapEarned: number; startedAt: number; runStartedAt: number; spawnCatches: number;
   };
-  settings: { sound: boolean; vibrate: boolean; sci: boolean; ambience: boolean; reminders: boolean };
+  settings: { sound: boolean; vibrate: boolean; sci: boolean; ambience: boolean; reminders: boolean; calm: boolean };
   buyAmount: number; // 1, 10, 100 or -1 for max
   lastSeen: number;
   daily: Daily;
@@ -68,7 +68,7 @@ function newState(now: number): State {
     perks: {},
     achievements: {},
     stats: { taps: 0, tapsRun: 0, fish: 0, whales: 0, migrations: 0, bestCombo: 0, tapEarned: 0, startedAt: now, runStartedAt: now, spawnCatches: 0 },
-    settings: { sound: true, vibrate: true, sci: false, ambience: true, reminders: true },
+    settings: { sound: true, vibrate: true, sci: false, ambience: true, reminders: true, calm: false },
     buyAmount: 1,
     lastSeen: now,
     daily: { day: '', taps: 0, claimedDay: '', streak: 0 },
