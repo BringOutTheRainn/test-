@@ -464,3 +464,10 @@ Live Science and the Royal Ontario Museum (jellyfish fossils about 505 million y
   female anglerfish have the lure; vent animals live on bacteria that turn vent chemicals into food (not on the
   chemicals directly); hermit crabs line up from largest to smallest. Game rules and pacing are unchanged.
 - **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
+
+**Run 20 (Oct 25, evening): week two wrap-up.** No new feature. A summary of week two (0.4 to 0.7: reef garden,
+weekly events, welcome back list, first-week guide, store screenshots, tap target and readability passes, What's
+new card, Reduce motion, Ocean facts) is in `week-two-summary.md` in the shared folder, with the four Play release
+steps that still need cj.
+- **Next, if development continues:** a cloud save, so progress survives a new phone; a second prestige layer
+  past Moonstones for players who reach the trench; seasonal coral colours for the garden.
