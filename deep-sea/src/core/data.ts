@@ -177,15 +177,15 @@ interface FactDef { id: string; icon: string; name: string; gen?: string; rare?:
 
 const FACT_OWNED = 10;
 const FACTS: FactDef[] = [
-  { id: 'crab', icon: '🦀', name: 'Hermit Crab', gen: 'crab', text: 'When a bigger empty shell turns up, hermit crabs line up by size and swap shells in a chain, each moving into the next one up.' },
+  { id: 'crab', icon: '🦀', name: 'Hermit Crab', gen: 'crab', text: 'When a bigger empty shell turns up, hermit crabs line up from largest to smallest and swap shells in a chain, each moving into the one just left behind.' },
   { id: 'seahorse', icon: '🐴', name: 'Seahorse', gen: 'seahorse', text: 'Male seahorses carry the eggs in a pouch and give birth to the young.' },
-  { id: 'kelp', icon: '🌿', name: 'Giant Kelp', gen: 'kelp', text: 'Giant kelp can grow about 60 cm in a single day, one of the fastest growing things on Earth.' },
+  { id: 'kelp', icon: '🌿', name: 'Giant Kelp', gen: 'kelp', text: 'In good conditions giant kelp can grow about 60 cm in a single day, faster than any other plant in the sea.' },
   { id: 'lantern', icon: '🐟', name: 'Lanternfish', gen: 'lantern', text: 'Every night lanternfish swim hundreds of metres up to feed near the surface, part of the biggest daily migration on the planet.' },
   { id: 'octopus', icon: '🐙', name: 'Octopus', gen: 'octopus', text: 'An octopus has three hearts and blue blood.' },
   { id: 'jelly', icon: '🪼', name: 'Jellyfish', gen: 'jelly', text: 'Jellyfish have no brain, heart or bones, and they have drifted through the oceans for more than 500 million years.' },
-  { id: 'angler', icon: '🎣', name: 'Anglerfish', gen: 'angler', text: "A deep sea anglerfish's glowing lure is lit by bacteria that live inside it." },
+  { id: 'angler', icon: '🎣', name: 'Anglerfish', gen: 'angler', text: 'Only female deep sea anglerfish have the glowing lure, and its light comes from bacteria living inside it.' },
   { id: 'squid', icon: '🦑', name: 'Giant Squid', gen: 'squid', text: 'Giant and colossal squid have the biggest eyes of any animal, about the size of a dinner plate.' },
-  { id: 'vent', icon: '🌋', name: 'Hydrothermal Vents', gen: 'vent', text: 'Deep sea vents were first found in 1977. The tube worms and clams around them live on chemicals from the vent instead of sunlight.' },
+  { id: 'vent', icon: '🌋', name: 'Hydrothermal Vents', gen: 'vent', text: 'Deep sea vents were first seen in 1977. The tube worms and clams around them live on bacteria that turn the vent\'s chemicals into food, with no sunlight at all.' },
   { id: 'galleon', icon: '⚓', name: 'Shipwrecks', gen: 'galleon', text: 'A sunken ship soon becomes a reef, as corals, sponges and fish move in.' },
   { id: 'moonjelly', icon: '🌕', name: 'Moon Jelly', rare: 'moonjelly', text: 'The four rings you can see through a moon jelly are its reproductive organs.' },
   { id: 'narwhal', icon: '🦄', name: 'Narwhal', rare: 'narwhal', text: "A narwhal's tusk is a tooth that grows through its upper lip and can reach about 3 metres." },

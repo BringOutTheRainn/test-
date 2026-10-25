@@ -254,7 +254,7 @@ at the offline rate, shown in a welcome back popup. Export, import and hard rese
 The Logbook holds a true fact for each real creature: the ten real generators (from Hermit Crab to Sunken Galleon)
 and the six rare creatures. A generator's fact unlocks when you own 10 of it, a rare creature's when you adopt it.
 A toast announces each new fact, and reading one for the first time gives a Heart (16 Hearts in all). Read facts
-stay open through migrations. The made-up creatures of the deepest zones have no fact.
+stay open through migrations. The made-up creatures of the deepest zones have no fact. Facts were checked against the sources listed in run 19.
 
 ## Reduce motion
 
@@ -451,4 +451,16 @@ reaching milestones. Fathom's creatures only had one line of flavour text.
   Heart for each first read. It gives early milestones a small reward and fits Fathom's real-ocean twist (it already
   follows real full moons). Version 0.7. Pacing is unchanged (1T at 89.8 minutes); 16 Hearts in all is about one
   rare creature.
+- **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
+
+**Run 19 (Oct 25).** A fact-check of all 16 ocean facts, since run 18 wrote them from memory. Sources: NOAA
+National Marine Sanctuaries and Aquarium of the Pacific (kelp up to 50 to 60 cm a day in good conditions), Discover
+and Scientific American (hermit crab vacancy chains), WHOI Twilight Zone project (the daily vertical migration),
+Smithsonian Ocean (giant squid eye up to about 25 cm; anglerfish lure bacteria), Earth Magazine (vents found by
+Alvin at the Galapagos Rift, February 1977), Georgia Aquarium and Museums Victoria (moon jelly's four gonads),
+Live Science and the Royal Ontario Museum (jellyfish fossils about 505 million years old), National Geographic
+(leafy seadragon fins and range), UCL Museums (narwhal tusk up to about 3 m).
+- All 16 held up. **Fixed four wordings** to match the sources: kelp's 60 cm a day is a good-conditions peak; only
+  female anglerfish have the lure; vent animals live on bacteria that turn vent chemicals into food (not on the
+  chemicals directly); hermit crabs line up from largest to smallest. Game rules and pacing are unchanged.
 - **Next:** the week two wrap-up: a summary of what shipped and the release steps that still need cj.
